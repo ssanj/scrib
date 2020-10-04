@@ -31,14 +31,18 @@ type alias Model =
 
 
 init : () -> (Model, Cmd Msg)
-init _ = (Model ""  Nothing, Cmd.none)
+init _ = (initModel, Cmd.none)
 
+
+initModel : Model
+initModel = Model "" Nothing
 
 -- UPDATE
 
 
 type Msg = NoteSaved
          | NoteEdited String
+         | NewNote
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -46,6 +50,7 @@ update msg model =
   case msg of
     NoteSaved             -> ({ model | noteId = Just 10 }, sendSaveMessage model.noteText)
     (NoteEdited noteText) -> ({ model | noteText = noteText }, sendMarkdownPreviewMessage noteText)
+    NewNote               -> ({ model | noteText = "", noteId = Nothing }, sendMarkdownPreviewMessage "")
 
 
 -- VIEW
@@ -80,19 +85,36 @@ viewNoteEditingArea model =
       button [id "view-notes-button", class "button", class "is-text"]
         [text "View Notes"]
     , textarea
-        [id "note-content", class "textarea", rows 10, placeholder "e.g. My awesome idea", onInput NoteEdited]
-        [text model.noteText]
+        [id "note-content", class "textarea", rows 10, placeholder "e.g. My awesome idea", onInput NoteEdited, value model.noteText]
+        []
     , div [class "field", class "is-grouped"]
         [
           p [class "control"]
             [
-              button [id "save-note", onClick NoteSaved, class "button", class "is-success"]
+              button [
+                id "save-note"
+                , onClick NoteSaved
+                , classList
+                    [("button", True), ("is-success", True), ("is-static", not (hasContent model))]
+              ]
                 [text (saveButtonText model)]
+            , button [
+                id "new-note"
+              , onClick NewNote
+              , classList
+                  [("button", True), ("is-success", True), ("is-hidden", not (hasBeenSaved model))]
+              ]
+                [text "New Note"]
             ]
         ]
     ]
 
 
+hasContent: Model -> Bool
+hasContent {noteText} = not (String.isEmpty noteText)
+
+hasBeenSaved: Model -> Bool
+hasBeenSaved {noteId} = maybe False (const True) noteId
 
 saveButtonText : Model -> String
 saveButtonText {noteId} = maybe "Save" (const "Edit") noteId

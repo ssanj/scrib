@@ -784,11 +784,11 @@ function _Debug_crash_UNUSED(identifier, fact1, fact2, fact3, fact4)
 
 function _Debug_regionToString(region)
 {
-	if (region.K.z === region.P.z)
+	if (region.K.A === region.P.A)
 	{
-		return 'on line ' + region.K.z;
+		return 'on line ' + region.K.A;
 	}
-	return 'on lines ' + region.K.z + ' through ' + region.P.z;
+	return 'on lines ' + region.K.A + ' through ' + region.P.A;
 }
 
 
@@ -5140,14 +5140,13 @@ var $elm$core$Task$perform = F2(
 var $elm$browser$Browser$element = _Browser_element;
 var $author$project$Main$Model = F2(
 	function (noteText, noteId) {
-		return {G: noteId, E: noteText};
+		return {B: noteId, w: noteText};
 	});
+var $author$project$Main$initModel = A2($author$project$Main$Model, '', $elm$core$Maybe$Nothing);
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
 var $author$project$Main$init = function (_v0) {
-	return _Utils_Tuple2(
-		A2($author$project$Main$Model, '', $elm$core$Maybe$Nothing),
-		$elm$core$Platform$Cmd$none);
+	return _Utils_Tuple2($author$project$Main$initModel, $elm$core$Platform$Cmd$none);
 };
 var $elm$core$Platform$Sub$batch = _Platform_batch;
 var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
@@ -5159,21 +5158,28 @@ var $author$project$Main$sendMarkdownPreviewMessage = _Platform_outgoingPort('se
 var $author$project$Main$sendSaveMessage = _Platform_outgoingPort('sendSaveMessage', $elm$json$Json$Encode$string);
 var $author$project$Main$update = F2(
 	function (msg, model) {
-		if (!msg.$) {
-			return _Utils_Tuple2(
-				_Utils_update(
-					model,
-					{
-						G: $elm$core$Maybe$Just(10)
-					}),
-				$author$project$Main$sendSaveMessage(model.E));
-		} else {
-			var noteText = msg.a;
-			return _Utils_Tuple2(
-				_Utils_update(
-					model,
-					{E: noteText}),
-				$author$project$Main$sendMarkdownPreviewMessage(noteText));
+		switch (msg.$) {
+			case 0:
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							B: $elm$core$Maybe$Just(10)
+						}),
+					$author$project$Main$sendSaveMessage(model.w));
+			case 1:
+				var noteText = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{w: noteText}),
+					$author$project$Main$sendMarkdownPreviewMessage(noteText));
+			default:
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{B: $elm$core$Maybe$Nothing, w: ''}),
+					$author$project$Main$sendMarkdownPreviewMessage(''));
 		}
 	});
 var $elm$html$Html$Attributes$stringProperty = F2(
@@ -5229,11 +5235,63 @@ var $author$project$Main$viewMarkdownPreview = A2(
 				]),
 			_List_Nil)
 		]));
+var $author$project$Main$NewNote = {$: 2};
 var $author$project$Main$NoteEdited = function (a) {
 	return {$: 1, a: a};
 };
 var $author$project$Main$NoteSaved = {$: 0};
 var $elm$html$Html$button = _VirtualDom_node('button');
+var $elm$core$List$filter = F2(
+	function (isGood, list) {
+		return A3(
+			$elm$core$List$foldr,
+			F2(
+				function (x, xs) {
+					return isGood(x) ? A2($elm$core$List$cons, x, xs) : xs;
+				}),
+			_List_Nil,
+			list);
+	});
+var $elm$core$Tuple$second = function (_v0) {
+	var y = _v0.b;
+	return y;
+};
+var $elm$html$Html$Attributes$classList = function (classes) {
+	return $elm$html$Html$Attributes$class(
+		A2(
+			$elm$core$String$join,
+			' ',
+			A2(
+				$elm$core$List$map,
+				$elm$core$Tuple$first,
+				A2($elm$core$List$filter, $elm$core$Tuple$second, classes))));
+};
+var $author$project$FP$const = F2(
+	function (a, _v0) {
+		return a;
+	});
+var $author$project$FP$maybe = F3(
+	function (onNothing, onJust, maybeVal) {
+		if (!maybeVal.$) {
+			var a = maybeVal.a;
+			return onJust(a);
+		} else {
+			return onNothing;
+		}
+	});
+var $author$project$Main$hasBeenSaved = function (_v0) {
+	var noteId = _v0.B;
+	return A3(
+		$author$project$FP$maybe,
+		false,
+		$author$project$FP$const(true),
+		noteId);
+};
+var $elm$core$Basics$not = _Basics_not;
+var $author$project$Main$hasContent = function (_v0) {
+	var noteText = _v0.w;
+	return !$elm$core$String$isEmpty(noteText);
+};
 var $elm$virtual_dom$VirtualDom$Normal = function (a) {
 	return {$: 0, a: a};
 };
@@ -5291,21 +5349,8 @@ var $elm$html$Html$Attributes$rows = function (n) {
 		'rows',
 		$elm$core$String$fromInt(n));
 };
-var $author$project$FP$const = F2(
-	function (a, _v0) {
-		return a;
-	});
-var $author$project$FP$maybe = F3(
-	function (onNothing, onJust, maybeVal) {
-		if (!maybeVal.$) {
-			var a = maybeVal.a;
-			return onJust(a);
-		} else {
-			return onNothing;
-		}
-	});
 var $author$project$Main$saveButtonText = function (_v0) {
-	var noteId = _v0.G;
+	var noteId = _v0.B;
 	return A3(
 		$author$project$FP$maybe,
 		'Save',
@@ -5313,6 +5358,7 @@ var $author$project$Main$saveButtonText = function (_v0) {
 		noteId);
 };
 var $elm$html$Html$textarea = _VirtualDom_node('textarea');
+var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty('value');
 var $author$project$Main$viewNoteEditingArea = function (model) {
 	return A2(
 		$elm$html$Html$div,
@@ -5339,12 +5385,10 @@ var $author$project$Main$viewNoteEditingArea = function (model) {
 						$elm$html$Html$Attributes$class('textarea'),
 						$elm$html$Html$Attributes$rows(10),
 						$elm$html$Html$Attributes$placeholder('e.g. My awesome idea'),
-						$elm$html$Html$Events$onInput($author$project$Main$NoteEdited)
+						$elm$html$Html$Events$onInput($author$project$Main$NoteEdited),
+						$elm$html$Html$Attributes$value(model.w)
 					]),
-				_List_fromArray(
-					[
-						$elm$html$Html$text(model.E)
-					])),
+				_List_Nil),
 				A2(
 				$elm$html$Html$div,
 				_List_fromArray(
@@ -5368,13 +5412,40 @@ var $author$project$Main$viewNoteEditingArea = function (model) {
 									[
 										$elm$html$Html$Attributes$id('save-note'),
 										$elm$html$Html$Events$onClick($author$project$Main$NoteSaved),
-										$elm$html$Html$Attributes$class('button'),
-										$elm$html$Html$Attributes$class('is-success')
+										$elm$html$Html$Attributes$classList(
+										_List_fromArray(
+											[
+												_Utils_Tuple2('button', true),
+												_Utils_Tuple2('is-success', true),
+												_Utils_Tuple2(
+												'is-static',
+												!$author$project$Main$hasContent(model))
+											]))
 									]),
 								_List_fromArray(
 									[
 										$elm$html$Html$text(
 										$author$project$Main$saveButtonText(model))
+									])),
+								A2(
+								$elm$html$Html$button,
+								_List_fromArray(
+									[
+										$elm$html$Html$Attributes$id('new-note'),
+										$elm$html$Html$Events$onClick($author$project$Main$NewNote),
+										$elm$html$Html$Attributes$classList(
+										_List_fromArray(
+											[
+												_Utils_Tuple2('button', true),
+												_Utils_Tuple2('is-success', true),
+												_Utils_Tuple2(
+												'is-hidden',
+												!$author$project$Main$hasBeenSaved(model))
+											]))
+									]),
+								_List_fromArray(
+									[
+										$elm$html$Html$text('New Note')
 									]))
 							]))
 					]))
