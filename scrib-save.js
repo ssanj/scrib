@@ -5291,11 +5291,11 @@ var $elm$html$Html$Attributes$rows = function (n) {
 		'rows',
 		$elm$core$String$fromInt(n));
 };
-var $author$project$Main$const = F2(
+var $author$project$FP$const = F2(
 	function (a, _v0) {
 		return a;
 	});
-var $author$project$Main$maybe = F3(
+var $author$project$FP$maybe = F3(
 	function (onNothing, onJust, maybeVal) {
 		if (!maybeVal.$) {
 			var a = maybeVal.a;
@@ -5307,9 +5307,9 @@ var $author$project$Main$maybe = F3(
 var $author$project$Main$saveButtonText = function (_v0) {
 	var noteId = _v0.G;
 	return A3(
-		$author$project$Main$maybe,
+		$author$project$FP$maybe,
 		'Save',
-		$author$project$Main$const('Edit'),
+		$author$project$FP$const('Edit'),
 		noteId);
 };
 var $elm$html$Html$textarea = _VirtualDom_node('textarea');

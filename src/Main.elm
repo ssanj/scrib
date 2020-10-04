@@ -5,7 +5,7 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick, onInput)
 
-
+import FP exposing (maybe, const)
 
 -- MAIN
 
@@ -92,14 +92,7 @@ viewNoteEditingArea model =
         ]
     ]
 
-maybe : b -> (a -> b) -> Maybe a -> b
-maybe onNothing onJust maybeVal =
-  case maybeVal of
-    (Just a) -> onJust a
-    Nothing  -> onNothing
 
-const : a -> b -> a
-const a _ = a
 
 saveButtonText : Model -> String
 saveButtonText {noteId} = maybe "Save" (const "Edit") noteId
