@@ -22,7 +22,7 @@
 
     const markdownView = document.getElementById('markdown-view');
 
-    app.ports.sendMessage.subscribe(function(noteText){
+    app.ports.sendMarkdownPreviewMessage.subscribe(function(noteText){
       if (marked && markdownView) {
         markdownView.innerHTML = marked(noteText, markedOptions);
       }
