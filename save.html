@@ -1,0 +1,192 @@
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Scrib</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.0/css/bulma.min.css">
+  <link rel="stylesheet" href="md.css">
+  <script src="scrib-save.js"></script>
+</head>
+
+<body>
+  <div id="myapp"></div>
+  <script>
+    const app = Elm.Main.init({
+      node: document.getElementById('myapp')
+    });
+
+    const markedOptions = {
+      "gfm": true,
+      "smartLists": true,
+      "xhtml": true
+    }
+
+    const markdownView = document.getElementById('markdown-view');
+
+    app.ports.sendMessage.subscribe(function(noteText){
+      if (marked && markdownView) {
+        markdownView.innerHTML = marked(noteText, markedOptions);
+      }
+    });
+
+    app.ports.sendSaveMessage.subscribe(function(noteText){
+      console.log("you saved: " + noteText);
+    });
+
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/1.1.1/marked.min.js" integrity="sha512-KCyhJjC9VsBYne93226gCA0Lb+VlrngllQqeCmX+HxBBHTC4HX2FYgEc6jT0oXYrLgvfglK49ktTTc0KVC1+gQ==" crossorigin="anonymous"></script>
+<!-- <html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Scrib!</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.0/css/bulma.min.css">
+    <link rel="stylesheet" href="md.css">
+  </head>
+  <body>
+    <div id="scrib"></div>
+
+ --><!--   <section class="section">
+    <div class="container">
+      <h1 class="title">
+        Scrib
+      </h1>
+      <p class="subtitle">
+        Making scribbling effortless
+      </p>
+      <div>
+        <button id="view-notes-button"  class="button is-text">View Notes</button>
+        <textarea id="note-content" class="textarea" rows="10" placeholder="e.g. My awesome idea"></textarea>
+        <div class="field is-grouped">
+          <p class="control">
+            <button id="save-note" class="button is-success">
+              Save
+            </button>
+          </p>
+        </div>
+      </div>
+      <div>
+        <hr/>
+        <div id="markdown-view"></div>
+      </div>
+    </div>
+
+    <div id="save-note-modal" class="modal">
+      <div class="modal-background"></div>
+      <div class="modal-content">
+        <div class="box">
+          <h1 class="title">Save Note</h1>
+          <p>Please select a name to save the note</p>
+          <div>
+            <input id="save-note-modal-filename" class="input" type="text" placeholder="note name">
+          </div>
+        </div>
+        <div class="field is-grouped">
+          <p class="control">
+            <button id="save-note-modal-save" class="button is-primary">
+              Save
+            </button>
+          </p>
+        </div>
+      <button id="save-note-modal-cancel" class="modal-close is-large" aria-label="close"></button>
+    </div>
+  </section> -->
+<!--   <script>
+      const noteContent = document.getElementById('note-content');
+      const saveNoteButton = document.getElementById('save-note');
+      const saveNoteModal = document.getElementById('save-note-modal');
+      const markdownView = document.getElementById('markdown-view');
+      const viewNotesButton = document.getElementById('view-notes-button');
+
+      const saveNoteModalSave = document.getElementById('save-note-modal-save');
+      const saveNoteModalCancel = document.getElementById('save-note-modal-cancel');
+      const saveNoteFilename = document.getElementById('save-note-modal-filename');
+
+      const basilOptions = {
+        namespace: 'scrib',
+        storages: ['local']
+      };
+
+      const markedOptions = {
+        "gfm": true,
+        "smartLists": true,
+        "xhtml": true
+      }
+
+      var basil = null;
+
+      function addStylesToElements(parent) {
+        const headSizes = [1, 2, 3, 4, 5, 6]
+        headSizes.forEach(function(size) {
+          const hSizes = parent.getElementsByTagName("h" + size);
+          Array.from(hSizes).forEach(function(h){
+            h.setAttribute('class', 'title is-' + size);
+          });
+        });
+      }
+
+      noteContent.addEventListener('input', function(event) {
+        markdownView.innerHTML = marked(noteContent.value, markedOptions);
+      });
+
+      saveNoteButton.addEventListener('click', function(event){
+        saveNoteFilename.value = '';
+        document.onkeydown = function(evt) {
+            evt = evt || window.event;
+            if (evt.keyCode == 27 && saveNoteModal.classList.contains('is-active')) {
+              saveNoteModal.classList.remove('is-active');
+            } else if (evt.keyCode == 13 &&
+                       saveNoteModal.classList.contains('is-active') &&
+                       saveNoteFilename.value.length != 0) {
+              saveNoteModalSave.click();
+            }
+        };
+
+        saveNoteModal.classList.add('is-active');
+      });
+
+      saveNoteModalSave.addEventListener('click', function(event){
+        let note = {
+                      'name': saveNoteFilename.value,
+                      'value': noteContent.value
+                      // 'rendered': convertToBase64(marked(noteContent.value, markedOptions).toString())
+                  };
+        saveToStorage(note);
+        saveNoteModal.classList.remove('is-active');
+      });
+      saveNoteModalCancel.addEventListener('click', function(event){
+        saveNoteModal.classList.remove('is-active');
+      });
+
+      // function convertToBase64(noteHtml) {
+      //   const wordArray = CryptoJS.enc.Utf8.parse(noteHtml);
+      //   return CryptoJS.enc.Base64.stringify(wordArray);
+      // }
+
+      function saveToStorage(note) {
+        let savedNotes = basil.get('notes');
+        savedNotes.push(note); //ignore result
+        basil.set('notes', savedNotes);
+      }
+
+      function initialiseBasil() {
+        if (!basil) {
+          basil = new Basil(basilOptions);
+        }
+
+        if (!Array.isArray(basil.get('notes'))) {
+          basil.set('notes', []);
+        }
+      }
+
+      window.addEventListener('load', (event) => {
+        initialiseBasil();
+      });
+
+      viewNotesButton.addEventListener('click', function(){
+        window.location.href = './view.html';
+      });
+  </script> -->
+<!--   <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/1.1.1/marked.min.js" integrity="sha512-KCyhJjC9VsBYne93226gCA0Lb+VlrngllQqeCmX+HxBBHTC4HX2FYgEc6jT0oXYrLgvfglK49ktTTc0KVC1+gQ==" crossorigin="anonymous"></script>
+ --><!--   <script src="https://cdnjs.cloudflare.com/ajax/libs/basil.js/0.4.4/basil.min.js" integrity="sha512-Kr3/r6AD7d5bFzRXAX/na1TfjWQSaziV0H4zSP2sPQ45tHvH8dgSAyBIzBD7qRQOeueeRZOeg3uja1b5u0sy8Q==" crossorigin="anonymous"></script>
+ -->  </body>
+</html>
