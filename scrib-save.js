@@ -5221,9 +5221,8 @@ var $author$project$Main$viewHeadings = _List_fromArray(
 	]);
 var $elm$html$Html$hr = _VirtualDom_node('hr');
 var $elm$html$Html$Attributes$id = $elm$html$Html$Attributes$stringProperty('id');
-var $author$project$Main$viewMarkdownPreview = A2(
-	$elm$html$Html$div,
-	_List_Nil,
+var $author$project$Main$plainDiv = $elm$html$Html$div(_List_Nil);
+var $author$project$Main$viewMarkdownPreview = $author$project$Main$plainDiv(
 	_List_fromArray(
 		[
 			A2($elm$html$Html$hr, _List_Nil, _List_Nil),
@@ -5236,9 +5235,6 @@ var $author$project$Main$viewMarkdownPreview = A2(
 			_List_Nil)
 		]));
 var $author$project$Main$NewNote = {$: 2};
-var $author$project$Main$NoteEdited = function (a) {
-	return {$: 1, a: a};
-};
 var $author$project$Main$NoteSaved = {$: 0};
 var $elm$html$Html$button = _VirtualDom_node('button');
 var $elm$core$List$filter = F2(
@@ -5309,6 +5305,91 @@ var $elm$html$Html$Events$onClick = function (msg) {
 		'click',
 		$elm$json$Json$Decode$succeed(msg));
 };
+var $author$project$Main$saveButtonText = function (_v0) {
+	var noteId = _v0.B;
+	return A3(
+		$author$project$FP$maybe,
+		'Save',
+		$author$project$FP$const('Edit'),
+		noteId);
+};
+var $author$project$Main$viewControls = function (model) {
+	return A2(
+		$elm$html$Html$div,
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$class('field'),
+				$elm$html$Html$Attributes$class('is-grouped')
+			]),
+		_List_fromArray(
+			[
+				A2(
+				$elm$html$Html$p,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('control')
+					]),
+				_List_fromArray(
+					[
+						A2(
+						$elm$html$Html$button,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$id('save-note'),
+								$elm$html$Html$Events$onClick($author$project$Main$NoteSaved),
+								$elm$html$Html$Attributes$classList(
+								_List_fromArray(
+									[
+										_Utils_Tuple2('button', true),
+										_Utils_Tuple2('is-success', true),
+										_Utils_Tuple2(
+										'is-static',
+										!$author$project$Main$hasContent(model))
+									]))
+							]),
+						_List_fromArray(
+							[
+								$elm$html$Html$text(
+								$author$project$Main$saveButtonText(model))
+							])),
+						A2(
+						$elm$html$Html$button,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$id('new-note'),
+								$elm$html$Html$Events$onClick($author$project$Main$NewNote),
+								$elm$html$Html$Attributes$classList(
+								_List_fromArray(
+									[
+										_Utils_Tuple2('button', true),
+										_Utils_Tuple2('is-text', true),
+										_Utils_Tuple2(
+										'is-hidden',
+										!$author$project$Main$hasBeenSaved(model))
+									]))
+							]),
+						_List_fromArray(
+							[
+								$elm$html$Html$text('New Note')
+							]))
+					])),
+				A2(
+				$elm$html$Html$button,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$id('view-notes-button'),
+						$elm$html$Html$Attributes$class('button'),
+						$elm$html$Html$Attributes$class('is-text')
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text('View Notes')
+					]))
+			]));
+};
+var $author$project$Main$NoteEdited = function (a) {
+	return {$: 1, a: a};
+};
 var $elm$html$Html$Events$alwaysStop = function (x) {
 	return _Utils_Tuple2(x, true);
 };
@@ -5349,106 +5430,28 @@ var $elm$html$Html$Attributes$rows = function (n) {
 		'rows',
 		$elm$core$String$fromInt(n));
 };
-var $author$project$Main$saveButtonText = function (_v0) {
-	var noteId = _v0.B;
-	return A3(
-		$author$project$FP$maybe,
-		'Save',
-		$author$project$FP$const('Edit'),
-		noteId);
-};
 var $elm$html$Html$textarea = _VirtualDom_node('textarea');
 var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty('value');
-var $author$project$Main$viewNoteEditingArea = function (model) {
+var $author$project$Main$viewNotesTextArea = function (model) {
 	return A2(
-		$elm$html$Html$div,
-		_List_Nil,
+		$elm$html$Html$textarea,
 		_List_fromArray(
 			[
-				A2(
-				$elm$html$Html$button,
-				_List_fromArray(
-					[
-						$elm$html$Html$Attributes$id('view-notes-button'),
-						$elm$html$Html$Attributes$class('button'),
-						$elm$html$Html$Attributes$class('is-text')
-					]),
-				_List_fromArray(
-					[
-						$elm$html$Html$text('View Notes')
-					])),
-				A2(
-				$elm$html$Html$textarea,
-				_List_fromArray(
-					[
-						$elm$html$Html$Attributes$id('note-content'),
-						$elm$html$Html$Attributes$class('textarea'),
-						$elm$html$Html$Attributes$rows(10),
-						$elm$html$Html$Attributes$placeholder('e.g. My awesome idea'),
-						$elm$html$Html$Events$onInput($author$project$Main$NoteEdited),
-						$elm$html$Html$Attributes$value(model.w)
-					]),
-				_List_Nil),
-				A2(
-				$elm$html$Html$div,
-				_List_fromArray(
-					[
-						$elm$html$Html$Attributes$class('field'),
-						$elm$html$Html$Attributes$class('is-grouped')
-					]),
-				_List_fromArray(
-					[
-						A2(
-						$elm$html$Html$p,
-						_List_fromArray(
-							[
-								$elm$html$Html$Attributes$class('control')
-							]),
-						_List_fromArray(
-							[
-								A2(
-								$elm$html$Html$button,
-								_List_fromArray(
-									[
-										$elm$html$Html$Attributes$id('save-note'),
-										$elm$html$Html$Events$onClick($author$project$Main$NoteSaved),
-										$elm$html$Html$Attributes$classList(
-										_List_fromArray(
-											[
-												_Utils_Tuple2('button', true),
-												_Utils_Tuple2('is-success', true),
-												_Utils_Tuple2(
-												'is-static',
-												!$author$project$Main$hasContent(model))
-											]))
-									]),
-								_List_fromArray(
-									[
-										$elm$html$Html$text(
-										$author$project$Main$saveButtonText(model))
-									])),
-								A2(
-								$elm$html$Html$button,
-								_List_fromArray(
-									[
-										$elm$html$Html$Attributes$id('new-note'),
-										$elm$html$Html$Events$onClick($author$project$Main$NewNote),
-										$elm$html$Html$Attributes$classList(
-										_List_fromArray(
-											[
-												_Utils_Tuple2('button', true),
-												_Utils_Tuple2('is-success', true),
-												_Utils_Tuple2(
-												'is-hidden',
-												!$author$project$Main$hasBeenSaved(model))
-											]))
-									]),
-								_List_fromArray(
-									[
-										$elm$html$Html$text('New Note')
-									]))
-							]))
-					]))
+				$elm$html$Html$Attributes$id('note-content'),
+				$elm$html$Html$Attributes$class('textarea'),
+				$elm$html$Html$Attributes$rows(10),
+				$elm$html$Html$Attributes$placeholder('e.g. My awesome idea'),
+				$elm$html$Html$Events$onInput($author$project$Main$NoteEdited),
+				$elm$html$Html$Attributes$value(model.w)
+			]),
+		_List_Nil);
+};
+var $author$project$Main$viewNoteEditingArea = function (model) {
+	return $author$project$Main$plainDiv(
+		_List_fromArray(
+			[
+				$author$project$Main$viewNotesTextArea(model),
+				$author$project$Main$viewControls(model)
 			]));
 };
 var $author$project$Main$view = function (model) {

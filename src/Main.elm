@@ -80,35 +80,47 @@ viewHeadings =
 
 viewNoteEditingArea : Model -> Html Msg
 viewNoteEditingArea model =
-  div []
+  plainDiv
     [
-      button [id "view-notes-button", class "button", class "is-text"]
-        [text "View Notes"]
-    , textarea
-        [id "note-content", class "textarea", rows 10, placeholder "e.g. My awesome idea", onInput NoteEdited, value model.noteText]
-        []
-    , div [class "field", class "is-grouped"]
-        [
-          p [class "control"]
-            [
-              button [
-                id "save-note"
-                , onClick NoteSaved
-                , classList
-                    [("button", True), ("is-success", True), ("is-static", not (hasContent model))]
-              ]
-                [text (saveButtonText model)]
-            , button [
-                id "new-note"
-              , onClick NewNote
-              , classList
-                  [("button", True), ("is-success", True), ("is-hidden", not (hasBeenSaved model))]
-              ]
-                [text "New Note"]
-            ]
-        ]
+      viewNotesTextArea model
+    , viewControls model
     ]
 
+plainDiv: List (Html msg) -> Html msg
+plainDiv = div []
+
+viewNotesTextArea: Model -> Html Msg
+viewNotesTextArea model =
+  textarea
+    [id "note-content", class "textarea", rows 10, placeholder "e.g. My awesome idea", onInput NoteEdited, value model.noteText]
+    []
+
+
+viewControls: Model -> Html Msg
+viewControls model =
+  div [class "field", class "is-grouped"]
+    [
+      p [class "control"]
+        [
+          button [
+            id "save-note"
+            , onClick NoteSaved
+            , classList
+                [("button", True), ("is-success", True), ("is-static", not (hasContent model))]
+          ]
+            [text (saveButtonText model)]
+        , button [
+            id "new-note"
+          , onClick NewNote
+          , classList
+              [("button", True), ("is-text", True), ("is-hidden", not (hasBeenSaved model))]
+          ]
+            [text "New Note"]
+        ]
+        , button [id "view-notes-button", class "button", class "is-text"]
+            [text "View Notes"]
+
+    ]
 
 hasContent: Model -> Bool
 hasContent {noteText} = not (String.isEmpty noteText)
@@ -121,7 +133,7 @@ saveButtonText {noteId} = maybe "Save" (const "Edit") noteId
 
 viewMarkdownPreview : Html Msg
 viewMarkdownPreview =
-  div []
+  plainDiv
     [
       hr [] []
     , div [id "markdown-view"] []
