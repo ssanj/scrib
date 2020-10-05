@@ -5139,7 +5139,7 @@ var $elm$core$Task$perform = F2(
 	});
 var $elm$browser$Browser$element = _Browser_element;
 var $elm$json$Json$Decode$decodeValue = _Json_run;
-var $author$project$Main$Model = F2(
+var $author$project$Save$Model = F2(
 	function (noteText, noteId) {
 		return {w: noteId, x: noteText};
 	});
@@ -5155,34 +5155,34 @@ var $elm$json$Json$Decode$maybe = function (decoder) {
 			]));
 };
 var $elm$json$Json$Decode$string = _Json_decodeString;
-var $author$project$Main$decoder = A3(
+var $author$project$Save$decoder = A3(
 	$elm$json$Json$Decode$map2,
-	$author$project$Main$Model,
+	$author$project$Save$Model,
 	A2($elm$json$Json$Decode$field, 'noteText', $elm$json$Json$Decode$string),
 	$elm$json$Json$Decode$maybe(
 		A2($elm$json$Json$Decode$field, 'noteId', $elm$json$Json$Decode$int)));
-var $author$project$Main$defaultModel = A2($author$project$Main$Model, '', $elm$core$Maybe$Nothing);
+var $author$project$Save$defaultModel = A2($author$project$Save$Model, '', $elm$core$Maybe$Nothing);
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
-var $author$project$Main$onlyModel = function (model) {
+var $author$project$Save$onlyModel = function (model) {
 	return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 };
-var $author$project$Main$init = function (json) {
-	var result = A2($elm$json$Json$Decode$decodeValue, $author$project$Main$decoder, json);
+var $author$project$Save$init = function (json) {
+	var result = A2($elm$json$Json$Decode$decodeValue, $author$project$Save$decoder, json);
 	if (!result.$) {
 		var model = result.a;
-		return $author$project$Main$onlyModel(model);
+		return $author$project$Save$onlyModel(model);
 	} else {
-		return $author$project$Main$onlyModel($author$project$Main$defaultModel);
+		return $author$project$Save$onlyModel($author$project$Save$defaultModel);
 	}
 };
 var $elm$core$Platform$Sub$batch = _Platform_batch;
 var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
-var $author$project$Main$subscriptions = function (_v0) {
+var $author$project$Save$subscriptions = function (_v0) {
 	return $elm$core$Platform$Sub$none;
 };
-var $author$project$Main$PreviewMessage = 1;
-var $author$project$Main$SaveMessage = 0;
+var $author$project$Save$PreviewMessage = 1;
+var $author$project$Save$SaveMessage = 0;
 var $elm$json$Json$Encode$int = _Json_wrap;
 var $author$project$FP$maybe = F3(
 	function (onNothing, onJust, maybeVal) {
@@ -5207,7 +5207,7 @@ var $elm$json$Json$Encode$object = function (pairs) {
 			_Json_emptyObject(0),
 			pairs));
 };
-var $author$project$Main$showPortType = function (portType) {
+var $author$project$Save$showPortType = function (portType) {
 	if (!portType) {
 		return 'save_message';
 	} else {
@@ -5215,7 +5215,7 @@ var $author$project$Main$showPortType = function (portType) {
 	}
 };
 var $elm$json$Json$Encode$string = _Json_wrap;
-var $author$project$Main$encode = F2(
+var $author$project$Save$encode = F2(
 	function (portType, model) {
 		return $elm$json$Json$Encode$object(
 			_List_fromArray(
@@ -5223,7 +5223,7 @@ var $author$project$Main$encode = F2(
 					_Utils_Tuple2(
 					'eventType',
 					$elm$json$Json$Encode$string(
-						$author$project$Main$showPortType(portType))),
+						$author$project$Save$showPortType(portType))),
 					_Utils_Tuple2(
 					'noteText',
 					$elm$json$Json$Encode$string(model.x)),
@@ -5232,8 +5232,8 @@ var $author$project$Main$encode = F2(
 					A3($author$project$FP$maybe, $elm$json$Json$Encode$null, $elm$json$Json$Encode$int, model.w))
 				]));
 	});
-var $author$project$Main$scribMessage = _Platform_outgoingPort('scribMessage', $elm$core$Basics$identity);
-var $author$project$Main$update = F2(
+var $author$project$Save$scribMessage = _Platform_outgoingPort('scribMessage', $elm$core$Basics$identity);
+var $author$project$Save$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
 			case 0:
@@ -5243,8 +5243,8 @@ var $author$project$Main$update = F2(
 						{
 							w: $elm$core$Maybe$Just(10)
 						}),
-					$author$project$Main$scribMessage(
-						A2($author$project$Main$encode, 0, model)));
+					$author$project$Save$scribMessage(
+						A2($author$project$Save$encode, 0, model)));
 			case 1:
 				var noteText = msg.a;
 				var updatedModel = _Utils_update(
@@ -5252,16 +5252,16 @@ var $author$project$Main$update = F2(
 					{x: noteText});
 				return _Utils_Tuple2(
 					updatedModel,
-					$author$project$Main$scribMessage(
-						A2($author$project$Main$encode, 1, updatedModel)));
+					$author$project$Save$scribMessage(
+						A2($author$project$Save$encode, 1, updatedModel)));
 			default:
 				var updatedModel = _Utils_update(
 					model,
 					{w: $elm$core$Maybe$Nothing, x: ''});
 				return _Utils_Tuple2(
 					updatedModel,
-					$author$project$Main$scribMessage(
-						A2($author$project$Main$encode, 1, updatedModel)));
+					$author$project$Save$scribMessage(
+						A2($author$project$Save$encode, 1, updatedModel)));
 		}
 	});
 var $elm$json$Json$Decode$value = _Json_decodeValue;
@@ -5279,7 +5279,7 @@ var $elm$html$Html$h1 = _VirtualDom_node('h1');
 var $elm$html$Html$p = _VirtualDom_node('p');
 var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
 var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
-var $author$project$Main$viewHeadings = _List_fromArray(
+var $author$project$Save$viewHeadings = _List_fromArray(
 	[
 		A2(
 		$elm$html$Html$h1,
@@ -5304,8 +5304,8 @@ var $author$project$Main$viewHeadings = _List_fromArray(
 	]);
 var $elm$html$Html$hr = _VirtualDom_node('hr');
 var $elm$html$Html$Attributes$id = $elm$html$Html$Attributes$stringProperty('id');
-var $author$project$Main$plainDiv = $elm$html$Html$div(_List_Nil);
-var $author$project$Main$viewMarkdownPreview = $author$project$Main$plainDiv(
+var $author$project$Save$plainDiv = $elm$html$Html$div(_List_Nil);
+var $author$project$Save$viewMarkdownPreview = $author$project$Save$plainDiv(
 	_List_fromArray(
 		[
 			A2($elm$html$Html$hr, _List_Nil, _List_Nil),
@@ -5317,8 +5317,8 @@ var $author$project$Main$viewMarkdownPreview = $author$project$Main$plainDiv(
 				]),
 			_List_Nil)
 		]));
-var $author$project$Main$NewNote = {$: 2};
-var $author$project$Main$NoteSaved = {$: 0};
+var $author$project$Save$NewNote = {$: 2};
+var $author$project$Save$NoteSaved = {$: 0};
 var $elm$html$Html$button = _VirtualDom_node('button');
 var $elm$core$List$filter = F2(
 	function (isGood, list) {
@@ -5349,7 +5349,7 @@ var $author$project$FP$const = F2(
 	function (a, _v0) {
 		return a;
 	});
-var $author$project$Main$hasBeenSaved = function (_v0) {
+var $author$project$Save$hasBeenSaved = function (_v0) {
 	var noteId = _v0.w;
 	return A3(
 		$author$project$FP$maybe,
@@ -5358,7 +5358,7 @@ var $author$project$Main$hasBeenSaved = function (_v0) {
 		noteId);
 };
 var $elm$core$Basics$not = _Basics_not;
-var $author$project$Main$hasContent = function (_v0) {
+var $author$project$Save$hasContent = function (_v0) {
 	var noteText = _v0.x;
 	return !$elm$core$String$isEmpty(noteText);
 };
@@ -5379,7 +5379,7 @@ var $elm$html$Html$Events$onClick = function (msg) {
 		'click',
 		$elm$json$Json$Decode$succeed(msg));
 };
-var $author$project$Main$saveButtonText = function (_v0) {
+var $author$project$Save$saveButtonText = function (_v0) {
 	var noteId = _v0.w;
 	return A3(
 		$author$project$FP$maybe,
@@ -5387,7 +5387,7 @@ var $author$project$Main$saveButtonText = function (_v0) {
 		$author$project$FP$const('Edit'),
 		noteId);
 };
-var $author$project$Main$viewControls = function (model) {
+var $author$project$Save$viewControls = function (model) {
 	return A2(
 		$elm$html$Html$div,
 		_List_fromArray(
@@ -5410,7 +5410,7 @@ var $author$project$Main$viewControls = function (model) {
 						_List_fromArray(
 							[
 								$elm$html$Html$Attributes$id('save-note'),
-								$elm$html$Html$Events$onClick($author$project$Main$NoteSaved),
+								$elm$html$Html$Events$onClick($author$project$Save$NoteSaved),
 								$elm$html$Html$Attributes$classList(
 								_List_fromArray(
 									[
@@ -5418,20 +5418,20 @@ var $author$project$Main$viewControls = function (model) {
 										_Utils_Tuple2('is-success', true),
 										_Utils_Tuple2(
 										'is-static',
-										!$author$project$Main$hasContent(model))
+										!$author$project$Save$hasContent(model))
 									]))
 							]),
 						_List_fromArray(
 							[
 								$elm$html$Html$text(
-								$author$project$Main$saveButtonText(model))
+								$author$project$Save$saveButtonText(model))
 							])),
 						A2(
 						$elm$html$Html$button,
 						_List_fromArray(
 							[
 								$elm$html$Html$Attributes$id('new-note'),
-								$elm$html$Html$Events$onClick($author$project$Main$NewNote),
+								$elm$html$Html$Events$onClick($author$project$Save$NewNote),
 								$elm$html$Html$Attributes$classList(
 								_List_fromArray(
 									[
@@ -5439,7 +5439,7 @@ var $author$project$Main$viewControls = function (model) {
 										_Utils_Tuple2('is-text', true),
 										_Utils_Tuple2(
 										'is-hidden',
-										!$author$project$Main$hasBeenSaved(model))
+										!$author$project$Save$hasBeenSaved(model))
 									]))
 							]),
 						_List_fromArray(
@@ -5461,7 +5461,7 @@ var $author$project$Main$viewControls = function (model) {
 					]))
 			]));
 };
-var $author$project$Main$NoteEdited = function (a) {
+var $author$project$Save$NoteEdited = function (a) {
 	return {$: 1, a: a};
 };
 var $elm$html$Html$Events$alwaysStop = function (x) {
@@ -5504,7 +5504,7 @@ var $elm$html$Html$Attributes$rows = function (n) {
 };
 var $elm$html$Html$textarea = _VirtualDom_node('textarea');
 var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty('value');
-var $author$project$Main$viewNotesTextArea = function (model) {
+var $author$project$Save$viewNotesTextArea = function (model) {
 	return A2(
 		$elm$html$Html$textarea,
 		_List_fromArray(
@@ -5513,20 +5513,20 @@ var $author$project$Main$viewNotesTextArea = function (model) {
 				$elm$html$Html$Attributes$class('textarea'),
 				$elm$html$Html$Attributes$rows(10),
 				$elm$html$Html$Attributes$placeholder('e.g. My awesome idea'),
-				$elm$html$Html$Events$onInput($author$project$Main$NoteEdited),
+				$elm$html$Html$Events$onInput($author$project$Save$NoteEdited),
 				$elm$html$Html$Attributes$value(model.x)
 			]),
 		_List_Nil);
 };
-var $author$project$Main$viewNoteEditingArea = function (model) {
-	return $author$project$Main$plainDiv(
+var $author$project$Save$viewNoteEditingArea = function (model) {
+	return $author$project$Save$plainDiv(
 		_List_fromArray(
 			[
-				$author$project$Main$viewNotesTextArea(model),
-				$author$project$Main$viewControls(model)
+				$author$project$Save$viewNotesTextArea(model),
+				$author$project$Save$viewControls(model)
 			]));
 };
-var $author$project$Main$view = function (model) {
+var $author$project$Save$view = function (model) {
 	return A2(
 		$elm$html$Html$section,
 		_List_fromArray(
@@ -5542,14 +5542,14 @@ var $author$project$Main$view = function (model) {
 						$elm$html$Html$Attributes$class('container')
 					]),
 				_Utils_ap(
-					$author$project$Main$viewHeadings,
+					$author$project$Save$viewHeadings,
 					_List_fromArray(
 						[
-							$author$project$Main$viewNoteEditingArea(model),
-							$author$project$Main$viewMarkdownPreview
+							$author$project$Save$viewNoteEditingArea(model),
+							$author$project$Save$viewMarkdownPreview
 						])))
 			]));
 };
-var $author$project$Main$main = $elm$browser$Browser$element(
-	{av: $author$project$Main$init, aB: $author$project$Main$subscriptions, aD: $author$project$Main$update, aE: $author$project$Main$view});
-_Platform_export({'Main':{'init':$author$project$Main$main($elm$json$Json$Decode$value)(0)}});}(this));
+var $author$project$Save$main = $elm$browser$Browser$element(
+	{av: $author$project$Save$init, aB: $author$project$Save$subscriptions, aD: $author$project$Save$update, aE: $author$project$Save$view});
+_Platform_export({'Save':{'init':$author$project$Save$main($elm$json$Json$Decode$value)(0)}});}(this));

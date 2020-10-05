@@ -13,7 +13,7 @@
 
     const appEditKey = 'scrib.edit';
 
-    const app = Elm.Main.init({
+    const app = Elm.Save.init({
       flags: loadEditFromLocalStorage(appEditKey),
       node: document.getElementById('myapp')
     });
