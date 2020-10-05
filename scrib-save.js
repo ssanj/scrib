@@ -784,11 +784,11 @@ function _Debug_crash_UNUSED(identifier, fact1, fact2, fact3, fact4)
 
 function _Debug_regionToString(region)
 {
-	if (region.K.A === region.P.A)
+	if (region.K.B === region.P.B)
 	{
-		return 'on line ' + region.K.A;
+		return 'on line ' + region.K.B;
 	}
-	return 'on lines ' + region.K.A + ' through ' + region.P.A;
+	return 'on lines ' + region.K.B + ' through ' + region.P.B;
 }
 
 
@@ -5140,7 +5140,7 @@ var $elm$core$Task$perform = F2(
 var $elm$browser$Browser$element = _Browser_element;
 var $author$project$Main$Model = F2(
 	function (noteText, noteId) {
-		return {B: noteId, w: noteText};
+		return {w: noteId, x: noteText};
 	});
 var $author$project$Main$initModel = A2($author$project$Main$Model, '', $elm$core$Maybe$Nothing);
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
@@ -5153,9 +5153,58 @@ var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
 var $author$project$Main$subscriptions = function (model) {
 	return $elm$core$Platform$Sub$none;
 };
+var $author$project$Main$PreviewMessage = 1;
+var $author$project$Main$SaveMessage = 0;
+var $elm$json$Json$Encode$int = _Json_wrap;
+var $author$project$FP$maybe = F3(
+	function (onNothing, onJust, maybeVal) {
+		if (!maybeVal.$) {
+			var a = maybeVal.a;
+			return onJust(a);
+		} else {
+			return onNothing;
+		}
+	});
+var $elm$json$Json$Encode$null = _Json_encodeNull;
+var $elm$json$Json$Encode$object = function (pairs) {
+	return _Json_wrap(
+		A3(
+			$elm$core$List$foldl,
+			F2(
+				function (_v0, obj) {
+					var k = _v0.a;
+					var v = _v0.b;
+					return A3(_Json_addField, k, v, obj);
+				}),
+			_Json_emptyObject(0),
+			pairs));
+};
+var $author$project$Main$showPortType = function (portType) {
+	if (!portType) {
+		return 'save_message';
+	} else {
+		return 'preview_message';
+	}
+};
 var $elm$json$Json$Encode$string = _Json_wrap;
-var $author$project$Main$sendMarkdownPreviewMessage = _Platform_outgoingPort('sendMarkdownPreviewMessage', $elm$json$Json$Encode$string);
-var $author$project$Main$sendSaveMessage = _Platform_outgoingPort('sendSaveMessage', $elm$json$Json$Encode$string);
+var $author$project$Main$encode = F2(
+	function (portType, model) {
+		return $elm$json$Json$Encode$object(
+			_List_fromArray(
+				[
+					_Utils_Tuple2(
+					'eventType',
+					$elm$json$Json$Encode$string(
+						$author$project$Main$showPortType(portType))),
+					_Utils_Tuple2(
+					'noteText',
+					$elm$json$Json$Encode$string(model.x)),
+					_Utils_Tuple2(
+					'noteId',
+					A3($author$project$FP$maybe, $elm$json$Json$Encode$null, $elm$json$Json$Encode$int, model.w))
+				]));
+	});
+var $author$project$Main$scribMessage = _Platform_outgoingPort('scribMessage', $elm$core$Basics$identity);
 var $author$project$Main$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
@@ -5164,22 +5213,27 @@ var $author$project$Main$update = F2(
 					_Utils_update(
 						model,
 						{
-							B: $elm$core$Maybe$Just(10)
+							w: $elm$core$Maybe$Just(10)
 						}),
-					$author$project$Main$sendSaveMessage(model.w));
+					$author$project$Main$scribMessage(
+						A2($author$project$Main$encode, 0, model)));
 			case 1:
 				var noteText = msg.a;
+				var updatedModel = _Utils_update(
+					model,
+					{x: noteText});
 				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{w: noteText}),
-					$author$project$Main$sendMarkdownPreviewMessage(noteText));
+					updatedModel,
+					$author$project$Main$scribMessage(
+						A2($author$project$Main$encode, 1, updatedModel)));
 			default:
+				var updatedModel = _Utils_update(
+					model,
+					{w: $elm$core$Maybe$Nothing, x: ''});
 				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{B: $elm$core$Maybe$Nothing, w: ''}),
-					$author$project$Main$sendMarkdownPreviewMessage(''));
+					updatedModel,
+					$author$project$Main$scribMessage(
+						A2($author$project$Main$encode, 1, updatedModel)));
 		}
 	});
 var $elm$html$Html$Attributes$stringProperty = F2(
@@ -5266,17 +5320,8 @@ var $author$project$FP$const = F2(
 	function (a, _v0) {
 		return a;
 	});
-var $author$project$FP$maybe = F3(
-	function (onNothing, onJust, maybeVal) {
-		if (!maybeVal.$) {
-			var a = maybeVal.a;
-			return onJust(a);
-		} else {
-			return onNothing;
-		}
-	});
 var $author$project$Main$hasBeenSaved = function (_v0) {
-	var noteId = _v0.B;
+	var noteId = _v0.w;
 	return A3(
 		$author$project$FP$maybe,
 		false,
@@ -5285,7 +5330,7 @@ var $author$project$Main$hasBeenSaved = function (_v0) {
 };
 var $elm$core$Basics$not = _Basics_not;
 var $author$project$Main$hasContent = function (_v0) {
-	var noteText = _v0.w;
+	var noteText = _v0.x;
 	return !$elm$core$String$isEmpty(noteText);
 };
 var $elm$virtual_dom$VirtualDom$Normal = function (a) {
@@ -5306,7 +5351,7 @@ var $elm$html$Html$Events$onClick = function (msg) {
 		$elm$json$Json$Decode$succeed(msg));
 };
 var $author$project$Main$saveButtonText = function (_v0) {
-	var noteId = _v0.B;
+	var noteId = _v0.w;
 	return A3(
 		$author$project$FP$maybe,
 		'Save',
@@ -5442,7 +5487,7 @@ var $author$project$Main$viewNotesTextArea = function (model) {
 				$elm$html$Html$Attributes$rows(10),
 				$elm$html$Html$Attributes$placeholder('e.g. My awesome idea'),
 				$elm$html$Html$Events$onInput($author$project$Main$NoteEdited),
-				$elm$html$Html$Attributes$value(model.w)
+				$elm$html$Html$Attributes$value(model.x)
 			]),
 		_List_Nil);
 };

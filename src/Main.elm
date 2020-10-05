@@ -7,6 +7,9 @@ import Html.Events exposing (onClick, onInput)
 
 import FP exposing (maybe, const)
 
+import Json.Decode as D
+import Json.Encode as E
+
 -- MAIN
 
 
@@ -39,6 +42,9 @@ initModel = Model "" Nothing
 
 -- UPDATE
 
+type PortType = SaveMessage
+              | PreviewMessage
+
 
 type Msg = NoteSaved
          | NoteEdited String
@@ -48,9 +54,13 @@ type Msg = NoteSaved
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    NoteSaved             -> ({ model | noteId = Just 10 }, sendSaveMessage model.noteText)
-    (NoteEdited noteText) -> ({ model | noteText = noteText }, sendMarkdownPreviewMessage noteText)
-    NewNote               -> ({ model | noteText = "", noteId = Nothing }, sendMarkdownPreviewMessage "")
+    NoteSaved             -> ({ model | noteId = Just 10 }, scribMessage (encode SaveMessage model))
+    (NoteEdited noteText) ->
+       let updatedModel = { model | noteText = noteText }
+       in (updatedModel, scribMessage (encode PreviewMessage updatedModel))
+    NewNote               ->
+      let updatedModel = { model | noteText = "", noteId = Nothing }
+      in (updatedModel, scribMessage (encode PreviewMessage updatedModel))
 
 
 -- VIEW
@@ -141,14 +151,34 @@ viewMarkdownPreview =
 
 -- PORTS
 
--- sent when you want to preview the current note as markdown
-port sendMarkdownPreviewMessage : String -> Cmd msg
-
--- sent when you save a note
-port sendSaveMessage : String -> Cmd msg
+port scribMessage : E.Value -> Cmd msg
 
 -- SUBSCRIPTIONS
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
   Sub.none
+
+-- JSON ENCODE/DECODE
+
+showPortType: PortType -> String
+showPortType portType =
+  case portType of
+    SaveMessage -> "save_message"
+    PreviewMessage -> "preview_message"
+
+
+encode : PortType -> Model -> E.Value
+encode portType model =
+  E.object
+    [ ("eventType", E.string (showPortType portType))
+    , ("noteText", E.string model.noteText)
+    , ("noteId", maybe E.null E.int model.noteId)
+    ]
+
+
+--decoder : D.Decoder Model
+--decoder =
+--  D.map2 Model
+--    (D.field "name" D.string)
+--    (D.field "email" D.string)
