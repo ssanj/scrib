@@ -10,7 +10,11 @@
 <body>
   <div id="myapp"></div>
   <script>
+
+    const appEditKey = 'scrib.edit';
+
     const app = Elm.Main.init({
+      flags: loadEditFromLocalStorage(appEditKey),
       node: document.getElementById('myapp')
     });
 
@@ -32,6 +36,11 @@
       }
     });
 
+    function loadEditFromLocalStorage(appKey) {
+      const storedData = localStorage.getItem(appKey);
+      return storedData ? JSON.parse(storedData) : null;
+    }
+
     function previewMarkdown(noteEvent) {
       if (marked && markdownView) {
         markdownView.innerHTML = marked(noteEvent.noteText, markedOptions);
@@ -39,6 +48,7 @@
     }
 
     function saveMessageToLocalStorage(noteEvent) {
+      localStorage.setItem(appEditKey, JSON.stringify(noteEvent));
       console.log("you saved: " + JSON.stringify(noteEvent));
     }
 

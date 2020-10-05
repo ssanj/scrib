@@ -12,15 +12,14 @@ import Json.Encode as E
 
 -- MAIN
 
-
+main: Program E.Value Model Msg
 main =
   Browser.element
-    { init = init
-    , update = update
+    { init          = init
+    , update        = update
     , subscriptions = subscriptions
-    , view = view
+    , view          = view
     }
-
 
 
 -- MODEL
@@ -33,12 +32,19 @@ type alias Model =
   }
 
 
-init : () -> (Model, Cmd Msg)
-init _ = (initModel, Cmd.none)
+init : E.Value -> (Model, Cmd Msg)
+init json =
+  let result = D.decodeValue decoder json
+  in case result of
+    Ok model  -> onlyModel model
+    Err _     -> onlyModel defaultModel
+
+defaultModel: Model
+defaultModel = Model "" Nothing
 
 
-initModel : Model
-initModel = Model "" Nothing
+onlyModel: Model -> (Model, Cmd msg)
+onlyModel model = (model, Cmd.none)
 
 -- UPDATE
 
@@ -156,8 +162,7 @@ port scribMessage : E.Value -> Cmd msg
 -- SUBSCRIPTIONS
 
 subscriptions : Model -> Sub Msg
-subscriptions model =
-  Sub.none
+subscriptions _ = Sub.none
 
 -- JSON ENCODE/DECODE
 
@@ -176,9 +181,11 @@ encode portType model =
     , ("noteId", maybe E.null E.int model.noteId)
     ]
 
+-- field : String -> Decoder a -> Decoder a
+-- maybe : Decoder a -> Decoder (Maybe a)
 
---decoder : D.Decoder Model
---decoder =
---  D.map2 Model
---    (D.field "name" D.string)
---    (D.field "email" D.string)
+decoder : D.Decoder Model
+decoder =
+  D.map2 Model
+    (D.field "noteText" D.string)
+    (D.maybe (D.field "noteId" D.int))
