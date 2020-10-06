@@ -1,0 +1,204 @@
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Scrib!</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.0/css/bulma.min.css">
+    <link rel="stylesheet" href="md.css">
+    <script src="scrib-view.js"></script>
+    <style>
+      #notes-list {
+        height: 20em;
+        overflow: auto;
+      }
+    </style>
+  </head>
+  <body>
+  <div id="myapp"></div>
+    <script>
+
+      const appEditKey = 'scrib.edit';
+
+      const app = Elm.View.init({
+        node: document.getElementById('myapp')
+      });
+
+      const markedOptions = {
+        "gfm": true,
+        "smartLists": true,
+        "xhtml": true
+      }
+
+      app.ports.scribMessage.subscribe(function(noteEvent){
+        /*if (noteEvent.eventType === "save_message") {
+          saveMessageToLocalStorage(noteEvent);
+        } else */
+        if (noteEvent .eventType=== "preview_message") {
+          previewMarkdown(noteEvent)
+        } else {
+          console.log("error, unknown noteEvent:" + JSON.stringify(noteEvent));
+        }
+      });
+
+      // function loadEditFromLocalStorage(appKey) {
+      //   const storedData = localStorage.getItem(appKey);
+      //   return storedData ? JSON.parse(storedData) : null;
+      // }
+
+      function previewMarkdown(noteEvent) {
+        const markdownView = document.getElementById('markdown-view');
+        if (marked && markdownView) {
+          markdownView.innerHTML = marked(noteEvent.noteText, markedOptions);
+        }
+      }
+
+      // function saveMessageToLocalStorage(noteEvent) {
+      //   localStorage.setItem(appEditKey, JSON.stringify(noteEvent));
+      //   console.log("you saved: " + JSON.stringify(noteEvent));
+      // }
+
+    </script>
+<!--   <section class="section">
+    <div class="container">
+      <h1 class="title">
+        Scrib
+      </h1>
+      <p class="subtitle">
+        Making scribbling effortless
+      </p>
+      <div>
+        <article class="panel is-primary">
+          <p class="panel-heading">
+            Saved Notes
+          </p>
+          <p class="panel-tabs">
+            <button id="add-note-button"  class="button is-text">Add Note</button>
+            <button id="generate-data" class="button is-info">Give me data!</button>
+          </p>
+          <div class="panel-block">
+            <p class="control has-icons-left">
+              <input class="input is-primary" type="text" placeholder="Search">
+              <span class="icon is-left">
+                <i class="fas fa-search" aria-hidden="true"></i>
+              </span>
+            </p>
+          </div>
+          <div id="notes-list">
+             Notes go here
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+  <div>
+    <hr/>
+    <div id="preview">
+      <div id="markdown-view"></div>
+      <button id="edit-button" note-id="" class="button is-info is-hidden">Edit</button>
+    </div>
+  </div> -->
+<!--   <script>
+      const notesList = document.getElementById('notes-list');
+      const markdownView = document.getElementById('markdown-view');
+      const genData = document.getElementById('generate-data');
+      const editButton = document.getElementById('edit-button');
+      const addNoteButton = document.getElementById('add-note-button');
+
+       const basilOptions = {
+        namespace: 'scrib',
+        storages: ['local']
+      };
+
+      const markedOptions = {
+        "gfm": true,
+        "smartLists": true,
+        "xhtml": true
+      }
+
+      var basil = null;
+
+      function loadFromStorage() {
+        let savedNotes = basil.get('notes');
+
+        Array.from(savedNotes).forEach(function (item){
+          notesList.appendChild(createNoteItem(item));
+        });
+
+
+      }
+
+      /**
+       *  create one of these elements
+       *   <a class="panel-block is-active">
+       *     <span class="panel-icon">
+       *       <i class="fas fa-book" aria-hidden="true"></i>
+       *     </span>
+       *     bulma
+       * </a>
+       */
+      function createNoteItem(note) {
+        const a = document.createElement('a');
+        a.classList.add('panel-block');
+
+        const span = document.createElement('span');
+        span.classList.add('panel-icon')
+
+        const i = document.createElement('i');
+        i.classList.add('fas', 'fa-book');
+
+        const aria = document.createAttribute('aria-hidden');
+        aria.value = true;
+        i.setAttributeNode(aria);
+
+        a.text=note.name
+        a.appendChild(span);
+        span.appendChild(i);
+
+        a.addEventListener('click', function(event) {
+          markdownView.innerHTML = marked(note.value, markedOptions);
+          if (editButton.classList.contains('is-hidden')) {
+            editButton.classList.remove('is-hidden');
+          }
+
+          editButton.setAttribute('note-id', note.name);
+          // event.preventDefault();
+        });
+
+        return a;
+      }
+
+      function initialiseBasil() {
+        if (!basil) {
+          basil = new Basil(basilOptions);
+        }
+
+        if (!Array.isArray(basil.get('notes'))) {
+          basil.set('notes', []);
+        }
+      }
+
+      window.addEventListener('load', (event) => {
+        initialiseBasil();
+
+        loadFromStorage();
+      });
+
+      genData.addEventListener('click', (event) => {
+        for (var i = 0; i < 1000; i++) {
+          const note = { 'name': "note-" + i, 'value': '# note ' + i}
+          notesList.appendChild(createNoteItem(note));
+        }
+      });
+
+      editButton.addEventListener('click', function(event) {
+        basil.set('notes.edit.id', editButton.getAttribute('note-id'));
+        window.location.href = './edit.html';
+      });
+
+      addNoteButton.addEventListener('click', function(event) {
+        window.location.href = './index.html';
+      });
+  </script> -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/1.1.1/marked.min.js" integrity="sha512-KCyhJjC9VsBYne93226gCA0Lb+VlrngllQqeCmX+HxBBHTC4HX2FYgEc6jT0oXYrLgvfglK49ktTTc0KVC1+gQ==" crossorigin="anonymous"></script>
+  </body>
+</html>

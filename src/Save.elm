@@ -6,6 +6,7 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (onClick, onInput)
 
 import FP exposing (maybe, const)
+import ElmCommon exposing (onlyModel, plainDiv)
 
 import Json.Decode as D
 import Json.Encode as E
@@ -41,10 +42,6 @@ init json =
 
 defaultModel: Model
 defaultModel = Model "" Nothing
-
-
-onlyModel: Model -> (Model, Cmd msg)
-onlyModel model = (model, Cmd.none)
 
 -- UPDATE
 
@@ -102,8 +99,7 @@ viewNoteEditingArea model =
     , viewControls model
     ]
 
-plainDiv: List (Html msg) -> Html msg
-plainDiv = div []
+
 
 viewNotesTextArea: Model -> Html Msg
 viewNotesTextArea model =
