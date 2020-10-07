@@ -12,6 +12,7 @@ import Json.Decode as D
 import Json.Encode as E
 
 import Debug exposing(toString, log)
+import Browser.Navigation
 
 -- MAIN
 
@@ -43,6 +44,12 @@ type alias Model =
 
 
 type PortType = PreviewMessage
+              | SaveToLocalStorage
+              | RemoveFromLocalStorage
+              | LogToConsole
+
+type JsResponseEvent = SavedToLocalStorage
+                     | RemovedFromLocalStorage
 
 emptyModel: Model
 emptyModel = Model Nothing []  Nothing
@@ -57,20 +64,30 @@ init _ = onlyModel emptyModel
 
 type Msg = NoteSelected Note
          | NoteEdited Note
+         | NoteSavedToLocalStorage
+         | NoteRemovedFromLocalStorage
+         | JSNotificationError String
+         | AddNote
          | SearchEdited
          | SearchPerformed
+
+
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
     (NoteSelected note) ->
-      let x = log "NoteSelected" "-"
+      let _ = log "NoteSelected" "-"
       in ({model| selectedNote = Just note }, scribMessage (encode PreviewMessage note))
     (NoteEdited note)   ->
-      let x = log "NoteEdited: " (toString note)
-      in onlyModel model
+      let _ = log "NoteEdited: " (toString note)
+      in (model, scribMessage (encode SaveToLocalStorage note))
+    NoteSavedToLocalStorage     -> (model, Browser.Navigation.load "save.html")
+    NoteRemovedFromLocalStorage -> (model, Browser.Navigation.load "save.html")
+    (JSNotificationError error) -> (model, scribMessage(encodeLogToConsole error))
+    AddNote -> (model, scribMessage encodeRemoveFromLocalStorage)
     _ ->
-      let x = log "Other!" "moo"
+      let _ = log "Other!" "moo"
       in onlyModel model
 
 
@@ -91,7 +108,7 @@ view model =
             [ p [ class "panel-heading" ]
               [ text "Saved Notes" ]
             , p [ class "panel-tabs" ]
-              [ button [ class "button", class "is-text", id "add-note-button" ]
+              [ button [ class "button", class "is-text", onClick AddNote]
                 [ text "Add Note" ]
               ]
             , div [ class "panel-block" ]
@@ -142,24 +159,61 @@ viewMarkdownPreview note =
 
 viewMarkdownPreviewDefault: Html Msg
 viewMarkdownPreviewDefault =
-  div [] [ hr [] [] ]
+  div []
+    [ hr []
+      []
+    , div [ id "preview" ]
+      [ div [ id "markdown-view" ]
+        []
+      ]
+    ]
 
 -- PORTS
 
 port scribMessage : E.Value -> Cmd msg
+port jsMessage : (E.Value -> msg) -> Sub msg
 
 -- SUBSCRIPTIONS
 
 subscriptions : Model -> Sub Msg
-subscriptions _ = Sub.none
+subscriptions model =
+  let decoded: E.Value -> Result D.Error JsResponseEvent
+      decoded = D.decodeValue decoderJsResponseEvent
+
+      handleDecoded: Result D.Error JsResponseEvent -> Msg
+      handleDecoded result =
+        case result of
+          Ok event ->
+            case event of
+               RemovedFromLocalStorage -> NoteRemovedFromLocalStorage
+               SavedToLocalStorage     -> NoteSavedToLocalStorage
+          Err err    -> JSNotificationError << D.errorToString <| err
+  in jsMessage (handleDecoded << decoded)
 
 -- JSON ENCODE/DECODE
 
 showPortType: PortType -> String
 showPortType portType =
   case portType of
-    PreviewMessage -> "preview_message"
+    PreviewMessage         -> "preview_message"
+    SaveToLocalStorage     -> "save_message"
+    RemoveFromLocalStorage -> "remove_message"
+    LogToConsole           -> "log_text"
 
+encodeRemoveFromLocalStorage : E.Value
+encodeRemoveFromLocalStorage  =
+  E.object
+    [
+      ("eventType", E.string (showPortType RemoveFromLocalStorage))
+    ]
+
+encodeLogToConsole : String -> E.Value
+encodeLogToConsole  error =
+  E.object
+    [
+      ("eventType", E.string (showPortType LogToConsole))
+    , ("output", E.string error)
+    ]
 
 encode : PortType -> Note -> E.Value
 encode portType model =
@@ -169,11 +223,15 @@ encode portType model =
     , ("noteId", E.int model.noteId)
     ]
 
----- field : String -> Decoder a -> Decoder a
----- maybe : Decoder a -> Decoder (Maybe a)
+decoderJsResponseEvent: D.Decoder JsResponseEvent
+decoderJsResponseEvent = D.andThen stringToJsResponseEvent decodeJsResponseString
 
---decoder : D.Decoder Model
---decoder =
---  D.map2 Model
---    (D.field "noteText" D.string)
---    (D.maybe (D.field "noteId" D.int))
+decodeJsResponseString :D.Decoder String
+decodeJsResponseString = D.field "eventType" D.string
+
+stringToJsResponseEvent: String -> D.Decoder JsResponseEvent
+stringToJsResponseEvent value =
+  case value of
+    "message_removed" -> D.succeed RemovedFromLocalStorage
+    "message_saved"   -> D.succeed SavedToLocalStorage
+    other             -> D.fail <| "Unknown JS Response type: " ++ other

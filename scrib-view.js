@@ -5157,12 +5157,58 @@ var $author$project$ElmCommon$onlyModel = function (model) {
 var $author$project$View$init = function (_v0) {
 	return $author$project$ElmCommon$onlyModel($author$project$View$emptyModel);
 };
-var $elm$core$Platform$Sub$batch = _Platform_batch;
-var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
-var $author$project$View$subscriptions = function (_v0) {
-	return $elm$core$Platform$Sub$none;
+var $author$project$View$JSNotificationError = function (a) {
+	return {$: 'JSNotificationError', a: a};
+};
+var $author$project$View$NoteRemovedFromLocalStorage = {$: 'NoteRemovedFromLocalStorage'};
+var $author$project$View$NoteSavedToLocalStorage = {$: 'NoteSavedToLocalStorage'};
+var $elm$core$Basics$composeL = F3(
+	function (g, f, x) {
+		return g(
+			f(x));
+	});
+var $elm$json$Json$Decode$decodeValue = _Json_run;
+var $elm$json$Json$Decode$andThen = _Json_andThen;
+var $elm$json$Json$Decode$field = _Json_decodeField;
+var $elm$json$Json$Decode$string = _Json_decodeString;
+var $author$project$View$decodeJsResponseString = A2($elm$json$Json$Decode$field, 'eventType', $elm$json$Json$Decode$string);
+var $author$project$View$RemovedFromLocalStorage = {$: 'RemovedFromLocalStorage'};
+var $author$project$View$SavedToLocalStorage = {$: 'SavedToLocalStorage'};
+var $elm$json$Json$Decode$fail = _Json_fail;
+var $author$project$View$stringToJsResponseEvent = function (value) {
+	switch (value) {
+		case 'message_removed':
+			return $elm$json$Json$Decode$succeed($author$project$View$RemovedFromLocalStorage);
+		case 'message_saved':
+			return $elm$json$Json$Decode$succeed($author$project$View$SavedToLocalStorage);
+		default:
+			var other = value;
+			return $elm$json$Json$Decode$fail('Unknown JS Response type: ' + other);
+	}
+};
+var $author$project$View$decoderJsResponseEvent = A2($elm$json$Json$Decode$andThen, $author$project$View$stringToJsResponseEvent, $author$project$View$decodeJsResponseString);
+var $elm$json$Json$Decode$value = _Json_decodeValue;
+var $author$project$View$jsMessage = _Platform_incomingPort('jsMessage', $elm$json$Json$Decode$value);
+var $author$project$View$subscriptions = function (model) {
+	var handleDecoded = function (result) {
+		if (result.$ === 'Ok') {
+			var event = result.a;
+			if (event.$ === 'RemovedFromLocalStorage') {
+				return $author$project$View$NoteRemovedFromLocalStorage;
+			} else {
+				return $author$project$View$NoteSavedToLocalStorage;
+			}
+		} else {
+			var err = result.a;
+			return A3($elm$core$Basics$composeL, $author$project$View$JSNotificationError, $elm$json$Json$Decode$errorToString, err);
+		}
+	};
+	var decoded = $elm$json$Json$Decode$decodeValue($author$project$View$decoderJsResponseEvent);
+	return $author$project$View$jsMessage(
+		A2($elm$core$Basics$composeL, handleDecoded, decoded));
 };
 var $author$project$View$PreviewMessage = {$: 'PreviewMessage'};
+var $author$project$View$SaveToLocalStorage = {$: 'SaveToLocalStorage'};
 var $elm$json$Json$Encode$int = _Json_wrap;
 var $elm$json$Json$Encode$object = function (pairs) {
 	return _Json_wrap(
@@ -5178,7 +5224,16 @@ var $elm$json$Json$Encode$object = function (pairs) {
 			pairs));
 };
 var $author$project$View$showPortType = function (portType) {
-	return 'preview_message';
+	switch (portType.$) {
+		case 'PreviewMessage':
+			return 'preview_message';
+		case 'SaveToLocalStorage':
+			return 'save_message';
+		case 'RemoveFromLocalStorage':
+			return 'remove_message';
+		default:
+			return 'log_text';
+	}
 };
 var $elm$json$Json$Encode$string = _Json_wrap;
 var $author$project$View$encode = F2(
@@ -5198,6 +5253,30 @@ var $author$project$View$encode = F2(
 					$elm$json$Json$Encode$int(model.noteId))
 				]));
 	});
+var $author$project$View$LogToConsole = {$: 'LogToConsole'};
+var $author$project$View$encodeLogToConsole = function (error) {
+	return $elm$json$Json$Encode$object(
+		_List_fromArray(
+			[
+				_Utils_Tuple2(
+				'eventType',
+				$elm$json$Json$Encode$string(
+					$author$project$View$showPortType($author$project$View$LogToConsole))),
+				_Utils_Tuple2(
+				'output',
+				$elm$json$Json$Encode$string(error))
+			]));
+};
+var $author$project$View$RemoveFromLocalStorage = {$: 'RemoveFromLocalStorage'};
+var $author$project$View$encodeRemoveFromLocalStorage = $elm$json$Json$Encode$object(
+	_List_fromArray(
+		[
+			_Utils_Tuple2(
+			'eventType',
+			$elm$json$Json$Encode$string(
+				$author$project$View$showPortType($author$project$View$RemoveFromLocalStorage)))
+		]));
+var $elm$browser$Browser$Navigation$load = _Browser_load;
 var $elm$core$Debug$log = _Debug_log;
 var $author$project$View$scribMessage = _Platform_outgoingPort('scribMessage', $elm$core$Basics$identity);
 var $elm$core$Debug$toString = _Debug_toString;
@@ -5206,7 +5285,7 @@ var $author$project$View$update = F2(
 		switch (msg.$) {
 			case 'NoteSelected':
 				var note = msg.a;
-				var x = A2($elm$core$Debug$log, 'NoteSelected', '-');
+				var _v1 = A2($elm$core$Debug$log, 'NoteSelected', '-');
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
@@ -5217,16 +5296,38 @@ var $author$project$View$update = F2(
 						A2($author$project$View$encode, $author$project$View$PreviewMessage, note)));
 			case 'NoteEdited':
 				var note = msg.a;
-				var x = A2(
+				var _v2 = A2(
 					$elm$core$Debug$log,
 					'NoteEdited: ',
 					$elm$core$Debug$toString(note));
-				return $author$project$ElmCommon$onlyModel(model);
+				return _Utils_Tuple2(
+					model,
+					$author$project$View$scribMessage(
+						A2($author$project$View$encode, $author$project$View$SaveToLocalStorage, note)));
+			case 'NoteSavedToLocalStorage':
+				return _Utils_Tuple2(
+					model,
+					$elm$browser$Browser$Navigation$load('save.html'));
+			case 'NoteRemovedFromLocalStorage':
+				return _Utils_Tuple2(
+					model,
+					$elm$browser$Browser$Navigation$load('save.html'));
+			case 'JSNotificationError':
+				var error = msg.a;
+				return _Utils_Tuple2(
+					model,
+					$author$project$View$scribMessage(
+						$author$project$View$encodeLogToConsole(error)));
+			case 'AddNote':
+				return _Utils_Tuple2(
+					model,
+					$author$project$View$scribMessage($author$project$View$encodeRemoveFromLocalStorage));
 			default:
-				var x = A2($elm$core$Debug$log, 'Other!', 'moo');
+				var _v3 = A2($elm$core$Debug$log, 'Other!', 'moo');
 				return $author$project$ElmCommon$onlyModel(model);
 		}
 	});
+var $author$project$View$AddNote = {$: 'AddNote'};
 var $elm$html$Html$article = _VirtualDom_node('article');
 var $elm$virtual_dom$VirtualDom$attribute = F2(
 	function (key, value) {
@@ -5322,7 +5423,23 @@ var $author$project$View$viewMarkdownPreviewDefault = A2(
 	_List_Nil,
 	_List_fromArray(
 		[
-			A2($elm$html$Html$hr, _List_Nil, _List_Nil)
+			A2($elm$html$Html$hr, _List_Nil, _List_Nil),
+			A2(
+			$elm$html$Html$div,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$id('preview')
+				]),
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$div,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$id('markdown-view')
+						]),
+					_List_Nil)
+				]))
 		]));
 var $author$project$View$createEditButton = A2($author$project$FP$maybe, $author$project$View$viewMarkdownPreviewDefault, $author$project$View$viewMarkdownPreview);
 var $author$project$View$NoteSelected = function (a) {
@@ -5454,7 +5571,7 @@ var $author$project$View$view = function (model) {
 															[
 																$elm$html$Html$Attributes$class('button'),
 																$elm$html$Html$Attributes$class('is-text'),
-																$elm$html$Html$Attributes$id('add-note-button')
+																$elm$html$Html$Events$onClick($author$project$View$AddNote)
 															]),
 														_List_fromArray(
 															[
