@@ -5189,7 +5189,7 @@ var $author$project$View$stringToJsResponseEvent = function (value) {
 var $author$project$View$decoderJsResponseEvent = A2($elm$json$Json$Decode$andThen, $author$project$View$stringToJsResponseEvent, $author$project$View$decodeJsResponseString);
 var $elm$json$Json$Decode$value = _Json_decodeValue;
 var $author$project$View$jsMessage = _Platform_incomingPort('jsMessage', $elm$json$Json$Decode$value);
-var $author$project$View$subscriptions = function (model) {
+var $author$project$View$subscriptions = function (_v0) {
 	var handleDecoded = function (result) {
 		if (result.$ === 'Ok') {
 			var event = result.a;

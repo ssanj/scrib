@@ -127,21 +127,21 @@ view model =
           ]
         ]
       ]
-   , createEditButton (model.selectedNote)
+   , createEditButton model.selectedNote
    ]
 
 
 createEditButton: Maybe Note -> Html Msg
-createEditButton = maybe (viewMarkdownPreviewDefault) viewMarkdownPreview
+createEditButton = maybe viewMarkdownPreviewDefault viewMarkdownPreview
 
 createNoteItem: Int -> Html Msg
 createNoteItem model =
-  a [class "panel-block", onClick (NoteSelected ({ noteText = ("# some note-" ++ String.fromInt(model)), noteId = model }))]
+  a [class "panel-block", onClick (NoteSelected { noteText = "# some note-" ++ String.fromInt model, noteId = model })]
   [ span [class "panel-icon"]
     [ i [ class "fas", class "fa-book", attribute "aria-hidden" "true"]
       []
     ]
-  , text ("testing " ++ (String.fromInt(model)))
+  , text ("testing " ++ String.fromInt model)
    ]
 
 viewMarkdownPreview : Note -> Html Msg
@@ -176,7 +176,7 @@ port jsMessage : (E.Value -> msg) -> Sub msg
 -- SUBSCRIPTIONS
 
 subscriptions : Model -> Sub Msg
-subscriptions model =
+subscriptions _ =
   let decoded: E.Value -> Result D.Error JsResponseEvent
       decoded = D.decodeValue decoderJsResponseEvent
 

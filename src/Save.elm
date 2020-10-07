@@ -10,6 +10,7 @@ import ElmCommon exposing (onlyModel, plainDiv)
 
 import Json.Decode as D
 import Json.Encode as E
+import Browser.Navigation
 
 -- MAIN
 
@@ -52,18 +53,23 @@ type PortType = SaveMessage
 type Msg = NoteSaved
          | NoteEdited String
          | NewNote
+         | ViewNote
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    NoteSaved             -> ({ model | noteId = Just 10 }, scribMessage (encode SaveMessage model))
+    NoteSaved             ->
+      let newModel = { model | noteId = Just 10 }
+      in (newModel, scribMessage (encode SaveMessage newModel))
     (NoteEdited noteText) ->
        let updatedModel = { model | noteText = noteText }
        in (updatedModel, scribMessage (encode PreviewMessage updatedModel))
     NewNote               ->
       let updatedModel = { model | noteText = "", noteId = Nothing }
       in (updatedModel, scribMessage (encode PreviewMessage updatedModel))
+
+    ViewNote              -> (model, Browser.Navigation.load "view.html")
 
 
 -- VIEW
@@ -129,7 +135,7 @@ viewControls model =
           ]
             [text "New Note"]
         ]
-        , button [id "view-notes-button", class "button", class "is-text"]
+        , button [id "view-notes-button", class "button", class "is-text", onClick ViewNote]
             [text "View Notes"]
 
     ]
