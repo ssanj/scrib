@@ -5320,20 +5320,10 @@ var $elm$core$Task$perform = F2(
 	});
 var $elm$browser$Browser$element = _Browser_element;
 var $krisajenkins$remotedata$RemoteData$Loading = {$: 'Loading'};
-var $author$project$View$Model = F3(
-	function (query, notes, selectedNote) {
-		return {notes: notes, query: query, selectedNote: selectedNote};
-	});
-var $krisajenkins$remotedata$RemoteData$NotAsked = {$: 'NotAsked'};
-var $author$project$View$emptyModel = A3($author$project$View$Model, $elm$core$Maybe$Nothing, $krisajenkins$remotedata$RemoteData$NotAsked, $elm$core$Maybe$Nothing);
-var $author$project$View$NotesResponse = function (a) {
-	return {$: 'NotesResponse', a: a};
+var $krisajenkins$remotedata$RemoteData$Success = function (a) {
+	return {$: 'Success', a: a};
 };
-var $elm$core$Basics$composeR = F3(
-	function (f, g, x) {
-		return g(
-			f(x));
-	});
+var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $author$project$View$Note = F2(
 	function (noteText, noteId) {
 		return {noteId: noteId, noteText: noteText};
@@ -5348,6 +5338,21 @@ var $author$project$View$decodeNote = A3(
 	A2($elm$json$Json$Decode$field, 'noteId', $elm$json$Json$Decode$int));
 var $elm$json$Json$Decode$list = _Json_decodeList;
 var $author$project$View$decodeNotes = $elm$json$Json$Decode$list($author$project$View$decodeNote);
+var $elm$json$Json$Decode$decodeValue = _Json_run;
+var $author$project$View$Model = F3(
+	function (query, notes, selectedNote) {
+		return {notes: notes, query: query, selectedNote: selectedNote};
+	});
+var $krisajenkins$remotedata$RemoteData$NotAsked = {$: 'NotAsked'};
+var $author$project$View$emptyModel = A3($author$project$View$Model, $elm$core$Maybe$Nothing, $krisajenkins$remotedata$RemoteData$NotAsked, $elm$core$Maybe$Nothing);
+var $author$project$View$NotesResponse = function (a) {
+	return {$: 'NotesResponse', a: a};
+};
+var $elm$core$Basics$composeR = F3(
+	function (f, g, x) {
+		return g(
+			f(x));
+	});
 var $elm$json$Json$Decode$decodeString = _Json_runOnString;
 var $elm$http$Http$BadStatus_ = F2(
 	function (a, b) {
@@ -5960,9 +5965,6 @@ var $elm$http$Http$expectJson = F2(
 var $krisajenkins$remotedata$RemoteData$Failure = function (a) {
 	return {$: 'Failure', a: a};
 };
-var $krisajenkins$remotedata$RemoteData$Success = function (a) {
-	return {$: 'Success', a: a};
-};
 var $krisajenkins$remotedata$RemoteData$fromResult = function (result) {
 	if (result.$ === 'Err') {
 		var e = result.a;
@@ -6153,24 +6155,89 @@ var $author$project$View$getRemoteNotes = $elm$http$Http$get(
 			$author$project$View$decodeNotes),
 		url: 'http://localhost:3000/notes'
 	});
-var $author$project$View$init = function (_v0) {
-	return _Utils_Tuple2(
-		_Utils_update(
-			$author$project$View$emptyModel,
-			{notes: $krisajenkins$remotedata$RemoteData$Loading}),
-		$author$project$View$getRemoteNotes);
+var $elm$core$Basics$composeL = F3(
+	function (g, f, x) {
+		return g(
+			f(x));
+	});
+var $author$project$View$LogToConsole = {$: 'LogToConsole'};
+var $elm$json$Json$Encode$object = function (pairs) {
+	return _Json_wrap(
+		A3(
+			$elm$core$List$foldl,
+			F2(
+				function (_v0, obj) {
+					var k = _v0.a;
+					var v = _v0.b;
+					return A3(_Json_addField, k, v, obj);
+				}),
+			_Json_emptyObject(_Utils_Tuple0),
+			pairs));
+};
+var $author$project$View$showPortType = function (portType) {
+	switch (portType.$) {
+		case 'PreviewMessage':
+			return 'preview_message';
+		case 'SaveToLocalStorage':
+			return 'save_message';
+		case 'SaveToSessionStorage':
+			return 'save_view_session';
+		case 'RemoveFromLocalStorage':
+			return 'remove_message';
+		default:
+			return 'log_text';
+	}
+};
+var $elm$json$Json$Encode$string = _Json_wrap;
+var $author$project$View$encodeLogToConsole = function (error) {
+	return $elm$json$Json$Encode$object(
+		_List_fromArray(
+			[
+				_Utils_Tuple2(
+				'eventType',
+				$elm$json$Json$Encode$string(
+					$author$project$View$showPortType($author$project$View$LogToConsole))),
+				_Utils_Tuple2(
+				'output',
+				$elm$json$Json$Encode$string(error))
+			]));
+};
+var $author$project$View$scribMessage = _Platform_outgoingPort('scribMessage', $elm$core$Basics$identity);
+var $author$project$View$logMessage = A2($elm$core$Basics$composeL, $author$project$View$scribMessage, $author$project$View$encodeLogToConsole);
+var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
+var $author$project$ElmCommon$onlyModel = function (model) {
+	return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+};
+var $author$project$View$init = function (notes) {
+	var decodeResult = A2($elm$json$Json$Decode$decodeValue, $author$project$View$decodeNotes, notes);
+	if (decodeResult.$ === 'Ok') {
+		var validNotes = decodeResult.a;
+		return $author$project$ElmCommon$onlyModel(
+			_Utils_update(
+				$author$project$View$emptyModel,
+				{
+					notes: $krisajenkins$remotedata$RemoteData$Success(validNotes)
+				}));
+	} else {
+		var err = decodeResult.a;
+		return _Utils_Tuple2(
+			_Utils_update(
+				$author$project$View$emptyModel,
+				{notes: $krisajenkins$remotedata$RemoteData$Loading}),
+			$elm$core$Platform$Cmd$batch(
+				_List_fromArray(
+					[
+						$author$project$View$getRemoteNotes,
+						$author$project$View$logMessage(
+						'Could not load view data: ' + $elm$json$Json$Decode$errorToString(err))
+					])));
+	}
 };
 var $author$project$View$JSNotificationError = function (a) {
 	return {$: 'JSNotificationError', a: a};
 };
 var $author$project$View$NoteRemovedFromLocalStorage = {$: 'NoteRemovedFromLocalStorage'};
 var $author$project$View$NoteSavedToLocalStorage = {$: 'NoteSavedToLocalStorage'};
-var $elm$core$Basics$composeL = F3(
-	function (g, f, x) {
-		return g(
-			f(x));
-	});
-var $elm$json$Json$Decode$decodeValue = _Json_run;
 var $elm$json$Json$Decode$andThen = _Json_andThen;
 var $author$project$View$decodeJsResponseString = A2($elm$json$Json$Decode$field, 'eventType', $elm$json$Json$Decode$string);
 var $author$project$View$RemovedFromLocalStorage = {$: 'RemovedFromLocalStorage'};
@@ -6211,32 +6278,6 @@ var $author$project$View$subscriptions = function (_v0) {
 var $author$project$View$PreviewMessage = {$: 'PreviewMessage'};
 var $author$project$View$SaveToLocalStorage = {$: 'SaveToLocalStorage'};
 var $elm$json$Json$Encode$int = _Json_wrap;
-var $elm$json$Json$Encode$object = function (pairs) {
-	return _Json_wrap(
-		A3(
-			$elm$core$List$foldl,
-			F2(
-				function (_v0, obj) {
-					var k = _v0.a;
-					var v = _v0.b;
-					return A3(_Json_addField, k, v, obj);
-				}),
-			_Json_emptyObject(_Utils_Tuple0),
-			pairs));
-};
-var $author$project$View$showPortType = function (portType) {
-	switch (portType.$) {
-		case 'PreviewMessage':
-			return 'preview_message';
-		case 'SaveToLocalStorage':
-			return 'save_message';
-		case 'RemoveFromLocalStorage':
-			return 'remove_message';
-		default:
-			return 'log_text';
-	}
-};
-var $elm$json$Json$Encode$string = _Json_wrap;
 var $author$project$View$encode = F2(
 	function (portType, model) {
 		return $elm$json$Json$Encode$object(
@@ -6254,20 +6295,6 @@ var $author$project$View$encode = F2(
 					$elm$json$Json$Encode$int(model.noteId))
 				]));
 	});
-var $author$project$View$LogToConsole = {$: 'LogToConsole'};
-var $author$project$View$encodeLogToConsole = function (error) {
-	return $elm$json$Json$Encode$object(
-		_List_fromArray(
-			[
-				_Utils_Tuple2(
-				'eventType',
-				$elm$json$Json$Encode$string(
-					$author$project$View$showPortType($author$project$View$LogToConsole))),
-				_Utils_Tuple2(
-				'output',
-				$elm$json$Json$Encode$string(error))
-			]));
-};
 var $author$project$View$RemoveFromLocalStorage = {$: 'RemoveFromLocalStorage'};
 var $author$project$View$encodeRemoveFromLocalStorage = $elm$json$Json$Encode$object(
 	_List_fromArray(
@@ -6279,6 +6306,43 @@ var $author$project$View$encodeRemoveFromLocalStorage = $elm$json$Json$Encode$ob
 		]));
 var $elm$browser$Browser$Navigation$load = _Browser_load;
 var $elm$core$Debug$log = _Debug_log;
+var $author$project$View$SaveToSessionStorage = {$: 'SaveToSessionStorage'};
+var $author$project$View$encodeNote = function (_v0) {
+	var noteText = _v0.noteText;
+	var noteId = _v0.noteId;
+	return $elm$json$Json$Encode$object(
+		_List_fromArray(
+			[
+				_Utils_Tuple2(
+				'noteText',
+				$elm$json$Json$Encode$string(noteText)),
+				_Utils_Tuple2(
+				'noteId',
+				$elm$json$Json$Encode$int(noteId))
+			]));
+};
+var $elm$json$Json$Encode$list = F2(
+	function (func, entries) {
+		return _Json_wrap(
+			A3(
+				$elm$core$List$foldl,
+				_Json_addEntry(func),
+				_Json_emptyArray(_Utils_Tuple0),
+				entries));
+	});
+var $author$project$View$encodeViewNotes = function (notes) {
+	return $elm$json$Json$Encode$object(
+		_List_fromArray(
+			[
+				_Utils_Tuple2(
+				'eventType',
+				$elm$json$Json$Encode$string(
+					$author$project$View$showPortType($author$project$View$SaveToSessionStorage))),
+				_Utils_Tuple2(
+				'view_data',
+				A2($elm$json$Json$Encode$list, $author$project$View$encodeNote, notes))
+			]));
+};
 var $author$project$View$fromHttpError = function (error) {
 	switch (error.$) {
 		case 'BadUrl':
@@ -6296,21 +6360,20 @@ var $author$project$View$fromHttpError = function (error) {
 			return 'bad body: ' + body;
 	}
 };
-var $elm$core$Platform$Cmd$batch = _Platform_batch;
-var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
-var $author$project$View$scribMessage = _Platform_outgoingPort('scribMessage', $elm$core$Basics$identity);
 var $author$project$View$logResponseErrors = function (remoteData) {
-	if (remoteData.$ === 'Failure') {
-		var e = remoteData.a;
-		return $author$project$View$scribMessage(
-			$author$project$View$encodeLogToConsole(
-				$author$project$View$fromHttpError(e)));
-	} else {
-		return $elm$core$Platform$Cmd$none;
+	switch (remoteData.$) {
+		case 'Failure':
+			var e = remoteData.a;
+			return $author$project$View$scribMessage(
+				$author$project$View$encodeLogToConsole(
+					$author$project$View$fromHttpError(e)));
+		case 'Success':
+			var notes = remoteData.a;
+			return $author$project$View$scribMessage(
+				$author$project$View$encodeViewNotes(notes));
+		default:
+			return $elm$core$Platform$Cmd$none;
 	}
-};
-var $author$project$ElmCommon$onlyModel = function (model) {
-	return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 };
 var $elm$core$Debug$toString = _Debug_toString;
 var $author$project$View$update = F2(
@@ -6362,12 +6425,19 @@ var $author$project$View$update = F2(
 						model,
 						{notes: notes}),
 					$author$project$View$logResponseErrors(notes));
+			case 'SearchPerformed':
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{notes: $krisajenkins$remotedata$RemoteData$Loading}),
+					$author$project$View$getRemoteNotes);
 			default:
 				var _v3 = A2($elm$core$Debug$log, 'Other!', 'moo');
 				return $author$project$ElmCommon$onlyModel(model);
 		}
 	});
 var $author$project$View$AddNote = {$: 'AddNote'};
+var $author$project$View$SearchPerformed = {$: 'SearchPerformed'};
 var $elm$html$Html$article = _VirtualDom_node('article');
 var $elm$virtual_dom$VirtualDom$attribute = F2(
 	function (key, value) {
@@ -6665,6 +6735,18 @@ var $author$project$View$view = function (model) {
 														_List_fromArray(
 															[
 																$elm$html$Html$text('Add Note')
+															])),
+														A2(
+														$elm$html$Html$button,
+														_List_fromArray(
+															[
+																$elm$html$Html$Attributes$class('button'),
+																$elm$html$Html$Attributes$class('is-text'),
+																$elm$html$Html$Events$onClick($author$project$View$SearchPerformed)
+															]),
+														_List_fromArray(
+															[
+																$elm$html$Html$text('Refresh')
 															]))
 													])),
 												A2(
@@ -6723,5 +6805,4 @@ var $author$project$View$view = function (model) {
 };
 var $author$project$View$main = $elm$browser$Browser$element(
 	{init: $author$project$View$init, subscriptions: $author$project$View$subscriptions, update: $author$project$View$update, view: $author$project$View$view});
-_Platform_export({'View':{'init':$author$project$View$main(
-	$elm$json$Json$Decode$succeed(_Utils_Tuple0))(0)}});}(this));
+_Platform_export({'View':{'init':$author$project$View$main($elm$json$Json$Decode$value)(0)}});}(this));

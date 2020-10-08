@@ -18,7 +18,7 @@ import Browser.Navigation
 
 -- MAIN
 
-main: Program () Model Msg
+main: Program E.Value Model Msg
 main =
   Browser.element
     { init          = init
@@ -48,6 +48,7 @@ type alias RemoteNotesData = WebData (List Note)
 
 type PortType = PreviewMessage
               | SaveToLocalStorage
+              | SaveToSessionStorage
               | RemoveFromLocalStorage
               | LogToConsole
 
@@ -58,8 +59,15 @@ emptyModel: Model
 emptyModel = Model Nothing NotAsked Nothing
 
 
-init : () -> (Model, Cmd Msg)
-init _ = ({ emptyModel | notes = Loading }, getRemoteNotes)
+init : E.Value -> (Model, Cmd Msg)
+init notes =
+    let decodeResult = D.decodeValue decodeNotes notes
+    in case decodeResult of
+         Ok validNotes -> onlyModel { emptyModel | notes = Success validNotes }
+         Err err       -> (
+                            { emptyModel | notes = Loading }
+                          , Cmd.batch [getRemoteNotes, logMessage <| "Could not load view data: " ++ D.errorToString err]
+                          )
 
 -- UPDATE
 
@@ -96,18 +104,23 @@ update msg model =
     NoteSavedToLocalStorage     -> (model, Browser.Navigation.load "save.html")
     NoteRemovedFromLocalStorage -> (model, Browser.Navigation.load "save.html")
     (JSNotificationError error) -> (model, scribMessage(encodeLogToConsole error))
-    AddNote -> (model, scribMessage encodeRemoveFromLocalStorage)
-    (NotesResponse notes) -> ({ model | notes = notes}, logResponseErrors notes)
+    AddNote                     -> (model, scribMessage encodeRemoveFromLocalStorage)
+    (NotesResponse notes)       -> ({ model | notes = notes}, logResponseErrors notes)
+    SearchPerformed             -> ({ model | notes = Loading }, getRemoteNotes)
     _ ->
       let _ = log "Other!" "moo"
       in onlyModel model
 
 
+logMessage: String -> Cmd Msg
+logMessage = scribMessage << encodeLogToConsole
+
 logResponseErrors: RemoteNotesData -> Cmd Msg
 logResponseErrors remoteData =
   case remoteData of
-    Failure e ->  scribMessage <| encodeLogToConsole <| fromHttpError e
-    _         -> Cmd.none
+    Failure e     -> scribMessage <| encodeLogToConsole <| fromHttpError e
+    Success notes -> scribMessage <| encodeViewNotes notes
+    _             -> Cmd.none
 
 
 -- VIEW
@@ -129,6 +142,8 @@ view model =
             , p [ class "panel-tabs" ]
               [ button [ class "button", class "is-text", onClick AddNote]
                 [ text "Add Note" ]
+              , button [ class "button", class "is-text", onClick SearchPerformed ]
+                [ text "Refresh" ]
               ]
             , div [ class "panel-block" ]
               [ p [ class "control has-icons-left" ]
@@ -236,6 +251,7 @@ showPortType portType =
   case portType of
     PreviewMessage         -> "preview_message"
     SaveToLocalStorage     -> "save_message"
+    SaveToSessionStorage   -> "save_view_session"
     RemoveFromLocalStorage -> "remove_message"
     LogToConsole           -> "log_text"
 
@@ -260,6 +276,21 @@ encode portType model =
     [ ("eventType", E.string (showPortType portType))
     , ("noteText", E.string model.noteText)
     , ("noteId", E.int model.noteId)
+    ]
+
+encodeNote: Note -> E.Value
+encodeNote {noteText, noteId} =
+  E.object
+   [
+      ("noteText", E.string noteText)
+    , ("noteId", E.int noteId)
+   ]
+
+encodeViewNotes : List Note -> E.Value
+encodeViewNotes notes =
+  E.object
+    [ ("eventType", E.string (showPortType SaveToSessionStorage))
+    , ("view_data", E.list encodeNote notes)
     ]
 
 decodeNotes : D.Decoder (List Note)

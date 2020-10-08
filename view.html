@@ -18,8 +18,10 @@
   <script>
 
       const appEditKey = 'scrib.edit';
+      const appViewKey = 'scrib.view';
 
       const app = Elm.View.init({
+        flags: loadMessageToSessionStorage(appViewKey),
         node: document.getElementById('myapp')
       });
 
@@ -38,6 +40,8 @@
       app.ports.scribMessage.subscribe(function(noteEvent){
         if (noteEvent.eventType === "save_message") {
           saveMessageToLocalStorage(noteEvent);
+        } else if (noteEvent.eventType === "save_view_session") {
+          saveToSessionStorage(noteEvent);
         } else if (noteEvent.eventType=== "preview_message") {
           previewMarkdown(noteEvent)
         } else if (noteEvent.eventType=== "remove_message") {
@@ -63,6 +67,17 @@
         console.log("you saved: " + JSON.stringify(noteEvent));
         app.ports.jsMessage.send(responseJson("message_saved"));
       }
+
+      function saveToSessionStorage(noteEvent) {
+        const viewData = JSON.stringify(noteEvent.view_data);
+        sessionStorage.setItem(appViewKey, viewData);
+        console.log("you saved your view: " + viewData);
+      }
+
+    function loadMessageToSessionStorage(appKey) {
+      const storedData = sessionStorage.getItem(appKey);
+      return storedData ? JSON.parse(storedData) : null;
+    }
 
   </script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/1.1.1/marked.min.js" integrity="sha512-KCyhJjC9VsBYne93226gCA0Lb+VlrngllQqeCmX+HxBBHTC4HX2FYgEc6jT0oXYrLgvfglK49ktTTc0KVC1+gQ==" crossorigin="anonymous"></script>
