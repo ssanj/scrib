@@ -1,6 +1,8 @@
 port module View exposing (..)
 
 import Browser
+import Http
+import RemoteData exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick, onInput)
@@ -11,7 +13,7 @@ import ElmCommon exposing (onlyModel, plainDiv)
 import Json.Decode as D
 import Json.Encode as E
 
-import Debug exposing(toString, log)
+import Debug exposing(toString, log, todo)
 import Browser.Navigation
 
 -- MAIN
@@ -38,10 +40,11 @@ type alias Note =
 type alias Model =
   {
     query: Maybe String
-  , notes: List Note
+  , notes: RemoteNotesData
   , selectedNote: Maybe Note
   }
 
+type alias RemoteNotesData = WebData (List Note)
 
 type PortType = PreviewMessage
               | SaveToLocalStorage
@@ -52,14 +55,21 @@ type JsResponseEvent = SavedToLocalStorage
                      | RemovedFromLocalStorage
 
 emptyModel: Model
-emptyModel = Model Nothing []  Nothing
+emptyModel = Model Nothing NotAsked Nothing
 
 
 init : () -> (Model, Cmd Msg)
-init _ = onlyModel emptyModel
-
+init _ = ({ emptyModel | notes = Loading }, getRemoteNotes)
 
 -- UPDATE
+
+
+getRemoteNotes: Cmd Msg
+getRemoteNotes =
+  Http.get {
+    url = "http://localhost:3000/notes"
+  , expect = Http.expectJson (RemoteData.fromResult >> NotesResponse) decodeNotes
+  }
 
 
 type Msg = NoteSelected Note
@@ -70,6 +80,7 @@ type Msg = NoteSelected Note
          | AddNote
          | SearchEdited
          | SearchPerformed
+         | NotesResponse RemoteNotesData
 
 
 
@@ -86,9 +97,17 @@ update msg model =
     NoteRemovedFromLocalStorage -> (model, Browser.Navigation.load "save.html")
     (JSNotificationError error) -> (model, scribMessage(encodeLogToConsole error))
     AddNote -> (model, scribMessage encodeRemoveFromLocalStorage)
+    (NotesResponse notes) -> ({ model | notes = notes}, logResponseErrors notes)
     _ ->
       let _ = log "Other!" "moo"
       in onlyModel model
+
+
+logResponseErrors: RemoteNotesData -> Cmd Msg
+logResponseErrors remoteData =
+  case remoteData of
+    Failure e ->  scribMessage <| encodeLogToConsole <| fromHttpError e
+    _         -> Cmd.none
 
 
 -- VIEW
@@ -121,8 +140,8 @@ view model =
                   ]
                 ]
               ]
-            , div [ id "notes-list" ]
-                (List.map createNoteItem [1,2,3,4,5,6,7,8,9,10])
+            , viewNotesList model.notes
+
             ]
           ]
         ]
@@ -131,17 +150,37 @@ view model =
    ]
 
 
+viewNotesList: RemoteNotesData -> Html Msg
+viewNotesList remoteNotesData =
+  let notesContent =
+        case remoteNotesData of
+          NotAsked      -> [div [] [text "No Data"]]
+          Loading       -> [div [] [text "Loading..."]]
+          Failure e     -> [div [] [text <| "oops! Could not get your data :(" ++ (fromHttpError e)]]
+          Success notes -> List.map createNoteItem notes
+  in div [ id "notes-list" ] notesContent
+
+fromHttpError: Http.Error -> String
+fromHttpError error =
+  case error of
+    (Http.BadUrl burl)      -> "bad url: " ++ burl
+    Http.Timeout            -> "timeout"
+    Http.NetworkError       -> "network error"
+    (Http.BadStatus status) -> "bad status: " ++ (String.fromInt(status))
+    (Http.BadBody body)     -> "bad body: " ++ body
+
+
 createEditButton: Maybe Note -> Html Msg
 createEditButton = maybe viewMarkdownPreviewDefault viewMarkdownPreview
 
-createNoteItem: Int -> Html Msg
-createNoteItem model =
-  a [class "panel-block", onClick (NoteSelected { noteText = "# some note-" ++ String.fromInt model, noteId = model })]
+createNoteItem: Note -> Html Msg
+createNoteItem {noteText, noteId} =
+  a [class "panel-block", onClick (NoteSelected { noteText = noteText, noteId = noteId })]
   [ span [class "panel-icon"]
     [ i [ class "fas", class "fa-book", attribute "aria-hidden" "true"]
       []
     ]
-  , text ("testing " ++ String.fromInt model)
+  , text noteText
    ]
 
 viewMarkdownPreview : Note -> Html Msg
@@ -222,6 +261,12 @@ encode portType model =
     , ("noteText", E.string model.noteText)
     , ("noteId", E.int model.noteId)
     ]
+
+decodeNotes : D.Decoder (List Note)
+decodeNotes = D.list decodeNote
+
+decodeNote: D.Decoder Note
+decodeNote = D.map2 Note (D.field "noteText" D.string) (D.field "noteId" D.int)
 
 decoderJsResponseEvent: D.Decoder JsResponseEvent
 decoderJsResponseEvent = D.andThen stringToJsResponseEvent decodeJsResponseString
