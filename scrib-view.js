@@ -5324,20 +5324,20 @@ var $krisajenkins$remotedata$RemoteData$Success = function (a) {
 	return {$: 'Success', a: a};
 };
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
-var $author$project$View$Note = F2(
+var $author$project$Note$Note = F2(
 	function (noteText, noteId) {
 		return {noteId: noteId, noteText: noteText};
 	});
 var $elm$json$Json$Decode$field = _Json_decodeField;
 var $elm$json$Json$Decode$int = _Json_decodeInt;
 var $elm$json$Json$Decode$string = _Json_decodeString;
-var $author$project$View$decodeNote = A3(
+var $author$project$Note$decodeNote = A3(
 	$elm$json$Json$Decode$map2,
-	$author$project$View$Note,
+	$author$project$Note$Note,
 	A2($elm$json$Json$Decode$field, 'noteText', $elm$json$Json$Decode$string),
 	A2($elm$json$Json$Decode$field, 'noteId', $elm$json$Json$Decode$int));
 var $elm$json$Json$Decode$list = _Json_decodeList;
-var $author$project$View$decodeNotes = $elm$json$Json$Decode$list($author$project$View$decodeNote);
+var $author$project$Note$decodeNotes = $elm$json$Json$Decode$list($author$project$Note$decodeNote);
 var $elm$json$Json$Decode$decodeValue = _Json_run;
 var $author$project$View$Model = F3(
 	function (query, notes, selectedNote) {
@@ -6152,7 +6152,7 @@ var $author$project$View$getRemoteNotes = $elm$http$Http$get(
 		expect: A2(
 			$elm$http$Http$expectJson,
 			A2($elm$core$Basics$composeR, $krisajenkins$remotedata$RemoteData$fromResult, $author$project$View$NotesResponse),
-			$author$project$View$decodeNotes),
+			$author$project$Note$decodeNotes),
 		url: 'http://localhost:3000/notes'
 	});
 var $elm$core$Basics$composeL = F3(
@@ -6209,7 +6209,7 @@ var $author$project$ElmCommon$onlyModel = function (model) {
 	return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 };
 var $author$project$View$init = function (notes) {
-	var decodeResult = A2($elm$json$Json$Decode$decodeValue, $author$project$View$decodeNotes, notes);
+	var decodeResult = A2($elm$json$Json$Decode$decodeValue, $author$project$Note$decodeNotes, notes);
 	if (decodeResult.$ === 'Ok') {
 		var validNotes = decodeResult.a;
 		return $author$project$ElmCommon$onlyModel(
@@ -6307,7 +6307,7 @@ var $author$project$View$encodeRemoveFromLocalStorage = $elm$json$Json$Encode$ob
 var $elm$browser$Browser$Navigation$load = _Browser_load;
 var $elm$core$Debug$log = _Debug_log;
 var $author$project$View$SaveToSessionStorage = {$: 'SaveToSessionStorage'};
-var $author$project$View$encodeNote = function (_v0) {
+var $author$project$Note$encodeNote = function (_v0) {
 	var noteText = _v0.noteText;
 	var noteId = _v0.noteId;
 	return $elm$json$Json$Encode$object(
@@ -6340,7 +6340,7 @@ var $author$project$View$encodeViewNotes = function (notes) {
 					$author$project$View$showPortType($author$project$View$SaveToSessionStorage))),
 				_Utils_Tuple2(
 				'view_data',
-				A2($elm$json$Json$Encode$list, $author$project$View$encodeNote, notes))
+				A2($elm$json$Json$Encode$list, $author$project$Note$encodeNote, notes))
 			]));
 };
 var $author$project$View$fromHttpError = function (error) {

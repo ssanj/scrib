@@ -5,15 +5,16 @@ import Http
 import RemoteData exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onClick, onInput)
+import Html.Events exposing (onClick)
 
-import FP exposing (maybe, const)
-import ElmCommon exposing (onlyModel, plainDiv)
+import FP exposing (maybe)
+import ElmCommon exposing (onlyModel)
 
 import Json.Decode as D
 import Json.Encode as E
+import Note        as N
 
-import Debug exposing(toString, log, todo)
+import Debug exposing(toString, log)
 import Browser.Navigation
 
 -- MAIN
@@ -30,21 +31,14 @@ main =
 
 -- MODEL
 
-type alias Note =
-  {
-    noteText: String
-  , noteId: Int
-  }
-
-
 type alias Model =
   {
     query: Maybe String
   , notes: RemoteNotesData
-  , selectedNote: Maybe Note
+  , selectedNote: Maybe N.Note
   }
 
-type alias RemoteNotesData = WebData (List Note)
+type alias RemoteNotesData = WebData (List N.Note)
 
 type PortType = PreviewMessage
               | SaveToLocalStorage
@@ -61,7 +55,7 @@ emptyModel = Model Nothing NotAsked Nothing
 
 init : E.Value -> (Model, Cmd Msg)
 init notes =
-    let decodeResult = D.decodeValue decodeNotes notes
+    let decodeResult = D.decodeValue N.decodeNotes notes
     in case decodeResult of
          Ok validNotes -> onlyModel { emptyModel | notes = Success validNotes }
          Err err       -> (
@@ -76,12 +70,12 @@ getRemoteNotes: Cmd Msg
 getRemoteNotes =
   Http.get {
     url = "http://localhost:3000/notes"
-  , expect = Http.expectJson (RemoteData.fromResult >> NotesResponse) decodeNotes
+  , expect = Http.expectJson (RemoteData.fromResult >> NotesResponse) N.decodeNotes
   }
 
 
-type Msg = NoteSelected Note
-         | NoteEdited Note
+type Msg = NoteSelected N.Note
+         | NoteEdited N.Note
          | NoteSavedToLocalStorage
          | NoteRemovedFromLocalStorage
          | JSNotificationError String
@@ -171,7 +165,7 @@ viewNotesList remoteNotesData =
         case remoteNotesData of
           NotAsked      -> [div [] [text "No Data"]]
           Loading       -> [div [] [text "Loading..."]]
-          Failure e     -> [div [] [text <| "oops! Could not get your data :(" ++ (fromHttpError e)]]
+          Failure e     -> [div [] [text <| "oops! Could not get your data :(" ++ fromHttpError e]]
           Success notes -> List.map createNoteItem notes
   in div [ id "notes-list" ] notesContent
 
@@ -181,14 +175,14 @@ fromHttpError error =
     (Http.BadUrl burl)      -> "bad url: " ++ burl
     Http.Timeout            -> "timeout"
     Http.NetworkError       -> "network error"
-    (Http.BadStatus status) -> "bad status: " ++ (String.fromInt(status))
+    (Http.BadStatus status) -> "bad status: " ++ String.fromInt status
     (Http.BadBody body)     -> "bad body: " ++ body
 
 
-createEditButton: Maybe Note -> Html Msg
+createEditButton: Maybe N.Note -> Html Msg
 createEditButton = maybe viewMarkdownPreviewDefault viewMarkdownPreview
 
-createNoteItem: Note -> Html Msg
+createNoteItem: N.Note -> Html Msg
 createNoteItem {noteText, noteId} =
   a [class "panel-block", onClick (NoteSelected { noteText = noteText, noteId = noteId })]
   [ span [class "panel-icon"]
@@ -198,7 +192,7 @@ createNoteItem {noteText, noteId} =
   , text noteText
    ]
 
-viewMarkdownPreview : Note -> Html Msg
+viewMarkdownPreview : N.Note -> Html Msg
 viewMarkdownPreview note =
   div []
     [ hr []
@@ -270,7 +264,7 @@ encodeLogToConsole  error =
     , ("output", E.string error)
     ]
 
-encode : PortType -> Note -> E.Value
+encode : PortType -> N.Note -> E.Value
 encode portType model =
   E.object
     [ ("eventType", E.string (showPortType portType))
@@ -278,26 +272,14 @@ encode portType model =
     , ("noteId", E.int model.noteId)
     ]
 
-encodeNote: Note -> E.Value
-encodeNote {noteText, noteId} =
-  E.object
-   [
-      ("noteText", E.string noteText)
-    , ("noteId", E.int noteId)
-   ]
 
-encodeViewNotes : List Note -> E.Value
+encodeViewNotes : List N.Note -> E.Value
 encodeViewNotes notes =
   E.object
     [ ("eventType", E.string (showPortType SaveToSessionStorage))
-    , ("view_data", E.list encodeNote notes)
+    , ("view_data", E.list N.encodeNote notes)
     ]
 
-decodeNotes : D.Decoder (List Note)
-decodeNotes = D.list decodeNote
-
-decodeNote: D.Decoder Note
-decodeNote = D.map2 Note (D.field "noteText" D.string) (D.field "noteId" D.int)
 
 decoderJsResponseEvent: D.Decoder JsResponseEvent
 decoderJsResponseEvent = D.andThen stringToJsResponseEvent decodeJsResponseString

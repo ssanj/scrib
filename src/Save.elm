@@ -1,7 +1,9 @@
 port module Save exposing (..)
 
 import Browser
+import Http
 import Html exposing (..)
+import RemoteData exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick, onInput)
 
@@ -10,7 +12,9 @@ import ElmCommon exposing (onlyModel, plainDiv)
 
 import Json.Decode as D
 import Json.Encode as E
+import Note        as N
 import Browser.Navigation
+
 
 -- MAIN
 
@@ -27,10 +31,12 @@ main =
 -- MODEL
 
 
+type alias RemoteSaveData = WebData Int
+
 type alias Model =
   {
     noteText: String
-  , noteId: Maybe Int
+  , noteId: RemoteSaveData
   }
 
 
@@ -42,7 +48,7 @@ init json =
     Err _     -> onlyModel defaultModel
 
 defaultModel: Model
-defaultModel = Model "" Nothing
+defaultModel = Model "" NotAsked
 
 -- UPDATE
 
@@ -54,23 +60,64 @@ type Msg = NoteSaved
          | NoteEdited String
          | NewNote
          | ViewNote
+         | NoteSaveResponse RemoteSaveData
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    NoteSaved             ->
-      let newModel = { model | noteId = Just 10 }
-      in (newModel, scribMessage (encode SaveMessage newModel))
+    NoteSaved             -> saveNote model
+      --let newModel = { model | noteId = Just 10 }
+      --in (newModel, scribMessage (encode SaveMessage newModel))
     (NoteEdited noteText) ->
        let updatedModel = { model | noteText = noteText }
        in (updatedModel, scribMessage (encode PreviewMessage updatedModel))
     NewNote               ->
-      let updatedModel = { model | noteText = "", noteId = Nothing }
+      let updatedModel = { model | noteText = "", noteId = NotAsked }
       in (updatedModel, scribMessage (encode PreviewMessage updatedModel))
 
     ViewNote              -> (model, Browser.Navigation.load "view.html")
+    (NoteSaveResponse noteResponse) -> onlyModel {model | noteId = noteResponse}
 
+saveNote: Model -> (Model, Cmd Msg)
+saveNote model =
+  case model.noteId of
+    Loading       -> (model, Cmd.none) -- still loading from a previous save...
+    _             -> performSaveNote model
+
+
+performSaveNote: Model -> (Model, Cmd Msg)
+performSaveNote model =
+    let remoteCall =
+          Http.post {
+            url = "http://localhost:3000/note"
+          , body = Http.jsonBody <| encodeSaveNote model
+          , expect = Http.expectJson (RemoteData.fromResult >> NoteSaveResponse) D.int
+          }
+    in ({model | noteId = Loading }, remoteCall)
+
+
+encodeSaveNote: Model -> E.Value
+encodeSaveNote {noteText, noteId} =
+  let maybeId = remoteDataToMaybe noteId
+  in maybe (encodeUnsavedNote noteText) (encodeSavedNote noteText) maybeId
+
+
+encodeSavedNote: String -> Int -> E.Value
+encodeSavedNote noteText noteId = N.encodeNote <| N.Note noteText noteId
+
+encodeUnsavedNote: String -> E.Value
+encodeUnsavedNote noteText =
+  E.object
+    [
+      ("noteText", E.string noteText)
+    ]
+
+remoteDataToMaybe: RemoteData e a -> Maybe a
+remoteDataToMaybe remoteData =
+  case remoteData of
+    Success a -> Just a
+    _ -> Nothing
 
 -- VIEW
 
@@ -97,15 +144,31 @@ viewHeadings =
   ]
 
 
+fromHttpError: Http.Error -> String
+fromHttpError error =
+  case error of
+    (Http.BadUrl burl)      -> "bad url: " ++ burl
+    Http.Timeout            -> "timeout"
+    Http.NetworkError       -> "network error"
+    (Http.BadStatus status) -> "bad status: " ++ String.fromInt status
+    (Http.BadBody body)     -> "bad body: " ++ body
+
 viewNoteEditingArea : Model -> Html Msg
 viewNoteEditingArea model =
   plainDiv
     [
-      viewNotesTextArea model
+      viewNotificationsArea model
+    , viewNotesTextArea model
     , viewControls model
     ]
 
 
+viewNotificationsArea: Model -> Html a
+viewNotificationsArea {noteId} =
+  case noteId of
+    Failure e -> div [] [text <| "Save failed: " ++ fromHttpError e]
+    Success _ -> div [] [text "Saved note"]
+    _         -> div [style "visibility" "hidden"] [text "."]
 
 viewNotesTextArea: Model -> Html Msg
 viewNotesTextArea model =
@@ -120,18 +183,12 @@ viewControls model =
     [
       p [class "control"]
         [
-          button [
-            id "save-note"
-            , onClick NoteSaved
-            , classList
-                [("button", True), ("is-success", True), ("is-static", not (hasContent model))]
-          ]
-            [text (saveButtonText model)]
+          viewSaveButton model
         , button [
             id "new-note"
           , onClick NewNote
           , classList
-              [("button", True), ("is-text", True), ("is-hidden", not (hasBeenSaved model))]
+              [("button", True), ("is-text", True){--, ("is-hidden", not (hasBeenSaved model))--}]
           ]
             [text "New Note"]
         ]
@@ -140,14 +197,36 @@ viewControls model =
 
     ]
 
+
+viewSaveButton: Model -> Html Msg
+viewSaveButton model =
+  let showSpinner =
+        case model.noteId of
+          Loading -> True
+          _       -> False
+  in button [
+       id "save-note"
+       , onClick NoteSaved
+       , classList
+           [
+             ("button", True)
+           , ("is-success", True)
+           , ("is-static", not (hasContent model))
+           , ("is-loading", showSpinner)
+           ]
+     ]
+      [text (saveButtonText model)]
+
+
+
 hasContent: Model -> Bool
 hasContent {noteText} = not (String.isEmpty noteText)
 
 hasBeenSaved: Model -> Bool
-hasBeenSaved {noteId} = maybe False (const True) noteId
+hasBeenSaved {noteId} = maybe False (const True) (remoteDataToMaybe noteId)
 
 saveButtonText : Model -> String
-saveButtonText {noteId} = maybe "Save" (const "Edit") noteId
+saveButtonText {noteId} = maybe "Save" (const "Edit") (remoteDataToMaybe noteId)
 
 viewMarkdownPreview : Html Msg
 viewMarkdownPreview =
@@ -180,7 +259,7 @@ encode portType model =
   E.object
     [ ("eventType", E.string (showPortType portType))
     , ("noteText", E.string model.noteText)
-    , ("noteId", maybe E.null E.int model.noteId)
+    , ("noteId", maybe E.null E.int <| remoteDataToMaybe model.noteId)
     ]
 
 -- field : String -> Decoder a -> Decoder a
@@ -190,4 +269,9 @@ decoder : D.Decoder Model
 decoder =
   D.map2 Model
     (D.field "noteText" D.string)
-    (D.maybe (D.field "noteId" D.int))
+    (D.map maybeToRemoteData <| D.maybe (D.field "noteId" D.int))
+
+maybeToRemoteData : Maybe a -> RemoteData e a
+maybeToRemoteData maybeValue =
+  maybe NotAsked Success maybeValue
+

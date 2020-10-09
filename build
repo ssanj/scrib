@@ -1,0 +1,7 @@
+#!/bin/bash
+
+if [[ $# -eq 2 ]]; then
+  elm make src/${1}.elm --output="${2}.js"
+else
+  echo "usage: <elm_file_without_extension> <output_js_file_without_extension>"
+fi

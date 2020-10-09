@@ -1,0 +1,5 @@
+#!/bin/bash
+
+echo "continuous compilation..."
+
+fswatch -r  src | xargs -I{} elm make {} --output=/dev/null
