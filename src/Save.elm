@@ -32,18 +32,28 @@ main =
 -- MODEL
 --
 
-type alias RemoteSaveData = WebData Int
+type DataSource = LocalLoad
+                | RemoteSave
+
+type alias NoteData a = {
+    dataSource: DataSource
+  , dataValue: a
+  }
+
+
+type alias RemoteNoteData a = WebData (NoteData a)
+
 
 type alias Model =
   {
     noteText: String
-  , noteId: RemoteSaveData
+  , noteId: RemoteNoteData Int
   }
 
 
 init : E.Value -> (Model, Cmd Msg)
 init json =
-  let result = D.decodeValue decoder json
+  let result = D.decodeValue (modelDecoder LocalLoad) json
   in case result of
     Ok model  -> onlyModel model
     Err _     -> onlyModel defaultModel
@@ -64,7 +74,7 @@ type Msg = NoteSaved
          | NoteEdited String
          | NewNote
          | ViewNote
-         | NoteSaveResponse RemoteSaveData
+         | NoteSaveResponse (RemoteNoteData Int)
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -97,9 +107,20 @@ performSaveNote model =
           Http.post {
             url = "http://localhost:3000/note"
           , body = Http.jsonBody <| encodeSaveNote model
-          , expect = Http.expectJson (RemoteData.fromResult >> NoteSaveResponse) D.int
+          , expect = Http.expectJson processSaveNoteResults D.int
           }
     in ({model | noteId = Loading }, remoteCall)
+
+
+processSaveNoteResults: Result Http.Error Int -> Msg
+processSaveNoteResults = processHttpResult (NoteData RemoteSave) NoteSaveResponse
+
+
+processHttpResult: (a -> b) -> (WebData b -> Msg) -> Result Http.Error a -> Msg
+processHttpResult toNotesData toMsg httpResult =
+  let result  = RemoteData.fromResult httpResult  -- WebData Int
+      result2 = RemoteData.map toNotesData result -- WebData (NotesData Int) == RemoteNoteData Int == RemoteData Http.Error (NotesData Int)
+  in toMsg result2
 
 --
 -- VIEW
@@ -141,9 +162,12 @@ viewNoteEditingArea model =
 viewNotificationsArea: Model -> Html a
 viewNotificationsArea {noteId} =
   case noteId of
-    Failure e -> div [] [text <| "Save failed: " ++ fromHttpError e]
-    Success _ -> div [] [text "Saved note"]
-    _         -> div [style "visibility" "hidden"] [text "."]
+    Failure e                         -> div [] [text <| "Save failed: " ++ fromHttpError e] -- show error
+    (Success {dataSource}) ->
+      case dataSource of
+        RemoteSave -> div [] [text "Saved note"] -- only show for remote save
+        LocalLoad  -> div [style "visibility" "hidden"] [text "."] -- do not show for local load
+    _                                 -> div [style "visibility" "hidden"] [text "."] -- do not show for other states
 
 
 viewNotesTextArea: Model -> Html Msg
@@ -222,7 +246,7 @@ subscriptions _ = Sub.none
 encodeSaveNote: Model -> E.Value
 encodeSaveNote {noteText, noteId} =
   let maybeId = remoteDataToMaybe noteId
-  in maybe (encodeUnsavedNote noteText) (encodeSavedNote noteText) maybeId
+  in maybe (encodeUnsavedNote noteText) (\{dataValue} -> encodeSavedNote noteText dataValue) maybeId
 
 
 encodeSavedNote: String -> Int -> E.Value
@@ -242,20 +266,20 @@ encode portType model =
   E.object
     [ ("eventType", E.string (showPortType portType))
     , ("noteText", E.string model.noteText)
-    , ("noteId", maybe E.null E.int <| remoteDataToMaybe model.noteId)
+    , ("noteId", maybe E.null E.int <| Maybe.map .dataValue (remoteDataToMaybe model.noteId))
     ]
 
 
-decoder : D.Decoder Model
-decoder =
+modelDecoder : DataSource -> D.Decoder Model
+modelDecoder ds =
   D.map2 Model
     (D.field "noteText" D.string)
-    (D.map maybeToRemoteData <| D.maybe (D.field "noteId" D.int))
+    (D.map (maybeToRemoteData ds) <| D.maybe (D.field "noteId" D.int))
 
 
-maybeToRemoteData : Maybe a -> RemoteData e a
-maybeToRemoteData maybeValue =
-  maybe NotAsked Success maybeValue
+maybeToRemoteData : DataSource ->  Maybe a -> RemoteNoteData a
+maybeToRemoteData ds maybeValue =
+  maybe NotAsked (Success << NoteData ds) maybeValue
 
 --
 -- UTIL
