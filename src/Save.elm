@@ -203,21 +203,21 @@ viewMarkdownPreview =
     ]
 
 --
---
 -- PORTS
+--
 
 port scribMessage : E.Value -> Cmd msg
 
 --
---
 -- SUBSCRIPTIONS
+--
 
 subscriptions : Model -> Sub Msg
 subscriptions _ = Sub.none
 
 --
---
 -- JSON ENCODE/DECODE
+--
 
 encodeSaveNote: Model -> E.Value
 encodeSaveNote {noteText, noteId} =
