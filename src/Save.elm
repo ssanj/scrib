@@ -15,8 +15,9 @@ import Json.Encode as E
 import Note        as N
 import Browser.Navigation
 
-
+--
 -- MAIN
+--
 
 main: Program E.Value Model Msg
 main =
@@ -27,9 +28,9 @@ main =
     , view          = view
     }
 
-
+--
 -- MODEL
-
+--
 
 type alias RemoteSaveData = WebData Int
 
@@ -47,10 +48,13 @@ init json =
     Ok model  -> onlyModel model
     Err _     -> onlyModel defaultModel
 
+
 defaultModel: Model
 defaultModel = Model "" NotAsked
 
+--
 -- UPDATE
+--
 
 type PortType = SaveMessage
               | PreviewMessage
@@ -79,6 +83,7 @@ update msg model =
     ViewNote              -> (model, Browser.Navigation.load "view.html")
     (NoteSaveResponse noteResponse) -> onlyModel {model | noteId = noteResponse}
 
+
 saveNote: Model -> (Model, Cmd Msg)
 saveNote model =
   case model.noteId of
@@ -96,31 +101,9 @@ performSaveNote model =
           }
     in ({model | noteId = Loading }, remoteCall)
 
-
-encodeSaveNote: Model -> E.Value
-encodeSaveNote {noteText, noteId} =
-  let maybeId = remoteDataToMaybe noteId
-  in maybe (encodeUnsavedNote noteText) (encodeSavedNote noteText) maybeId
-
-
-encodeSavedNote: String -> Int -> E.Value
-encodeSavedNote noteText noteId = N.encodeNote <| N.Note noteText noteId
-
-encodeUnsavedNote: String -> E.Value
-encodeUnsavedNote noteText =
-  E.object
-    [
-      ("noteText", E.string noteText)
-    ]
-
-remoteDataToMaybe: RemoteData e a -> Maybe a
-remoteDataToMaybe remoteData =
-  case remoteData of
-    Success a -> Just a
-    _ -> Nothing
-
+--
 -- VIEW
-
+--
 
 view : Model -> Html Msg
 view model =
@@ -136,6 +119,7 @@ view model =
         )
     ]
 
+
 viewHeadings : List (Html msg)
 viewHeadings =
   [
@@ -143,15 +127,6 @@ viewHeadings =
   , p [class "subtitle"] [text "Making scribbling effortless"]
   ]
 
-
-fromHttpError: Http.Error -> String
-fromHttpError error =
-  case error of
-    (Http.BadUrl burl)      -> "bad url: " ++ burl
-    Http.Timeout            -> "timeout"
-    Http.NetworkError       -> "network error"
-    (Http.BadStatus status) -> "bad status: " ++ String.fromInt status
-    (Http.BadBody body)     -> "bad body: " ++ body
 
 viewNoteEditingArea : Model -> Html Msg
 viewNoteEditingArea model =
@@ -169,6 +144,7 @@ viewNotificationsArea {noteId} =
     Failure e -> div [] [text <| "Save failed: " ++ fromHttpError e]
     Success _ -> div [] [text "Saved note"]
     _         -> div [style "visibility" "hidden"] [text "."]
+
 
 viewNotesTextArea: Model -> Html Msg
 viewNotesTextArea model =
@@ -218,16 +194,6 @@ viewSaveButton model =
       [text (saveButtonText model)]
 
 
-
-hasContent: Model -> Bool
-hasContent {noteText} = not (String.isEmpty noteText)
-
-hasBeenSaved: Model -> Bool
-hasBeenSaved {noteId} = maybe False (const True) (remoteDataToMaybe noteId)
-
-saveButtonText : Model -> String
-saveButtonText {noteId} = maybe "Save" (const "Edit") (remoteDataToMaybe noteId)
-
 viewMarkdownPreview : Html Msg
 viewMarkdownPreview =
   plainDiv
@@ -236,22 +202,39 @@ viewMarkdownPreview =
     , div [id "markdown-view"] []
     ]
 
+--
+--
 -- PORTS
 
 port scribMessage : E.Value -> Cmd msg
 
+--
+--
 -- SUBSCRIPTIONS
 
 subscriptions : Model -> Sub Msg
 subscriptions _ = Sub.none
 
+--
+--
 -- JSON ENCODE/DECODE
 
-showPortType: PortType -> String
-showPortType portType =
-  case portType of
-    SaveMessage -> "save_message"
-    PreviewMessage -> "preview_message"
+encodeSaveNote: Model -> E.Value
+encodeSaveNote {noteText, noteId} =
+  let maybeId = remoteDataToMaybe noteId
+  in maybe (encodeUnsavedNote noteText) (encodeSavedNote noteText) maybeId
+
+
+encodeSavedNote: String -> Int -> E.Value
+encodeSavedNote noteText noteId = N.encodeNote <| N.Note noteText noteId
+
+
+encodeUnsavedNote: String -> E.Value
+encodeUnsavedNote noteText =
+  E.object
+    [
+      ("noteText", E.string noteText)
+    ]
 
 
 encode : PortType -> Model -> E.Value
@@ -262,8 +245,6 @@ encode portType model =
     , ("noteId", maybe E.null E.int <| remoteDataToMaybe model.noteId)
     ]
 
--- field : String -> Decoder a -> Decoder a
--- maybe : Decoder a -> Decoder (Maybe a)
 
 decoder : D.Decoder Model
 decoder =
@@ -271,7 +252,46 @@ decoder =
     (D.field "noteText" D.string)
     (D.map maybeToRemoteData <| D.maybe (D.field "noteId" D.int))
 
+
 maybeToRemoteData : Maybe a -> RemoteData e a
 maybeToRemoteData maybeValue =
   maybe NotAsked Success maybeValue
 
+--
+-- UTIL
+--
+
+hasContent: Model -> Bool
+hasContent {noteText} = not (String.isEmpty noteText)
+
+
+hasBeenSaved: Model -> Bool
+hasBeenSaved {noteId} = maybe False (const True) (remoteDataToMaybe noteId)
+
+
+remoteDataToMaybe: RemoteData e a -> Maybe a
+remoteDataToMaybe remoteData =
+  case remoteData of
+    Success a -> Just a
+    _ -> Nothing
+
+
+saveButtonText : Model -> String
+saveButtonText {noteId} = maybe "Save" (const "Edit") (remoteDataToMaybe noteId)
+
+
+showPortType: PortType -> String
+showPortType portType =
+  case portType of
+    SaveMessage -> "save_message"
+    PreviewMessage -> "preview_message"
+
+
+fromHttpError: Http.Error -> String
+fromHttpError error =
+  case error of
+    (Http.BadUrl burl)      -> "bad url: " ++ burl
+    Http.Timeout            -> "timeout"
+    Http.NetworkError       -> "network error"
+    (Http.BadStatus status) -> "bad status: " ++ String.fromInt status
+    (Http.BadBody body)     -> "bad body: " ++ body
