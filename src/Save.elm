@@ -55,7 +55,7 @@ init : E.Value -> (Model, Cmd Msg)
 init json =
   let result = D.decodeValue (modelDecoder LocalLoad) json
   in case result of
-    Ok model  -> onlyModel model
+    Ok model  -> (model, scribMessage <| encode PreviewMessage model)
     Err _     -> onlyModel defaultModel
 
 
@@ -105,7 +105,7 @@ performSaveNote: Model -> (Model, Cmd Msg)
 performSaveNote model =
     let remoteCall =
           Http.post {
-            url = "http://localhost:3000/note"
+            url = "http://localhost:3000/note" -- This should be configurable
           , body = Http.jsonBody <| encodeSaveNote model
           , expect = Http.expectJson processSaveNoteResults D.int
           }

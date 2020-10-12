@@ -5320,6 +5320,7 @@ var $elm$core$Task$perform = F2(
 	});
 var $elm$browser$Browser$element = _Browser_element;
 var $author$project$Save$LocalLoad = {$: 'LocalLoad'};
+var $author$project$Save$PreviewMessage = {$: 'PreviewMessage'};
 var $elm$json$Json$Decode$decodeValue = _Json_run;
 var $author$project$Save$Model = F2(
 	function (noteText, noteId) {
@@ -5327,84 +5328,6 @@ var $author$project$Save$Model = F2(
 	});
 var $krisajenkins$remotedata$RemoteData$NotAsked = {$: 'NotAsked'};
 var $author$project$Save$defaultModel = A2($author$project$Save$Model, '', $krisajenkins$remotedata$RemoteData$NotAsked);
-var $elm$json$Json$Decode$field = _Json_decodeField;
-var $elm$json$Json$Decode$int = _Json_decodeInt;
-var $elm$json$Json$Decode$oneOf = _Json_oneOf;
-var $elm$json$Json$Decode$maybe = function (decoder) {
-	return $elm$json$Json$Decode$oneOf(
-		_List_fromArray(
-			[
-				A2($elm$json$Json$Decode$map, $elm$core$Maybe$Just, decoder),
-				$elm$json$Json$Decode$succeed($elm$core$Maybe$Nothing)
-			]));
-};
-var $author$project$Save$NoteData = F2(
-	function (dataSource, dataValue) {
-		return {dataSource: dataSource, dataValue: dataValue};
-	});
-var $krisajenkins$remotedata$RemoteData$Success = function (a) {
-	return {$: 'Success', a: a};
-};
-var $elm$core$Basics$composeL = F3(
-	function (g, f, x) {
-		return g(
-			f(x));
-	});
-var $author$project$FP$maybe = F3(
-	function (onNothing, onJust, maybeVal) {
-		if (maybeVal.$ === 'Just') {
-			var a = maybeVal.a;
-			return onJust(a);
-		} else {
-			return onNothing;
-		}
-	});
-var $author$project$Save$maybeToRemoteData = F2(
-	function (ds, maybeValue) {
-		return A3(
-			$author$project$FP$maybe,
-			$krisajenkins$remotedata$RemoteData$NotAsked,
-			A2(
-				$elm$core$Basics$composeL,
-				$krisajenkins$remotedata$RemoteData$Success,
-				$author$project$Save$NoteData(ds)),
-			maybeValue);
-	});
-var $elm$json$Json$Decode$string = _Json_decodeString;
-var $author$project$Save$modelDecoder = function (ds) {
-	return A3(
-		$elm$json$Json$Decode$map2,
-		$author$project$Save$Model,
-		A2($elm$json$Json$Decode$field, 'noteText', $elm$json$Json$Decode$string),
-		A2(
-			$elm$json$Json$Decode$map,
-			$author$project$Save$maybeToRemoteData(ds),
-			$elm$json$Json$Decode$maybe(
-				A2($elm$json$Json$Decode$field, 'noteId', $elm$json$Json$Decode$int))));
-};
-var $elm$core$Platform$Cmd$batch = _Platform_batch;
-var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
-var $author$project$ElmCommon$onlyModel = function (model) {
-	return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
-};
-var $author$project$Save$init = function (json) {
-	var result = A2(
-		$elm$json$Json$Decode$decodeValue,
-		$author$project$Save$modelDecoder($author$project$Save$LocalLoad),
-		json);
-	if (result.$ === 'Ok') {
-		var model = result.a;
-		return $author$project$ElmCommon$onlyModel(model);
-	} else {
-		return $author$project$ElmCommon$onlyModel($author$project$Save$defaultModel);
-	}
-};
-var $elm$core$Platform$Sub$batch = _Platform_batch;
-var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
-var $author$project$Save$subscriptions = function (_v0) {
-	return $elm$core$Platform$Sub$none;
-};
-var $author$project$Save$PreviewMessage = {$: 'PreviewMessage'};
 var $elm$json$Json$Encode$int = _Json_wrap;
 var $elm$core$Maybe$map = F2(
 	function (f, maybe) {
@@ -5414,6 +5337,15 @@ var $elm$core$Maybe$map = F2(
 				f(value));
 		} else {
 			return $elm$core$Maybe$Nothing;
+		}
+	});
+var $author$project$FP$maybe = F3(
+	function (onNothing, onJust, maybeVal) {
+		if (maybeVal.$ === 'Just') {
+			var a = maybeVal.a;
+			return onJust(a);
+		} else {
+			return onNothing;
 		}
 	});
 var $elm$json$Json$Encode$null = _Json_encodeNull;
@@ -5472,6 +5404,78 @@ var $author$project$Save$encode = F2(
 							$author$project$Save$remoteDataToMaybe(model.noteId))))
 				]));
 	});
+var $elm$json$Json$Decode$field = _Json_decodeField;
+var $elm$json$Json$Decode$int = _Json_decodeInt;
+var $elm$json$Json$Decode$oneOf = _Json_oneOf;
+var $elm$json$Json$Decode$maybe = function (decoder) {
+	return $elm$json$Json$Decode$oneOf(
+		_List_fromArray(
+			[
+				A2($elm$json$Json$Decode$map, $elm$core$Maybe$Just, decoder),
+				$elm$json$Json$Decode$succeed($elm$core$Maybe$Nothing)
+			]));
+};
+var $author$project$Save$NoteData = F2(
+	function (dataSource, dataValue) {
+		return {dataSource: dataSource, dataValue: dataValue};
+	});
+var $krisajenkins$remotedata$RemoteData$Success = function (a) {
+	return {$: 'Success', a: a};
+};
+var $elm$core$Basics$composeL = F3(
+	function (g, f, x) {
+		return g(
+			f(x));
+	});
+var $author$project$Save$maybeToRemoteData = F2(
+	function (ds, maybeValue) {
+		return A3(
+			$author$project$FP$maybe,
+			$krisajenkins$remotedata$RemoteData$NotAsked,
+			A2(
+				$elm$core$Basics$composeL,
+				$krisajenkins$remotedata$RemoteData$Success,
+				$author$project$Save$NoteData(ds)),
+			maybeValue);
+	});
+var $elm$json$Json$Decode$string = _Json_decodeString;
+var $author$project$Save$modelDecoder = function (ds) {
+	return A3(
+		$elm$json$Json$Decode$map2,
+		$author$project$Save$Model,
+		A2($elm$json$Json$Decode$field, 'noteText', $elm$json$Json$Decode$string),
+		A2(
+			$elm$json$Json$Decode$map,
+			$author$project$Save$maybeToRemoteData(ds),
+			$elm$json$Json$Decode$maybe(
+				A2($elm$json$Json$Decode$field, 'noteId', $elm$json$Json$Decode$int))));
+};
+var $elm$core$Platform$Cmd$batch = _Platform_batch;
+var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
+var $author$project$ElmCommon$onlyModel = function (model) {
+	return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+};
+var $author$project$Save$scribMessage = _Platform_outgoingPort('scribMessage', $elm$core$Basics$identity);
+var $author$project$Save$init = function (json) {
+	var result = A2(
+		$elm$json$Json$Decode$decodeValue,
+		$author$project$Save$modelDecoder($author$project$Save$LocalLoad),
+		json);
+	if (result.$ === 'Ok') {
+		var model = result.a;
+		return _Utils_Tuple2(
+			model,
+			$author$project$Save$scribMessage(
+				A2($author$project$Save$encode, $author$project$Save$PreviewMessage, model)));
+	} else {
+		return $author$project$ElmCommon$onlyModel($author$project$Save$defaultModel);
+	}
+};
+var $elm$core$Platform$Sub$batch = _Platform_batch;
+var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
+var $author$project$Save$subscriptions = function (_v0) {
+	return $elm$core$Platform$Sub$none;
+};
 var $elm$browser$Browser$Navigation$load = _Browser_load;
 var $krisajenkins$remotedata$RemoteData$Loading = {$: 'Loading'};
 var $author$project$Note$Note = F2(
@@ -6375,7 +6379,6 @@ var $author$project$Save$saveNote = function (model) {
 		return $author$project$Save$performSaveNote(model);
 	}
 };
-var $author$project$Save$scribMessage = _Platform_outgoingPort('scribMessage', $elm$core$Basics$identity);
 var $author$project$Save$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
