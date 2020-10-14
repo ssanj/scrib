@@ -11,7 +11,19 @@
         height: 20em;
         overflow: auto;
       }
+
+      .autohide {
+        visibility: visible;
+        animation: autohide 3s;
+        animation-fill-mode: forwards;
+      }
+
+      @keyframes autohide {
+        from {visibilty: visible;}
+        to {visibility: hidden}
+      }
     </style>
+
   </head>
   <body>
   <div id="myapp"></div>
