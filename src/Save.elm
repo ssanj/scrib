@@ -162,12 +162,65 @@ viewNoteEditingArea model =
 viewNotificationsArea: Model -> Html a
 viewNotificationsArea {noteId} =
   case noteId of
-    Failure e                         -> div [class "autohide"] [text <| "Save failed: " ++ fromHttpError e] -- show error
+    Failure e              -> addFailureAlert <| "Save failed: " ++ fromHttpError e -- show error
     (Success {dataSource}) ->
       case dataSource of
-        RemoteSave -> div [class "autohide"] [text "Saved note"] -- only show for remote save
-        LocalLoad  -> div [class "is-invisible"] [text "."] -- do not show for local load
-    _                                 -> div [class "is-invisible"] [text "."] -- do not show for other states
+        RemoteSave -> addSuccessAlert "Saved note" -- only show for remote save
+        LocalLoad  -> hideAlertSpace -- do not show for local load
+    _              -> hideAlertSpace -- do not show for other states
+
+addClasses: List String -> List (Attribute a)
+addClasses classes = List.map class classes
+
+hideAlertSpace: Html a
+hideAlertSpace =
+  div
+    (
+      addClasses [
+        "px-1"
+      , "py-1"
+      , "has-text-white"
+      , "has-background-white"
+      , "is-invisible"
+      ]
+    )
+    [
+      text "placeholder"
+    ]
+
+addSuccessAlert: String -> Html a
+addSuccessAlert textValue =
+  div
+    (
+      addClasses
+      [
+        "px-1"
+      , "py-1"
+      , "has-background-primary"
+      , "has-text-white"
+      , "autohide"
+      ]
+    )
+    [
+      text textValue
+    ]
+
+addFailureAlert: String -> Html a
+addFailureAlert textValue =
+  div
+    (
+      addClasses [
+        "px-1"
+      , "py-1"
+      , "has-background-danger"
+      , "has-text-white"
+      , "autohide"
+      ]
+    )
+    [
+      text textValue
+    ]
+
 
 
 viewNotesTextArea: Model -> Html Msg
@@ -215,7 +268,7 @@ viewSaveButton model =
            , ("is-loading", showSpinner)
            ]
      ]
-      [text (saveButtonText model)]
+      [text "Save"]
 
 
 viewMarkdownPreview : Html Msg
@@ -298,10 +351,6 @@ remoteDataToMaybe remoteData =
   case remoteData of
     Success a -> Just a
     _ -> Nothing
-
-
-saveButtonText : Model -> String
-saveButtonText {noteId} = maybe "Save" (const "Edit") (remoteDataToMaybe noteId)
 
 
 showPortType: PortType -> String

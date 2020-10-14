@@ -6517,18 +6517,6 @@ var $author$project$Save$hasContent = function (_v0) {
 	var noteText = _v0.noteText;
 	return !$elm$core$String$isEmpty(noteText);
 };
-var $author$project$FP$const = F2(
-	function (a, _v0) {
-		return a;
-	});
-var $author$project$Save$saveButtonText = function (_v0) {
-	var noteId = _v0.noteId;
-	return A3(
-		$author$project$FP$maybe,
-		'Save',
-		$author$project$FP$const('Edit'),
-		$author$project$Save$remoteDataToMaybe(noteId));
-};
 var $author$project$Save$viewSaveButton = function (model) {
 	var showSpinner = function () {
 		var _v0 = model.noteId;
@@ -6557,8 +6545,7 @@ var $author$project$Save$viewSaveButton = function (model) {
 			]),
 		_List_fromArray(
 			[
-				$elm$html$Html$text(
-				$author$project$Save$saveButtonText(model))
+				$elm$html$Html$text('Save')
 			]));
 };
 var $author$project$Save$viewControls = function (model) {
@@ -6670,6 +6657,31 @@ var $author$project$Save$viewNotesTextArea = function (model) {
 			]),
 		_List_Nil);
 };
+var $author$project$Save$addClasses = function (classes) {
+	return A2($elm$core$List$map, $elm$html$Html$Attributes$class, classes);
+};
+var $author$project$Save$addFailureAlert = function (textValue) {
+	return A2(
+		$elm$html$Html$div,
+		$author$project$Save$addClasses(
+			_List_fromArray(
+				['px-1', 'py-1', 'has-background-danger', 'has-text-white', 'autohide'])),
+		_List_fromArray(
+			[
+				$elm$html$Html$text(textValue)
+			]));
+};
+var $author$project$Save$addSuccessAlert = function (textValue) {
+	return A2(
+		$elm$html$Html$div,
+		$author$project$Save$addClasses(
+			_List_fromArray(
+				['px-1', 'py-1', 'has-background-primary', 'has-text-white', 'autohide'])),
+		_List_fromArray(
+			[
+				$elm$html$Html$text(textValue)
+			]));
+};
 var $author$project$Save$fromHttpError = function (error) {
 	switch (error.$) {
 		case 'BadUrl':
@@ -6687,58 +6699,31 @@ var $author$project$Save$fromHttpError = function (error) {
 			return 'bad body: ' + body;
 	}
 };
+var $author$project$Save$hideAlertSpace = A2(
+	$elm$html$Html$div,
+	$author$project$Save$addClasses(
+		_List_fromArray(
+			['px-1', 'py-1', 'has-text-white', 'has-background-white', 'is-invisible'])),
+	_List_fromArray(
+		[
+			$elm$html$Html$text('placeholder')
+		]));
 var $author$project$Save$viewNotificationsArea = function (_v0) {
 	var noteId = _v0.noteId;
 	switch (noteId.$) {
 		case 'Failure':
 			var e = noteId.a;
-			return A2(
-				$elm$html$Html$div,
-				_List_fromArray(
-					[
-						$elm$html$Html$Attributes$class('autohide')
-					]),
-				_List_fromArray(
-					[
-						$elm$html$Html$text(
-						'Save failed: ' + $author$project$Save$fromHttpError(e))
-					]));
+			return $author$project$Save$addFailureAlert(
+				'Save failed: ' + $author$project$Save$fromHttpError(e));
 		case 'Success':
 			var dataSource = noteId.a.dataSource;
 			if (dataSource.$ === 'RemoteSave') {
-				return A2(
-					$elm$html$Html$div,
-					_List_fromArray(
-						[
-							$elm$html$Html$Attributes$class('autohide')
-						]),
-					_List_fromArray(
-						[
-							$elm$html$Html$text('Saved note')
-						]));
+				return $author$project$Save$addSuccessAlert('Saved note');
 			} else {
-				return A2(
-					$elm$html$Html$div,
-					_List_fromArray(
-						[
-							$elm$html$Html$Attributes$class('is-invisible')
-						]),
-					_List_fromArray(
-						[
-							$elm$html$Html$text('.')
-						]));
+				return $author$project$Save$hideAlertSpace;
 			}
 		default:
-			return A2(
-				$elm$html$Html$div,
-				_List_fromArray(
-					[
-						$elm$html$Html$Attributes$class('is-invisible')
-					]),
-				_List_fromArray(
-					[
-						$elm$html$Html$text('.')
-					]));
+			return $author$project$Save$hideAlertSpace;
 	}
 };
 var $author$project$Save$viewNoteEditingArea = function (model) {
