@@ -6687,8 +6687,6 @@ var $author$project$Save$fromHttpError = function (error) {
 			return 'bad body: ' + body;
 	}
 };
-var $elm$virtual_dom$VirtualDom$style = _VirtualDom_style;
-var $elm$html$Html$Attributes$style = $elm$virtual_dom$VirtualDom$style;
 var $author$project$Save$viewNotificationsArea = function (_v0) {
 	var noteId = _v0.noteId;
 	switch (noteId.$) {
@@ -6696,7 +6694,10 @@ var $author$project$Save$viewNotificationsArea = function (_v0) {
 			var e = noteId.a;
 			return A2(
 				$elm$html$Html$div,
-				_List_Nil,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('autohide')
+					]),
 				_List_fromArray(
 					[
 						$elm$html$Html$text(
@@ -6707,7 +6708,10 @@ var $author$project$Save$viewNotificationsArea = function (_v0) {
 			if (dataSource.$ === 'RemoteSave') {
 				return A2(
 					$elm$html$Html$div,
-					_List_Nil,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('autohide')
+						]),
 					_List_fromArray(
 						[
 							$elm$html$Html$text('Saved note')
@@ -6717,7 +6721,7 @@ var $author$project$Save$viewNotificationsArea = function (_v0) {
 					$elm$html$Html$div,
 					_List_fromArray(
 						[
-							A2($elm$html$Html$Attributes$style, 'visibility', 'hidden')
+							$elm$html$Html$Attributes$class('is-invisible')
 						]),
 					_List_fromArray(
 						[
@@ -6729,7 +6733,7 @@ var $author$project$Save$viewNotificationsArea = function (_v0) {
 				$elm$html$Html$div,
 				_List_fromArray(
 					[
-						A2($elm$html$Html$Attributes$style, 'visibility', 'hidden')
+						$elm$html$Html$Attributes$class('is-invisible')
 					]),
 				_List_fromArray(
 					[

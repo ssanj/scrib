@@ -6552,6 +6552,15 @@ var $author$project$View$viewMarkdownPreviewDefault = A2(
 				]))
 		]));
 var $author$project$View$createEditButton = A2($author$project$FP$maybe, $author$project$View$viewMarkdownPreviewDefault, $author$project$View$viewMarkdownPreview);
+var $author$project$View$getNoteCount = function (remoteNoteData) {
+	if (remoteNoteData.$ === 'Success') {
+		var notes = remoteNoteData.a;
+		return $elm$core$String$fromInt(
+			$elm$core$List$length(notes));
+	} else {
+		return '-';
+	}
+};
 var $elm$html$Html$h1 = _VirtualDom_node('h1');
 var $elm$html$Html$i = _VirtualDom_node('i');
 var $elm$html$Html$input = _VirtualDom_node('input');
@@ -6564,6 +6573,31 @@ var $author$project$View$NoteSelected = function (a) {
 	return {$: 'NoteSelected', a: a};
 };
 var $elm$html$Html$a = _VirtualDom_node('a');
+var $elm$core$List$head = function (list) {
+	if (list.b) {
+		var x = list.a;
+		var xs = list.b;
+		return $elm$core$Maybe$Just(x);
+	} else {
+		return $elm$core$Maybe$Nothing;
+	}
+};
+var $author$project$View$onlyHeading = function (note) {
+	return A3(
+		$author$project$FP$maybe,
+		'-no title-',
+		$elm$core$Basics$identity,
+		$elm$core$List$head(
+			A2($elm$core$String$split, '\n', note)));
+};
+var $elm$core$String$replace = F3(
+	function (before, after, string) {
+		return A2(
+			$elm$core$String$join,
+			after,
+			A2($elm$core$String$split, before, string));
+	});
+var $author$project$View$removeHeading = A2($elm$core$String$replace, '# ', '');
 var $author$project$View$createNoteItem = function (_v0) {
 	var noteText = _v0.noteText;
 	var noteId = _v0.noteId;
@@ -6596,7 +6630,9 @@ var $author$project$View$createNoteItem = function (_v0) {
 							]),
 						_List_Nil)
 					])),
-				$elm$html$Html$text(noteText)
+				$elm$html$Html$text(
+				$author$project$View$removeHeading(
+					$author$project$View$onlyHeading(noteText)))
 			]));
 };
 var $author$project$View$viewNotesList = function (remoteNotesData) {
@@ -6714,7 +6750,20 @@ var $author$project$View$view = function (model) {
 													]),
 												_List_fromArray(
 													[
-														$elm$html$Html$text('Saved Notes')
+														$elm$html$Html$text('Saved Notes'),
+														$elm$html$Html$text(' '),
+														A2(
+														$elm$html$Html$span,
+														_List_fromArray(
+															[
+																$elm$html$Html$Attributes$class('tab'),
+																$elm$html$Html$Attributes$class('is-medium')
+															]),
+														_List_fromArray(
+															[
+																$elm$html$Html$text(
+																$author$project$View$getNoteCount(model.notes))
+															]))
 													])),
 												A2(
 												$elm$html$Html$p,

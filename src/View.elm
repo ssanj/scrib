@@ -132,7 +132,10 @@ view model =
         , div []
           [ article [ class "panel", class "is-primary" ]
             [ p [ class "panel-heading" ]
-              [ text "Saved Notes" ]
+              [ text "Saved Notes"
+              , text " "
+              , span [class "tab", class "is-medium"] [text <| getNoteCount model.notes]
+              ]
             , p [ class "panel-tabs" ]
               [ button [ class "button", class "is-text", onClick AddNote]
                 [ text "Add Note" ]
@@ -158,6 +161,11 @@ view model =
    , createEditButton model.selectedNote
    ]
 
+getNoteCount: RemoteNotesData -> String
+getNoteCount remoteNoteData =
+  case remoteNoteData of
+    Success notes -> String.fromInt <| List.length notes
+    _             -> "-"
 
 viewNotesList: RemoteNotesData -> Html Msg
 viewNotesList remoteNotesData =
@@ -182,6 +190,7 @@ fromHttpError error =
 createEditButton: Maybe N.Note -> Html Msg
 createEditButton = maybe viewMarkdownPreviewDefault viewMarkdownPreview
 
+-- Update this to only create a note with the text for the first line
 createNoteItem: N.Note -> Html Msg
 createNoteItem {noteText, noteId} =
   a [class "panel-block", onClick (NoteSelected { noteText = noteText, noteId = noteId })]
@@ -189,8 +198,14 @@ createNoteItem {noteText, noteId} =
     [ i [ class "fas", class "fa-book", attribute "aria-hidden" "true"]
       []
     ]
-  , text noteText
+  , text <| removeHeading <| onlyHeading noteText
    ]
+
+onlyHeading : String -> String
+onlyHeading note = maybe "-no title-" identity (List.head <| String.split "\n" note)
+
+removeHeading : String -> String
+removeHeading = String.replace "# " ""
 
 viewMarkdownPreview : N.Note -> Html Msg
 viewMarkdownPreview note =

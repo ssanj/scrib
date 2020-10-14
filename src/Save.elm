@@ -162,12 +162,12 @@ viewNoteEditingArea model =
 viewNotificationsArea: Model -> Html a
 viewNotificationsArea {noteId} =
   case noteId of
-    Failure e                         -> div [] [text <| "Save failed: " ++ fromHttpError e] -- show error
+    Failure e                         -> div [class "autohide"] [text <| "Save failed: " ++ fromHttpError e] -- show error
     (Success {dataSource}) ->
       case dataSource of
-        RemoteSave -> div [] [text "Saved note"] -- only show for remote save
-        LocalLoad  -> div [style "visibility" "hidden"] [text "."] -- do not show for local load
-    _                                 -> div [style "visibility" "hidden"] [text "."] -- do not show for other states
+        RemoteSave -> div [class "autohide"] [text "Saved note"] -- only show for remote save
+        LocalLoad  -> div [class "is-invisible"] [text "."] -- do not show for local load
+    _                                 -> div [class "is-invisible"] [text "."] -- do not show for other states
 
 
 viewNotesTextArea: Model -> Html Msg
