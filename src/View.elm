@@ -1,21 +1,22 @@
 port module View exposing (..)
 
-import Browser
-import Http
 import RemoteData exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onClick)
+import ElmCommon exposing (..)
 
+import Html.Events exposing (onClick)
 import FP exposing (maybe)
-import ElmCommon exposing (onlyModel)
+import Browser.Navigation
+
+import Browser
+import Http
+import Browser.Navigation
 
 import Json.Decode as D
 import Json.Encode as E
 import Note        as N
 
-import Debug exposing(toString, log)
-import Browser.Navigation
 
 -- MAIN
 
@@ -89,21 +90,15 @@ type Msg = NoteSelected N.Note
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    (NoteSelected note) ->
-      let _ = log "NoteSelected" "-"
-      in ({model| selectedNote = Just note }, scribMessage (encode PreviewMessage note))
-    (NoteEdited note)   ->
-      let _ = log "NoteEdited: " (toString note)
-      in (model, scribMessage (encode SaveToLocalStorage note))
+    (NoteSelected note)         -> ({model| selectedNote = Just note }, scribMessage (encode PreviewMessage note))
+    (NoteEdited note)           -> (model, scribMessage (encode SaveToLocalStorage note))
     NoteSavedToLocalStorage     -> (model, Browser.Navigation.load "save.html")
     NoteRemovedFromLocalStorage -> (model, Browser.Navigation.load "save.html")
     (JSNotificationError error) -> (model, scribMessage(encodeLogToConsole error))
     AddNote                     -> (model, scribMessage encodeRemoveFromLocalStorage)
     (NotesResponse notes)       -> ({ model | notes = notes}, logResponseErrors notes)
     SearchPerformed             -> ({ model | notes = Loading }, getRemoteNotes)
-    _ ->
-      let _ = log "Other!" "moo"
-      in onlyModel model
+    _                           -> onlyModel model
 
 
 logMessage: String -> Cmd Msg
@@ -173,7 +168,7 @@ viewNotesList remoteNotesData =
         case remoteNotesData of
           NotAsked      -> [div [] [text "No Data"]]
           Loading       -> [div [] [text "Loading..."]]
-          Failure e     -> [div [] [text <| "oops! Could not get your data :(" ++ fromHttpError e]]
+          Failure e     -> [addFailureAlert <| "oops! Could not get your data :(" ++ fromHttpError e]
           Success notes -> List.map createNoteItem notes
   in div [ id "notes-list" ] notesContent
 

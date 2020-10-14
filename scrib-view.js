@@ -6305,7 +6305,6 @@ var $author$project$View$encodeRemoveFromLocalStorage = $elm$json$Json$Encode$ob
 				$author$project$View$showPortType($author$project$View$RemoveFromLocalStorage)))
 		]));
 var $elm$browser$Browser$Navigation$load = _Browser_load;
-var $elm$core$Debug$log = _Debug_log;
 var $author$project$View$SaveToSessionStorage = {$: 'SaveToSessionStorage'};
 var $author$project$Note$encodeNote = function (_v0) {
 	var noteText = _v0.noteText;
@@ -6375,13 +6374,11 @@ var $author$project$View$logResponseErrors = function (remoteData) {
 			return $elm$core$Platform$Cmd$none;
 	}
 };
-var $elm$core$Debug$toString = _Debug_toString;
 var $author$project$View$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
 			case 'NoteSelected':
 				var note = msg.a;
-				var _v1 = A2($elm$core$Debug$log, 'NoteSelected', '-');
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
@@ -6392,10 +6389,6 @@ var $author$project$View$update = F2(
 						A2($author$project$View$encode, $author$project$View$PreviewMessage, note)));
 			case 'NoteEdited':
 				var note = msg.a;
-				var _v2 = A2(
-					$elm$core$Debug$log,
-					'NoteEdited: ',
-					$elm$core$Debug$toString(note));
 				return _Utils_Tuple2(
 					model,
 					$author$project$View$scribMessage(
@@ -6432,7 +6425,6 @@ var $author$project$View$update = F2(
 						{notes: $krisajenkins$remotedata$RemoteData$Loading}),
 					$author$project$View$getRemoteNotes);
 			default:
-				var _v3 = A2($elm$core$Debug$log, 'Other!', 'moo');
 				return $author$project$ElmCommon$onlyModel(model);
 		}
 	});
@@ -6569,6 +6561,20 @@ var $elm$html$Html$Attributes$placeholder = $elm$html$Html$Attributes$stringProp
 var $elm$html$Html$section = _VirtualDom_node('section');
 var $elm$html$Html$span = _VirtualDom_node('span');
 var $elm$html$Html$Attributes$type_ = $elm$html$Html$Attributes$stringProperty('type');
+var $author$project$ElmCommon$addClasses = function (classes) {
+	return A2($elm$core$List$map, $elm$html$Html$Attributes$class, classes);
+};
+var $author$project$ElmCommon$addFailureAlert = function (textValue) {
+	return A2(
+		$elm$html$Html$div,
+		$author$project$ElmCommon$addClasses(
+			_List_fromArray(
+				['px-1', 'py-1', 'has-background-danger', 'has-text-white', 'autohide'])),
+		_List_fromArray(
+			[
+				$elm$html$Html$text(textValue)
+			]));
+};
 var $author$project$View$NoteSelected = function (a) {
 	return {$: 'NoteSelected', a: a};
 };
@@ -6664,14 +6670,8 @@ var $author$project$View$viewNotesList = function (remoteNotesData) {
 				var e = remoteNotesData.a;
 				return _List_fromArray(
 					[
-						A2(
-						$elm$html$Html$div,
-						_List_Nil,
-						_List_fromArray(
-							[
-								$elm$html$Html$text(
-								'oops! Could not get your data :(' + $author$project$View$fromHttpError(e))
-							]))
+						$author$project$ElmCommon$addFailureAlert(
+						'oops! Could not get your data :(' + $author$project$View$fromHttpError(e))
 					]);
 			default:
 				var notes = remoteNotesData.a;

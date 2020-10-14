@@ -1,19 +1,21 @@
 port module Save exposing (..)
 
-import Browser
-import Http
 import Html exposing (..)
 import RemoteData exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onClick, onInput)
+import ElmCommon exposing (..)
 
+import Html.Events exposing (onClick, onInput)
 import FP exposing (maybe, const)
-import ElmCommon exposing (onlyModel, plainDiv)
+
+import Browser
+import Http
+import Browser.Navigation
+
 
 import Json.Decode as D
 import Json.Encode as E
 import Note        as N
-import Browser.Navigation
 
 --
 -- MAIN
@@ -168,59 +170,6 @@ viewNotificationsArea {noteId} =
         RemoteSave -> addSuccessAlert "Saved note" -- only show for remote save
         LocalLoad  -> hideAlertSpace -- do not show for local load
     _              -> hideAlertSpace -- do not show for other states
-
-addClasses: List String -> List (Attribute a)
-addClasses classes = List.map class classes
-
-hideAlertSpace: Html a
-hideAlertSpace =
-  div
-    (
-      addClasses [
-        "px-1"
-      , "py-1"
-      , "has-text-white"
-      , "has-background-white"
-      , "is-invisible"
-      ]
-    )
-    [
-      text "placeholder"
-    ]
-
-addSuccessAlert: String -> Html a
-addSuccessAlert textValue =
-  div
-    (
-      addClasses
-      [
-        "px-1"
-      , "py-1"
-      , "has-background-primary"
-      , "has-text-white"
-      , "autohide"
-      ]
-    )
-    [
-      text textValue
-    ]
-
-addFailureAlert: String -> Html a
-addFailureAlert textValue =
-  div
-    (
-      addClasses [
-        "px-1"
-      , "py-1"
-      , "has-background-danger"
-      , "has-text-white"
-      , "autohide"
-      ]
-    )
-    [
-      text textValue
-    ]
-
 
 
 viewNotesTextArea: Model -> Html Msg

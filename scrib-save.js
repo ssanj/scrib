@@ -6657,13 +6657,13 @@ var $author$project$Save$viewNotesTextArea = function (model) {
 			]),
 		_List_Nil);
 };
-var $author$project$Save$addClasses = function (classes) {
+var $author$project$ElmCommon$addClasses = function (classes) {
 	return A2($elm$core$List$map, $elm$html$Html$Attributes$class, classes);
 };
-var $author$project$Save$addFailureAlert = function (textValue) {
+var $author$project$ElmCommon$addFailureAlert = function (textValue) {
 	return A2(
 		$elm$html$Html$div,
-		$author$project$Save$addClasses(
+		$author$project$ElmCommon$addClasses(
 			_List_fromArray(
 				['px-1', 'py-1', 'has-background-danger', 'has-text-white', 'autohide'])),
 		_List_fromArray(
@@ -6671,10 +6671,10 @@ var $author$project$Save$addFailureAlert = function (textValue) {
 				$elm$html$Html$text(textValue)
 			]));
 };
-var $author$project$Save$addSuccessAlert = function (textValue) {
+var $author$project$ElmCommon$addSuccessAlert = function (textValue) {
 	return A2(
 		$elm$html$Html$div,
-		$author$project$Save$addClasses(
+		$author$project$ElmCommon$addClasses(
 			_List_fromArray(
 				['px-1', 'py-1', 'has-background-primary', 'has-text-white', 'autohide'])),
 		_List_fromArray(
@@ -6699,9 +6699,9 @@ var $author$project$Save$fromHttpError = function (error) {
 			return 'bad body: ' + body;
 	}
 };
-var $author$project$Save$hideAlertSpace = A2(
+var $author$project$ElmCommon$hideAlertSpace = A2(
 	$elm$html$Html$div,
-	$author$project$Save$addClasses(
+	$author$project$ElmCommon$addClasses(
 		_List_fromArray(
 			['px-1', 'py-1', 'has-text-white', 'has-background-white', 'is-invisible'])),
 	_List_fromArray(
@@ -6713,17 +6713,17 @@ var $author$project$Save$viewNotificationsArea = function (_v0) {
 	switch (noteId.$) {
 		case 'Failure':
 			var e = noteId.a;
-			return $author$project$Save$addFailureAlert(
+			return $author$project$ElmCommon$addFailureAlert(
 				'Save failed: ' + $author$project$Save$fromHttpError(e));
 		case 'Success':
 			var dataSource = noteId.a.dataSource;
 			if (dataSource.$ === 'RemoteSave') {
-				return $author$project$Save$addSuccessAlert('Saved note');
+				return $author$project$ElmCommon$addSuccessAlert('Saved note');
 			} else {
-				return $author$project$Save$hideAlertSpace;
+				return $author$project$ElmCommon$hideAlertSpace;
 			}
 		default:
-			return $author$project$Save$hideAlertSpace;
+			return $author$project$ElmCommon$hideAlertSpace;
 	}
 };
 var $author$project$Save$viewNoteEditingArea = function (model) {
