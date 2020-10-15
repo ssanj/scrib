@@ -69,8 +69,10 @@
 
       function previewMarkdown(noteEvent) {
         const markdownView = document.getElementById('markdown-view');
-        if (marked && markdownView) {
+        if (isDefined(marked) && isDefined(markdownView)) {
           markdownView.innerHTML = marked(noteEvent.noteText, markedOptions);
+        } else {
+         console.log("error", "markdown renderer has not loaded.")
         }
       }
 
@@ -85,6 +87,10 @@
         sessionStorage.setItem(appViewKey, viewData);
         console.log("you saved your view: " + viewData);
       }
+
+    function isDefined(myVal) {
+      return typeof myVal !== 'undefined'
+    }
 
     function loadMessageToSessionStorage(appKey) {
       const storedData = sessionStorage.getItem(appKey);
