@@ -50,7 +50,12 @@ type alias Model =
   {
     noteText: String
   , noteId: RemoteNoteData Int
+  , saveStatus: SaveStatus
   }
+
+type SaveStatus = NotSaved
+                | Saved
+                | Stale
 
 
 init : E.Value -> (Model, Cmd Msg)
@@ -62,7 +67,7 @@ init json =
 
 
 defaultModel: Model
-defaultModel = Model "" NotAsked
+defaultModel = Model "" NotAsked NotSaved
 
 --
 -- UPDATE
@@ -84,15 +89,21 @@ update msg model =
   case msg of
     NoteSaved             -> saveNote model
     (NoteEdited noteText) ->
-       let updatedModel = { model | noteText = noteText }
+       let updatedModel = { model | noteText = noteText, saveStatus = Stale }
        in (updatedModel, scribMessage (encode PreviewMessage updatedModel))
     NewNote               ->
-      let updatedModel = { model | noteText = "", noteId = NotAsked }
+      let updatedModel = { model | noteText = "", noteId = NotAsked, saveStatus = NotSaved }
       in (updatedModel, scribMessage (encode PreviewMessage updatedModel))
 
     ViewNote              -> (model, Browser.Navigation.load "view.html")
-    (NoteSaveResponse noteResponse) -> onlyModel {model | noteId = noteResponse}
+    (NoteSaveResponse noteResponse) -> onlyModel {model | noteId = noteResponse, saveStatus = saveStatusFromResponse model.saveStatus noteResponse}
 
+
+saveStatusFromResponse : SaveStatus -> RemoteNoteData Int -> SaveStatus
+saveStatusFromResponse prevSaveStatus remoteData =
+  case remoteData of
+   (Success _) -> Saved
+   _           -> prevSaveStatus
 
 saveNote: Model -> (Model, Cmd Msg)
 saveNote model =
@@ -200,9 +211,25 @@ viewControls model =
         ]
         , button [id "view-notes-button", class "button", class "is-text", onClick ViewNote]
             [text "View Notes"]
+        , modifiedTag model.saveStatus
 
     ]
 
+modifiedTag : SaveStatus -> Html a
+modifiedTag saveStatus =
+  case saveStatus of
+    Saved    ->
+        span
+          (addClasses ["tag", "is-success"])
+          [ text "+" ]
+    Stale    ->
+        span
+          (addClasses ["tag", "is-info"])
+          [ text "*" ]
+    NotSaved ->
+        span
+          (addClasses ["tag", "is-info"])
+          [ text "?" ]
 
 viewSaveButton: Model -> Html Msg
 viewSaveButton model =
@@ -278,10 +305,14 @@ encode portType model =
 
 modelDecoder : DataSource -> D.Decoder Model
 modelDecoder ds =
-  D.map2 Model
-    (D.field "noteText" D.string)
-    (D.map (maybeToRemoteData ds) <| D.maybe (D.field "noteId" D.int))
+  let maybeNoteId = D.maybe (D.field "noteId" D.int)
+  in D.map3 Model
+      (D.field "noteText" D.string)
+      (D.map (maybeToRemoteData ds) maybeNoteId)
+      (D.map maybeToSaveStatus maybeNoteId)
 
+maybeToSaveStatus : Maybe a -> SaveStatus
+maybeToSaveStatus = maybe NotSaved (const Saved)
 
 maybeToRemoteData : DataSource ->  Maybe a -> RemoteNoteData a
 maybeToRemoteData ds maybeValue =

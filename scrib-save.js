@@ -5322,12 +5322,13 @@ var $elm$browser$Browser$element = _Browser_element;
 var $author$project$Save$LocalLoad = {$: 'LocalLoad'};
 var $author$project$Save$PreviewMessage = {$: 'PreviewMessage'};
 var $elm$json$Json$Decode$decodeValue = _Json_run;
-var $author$project$Save$Model = F2(
-	function (noteText, noteId) {
-		return {noteId: noteId, noteText: noteText};
+var $author$project$Save$Model = F3(
+	function (noteText, noteId, saveStatus) {
+		return {noteId: noteId, noteText: noteText, saveStatus: saveStatus};
 	});
 var $krisajenkins$remotedata$RemoteData$NotAsked = {$: 'NotAsked'};
-var $author$project$Save$defaultModel = A2($author$project$Save$Model, '', $krisajenkins$remotedata$RemoteData$NotAsked);
+var $author$project$Save$NotSaved = {$: 'NotSaved'};
+var $author$project$Save$defaultModel = A3($author$project$Save$Model, '', $krisajenkins$remotedata$RemoteData$NotAsked, $author$project$Save$NotSaved);
 var $elm$json$Json$Encode$int = _Json_wrap;
 var $elm$core$Maybe$map = F2(
 	function (f, maybe) {
@@ -5406,6 +5407,7 @@ var $author$project$Save$encode = F2(
 	});
 var $elm$json$Json$Decode$field = _Json_decodeField;
 var $elm$json$Json$Decode$int = _Json_decodeInt;
+var $elm$json$Json$Decode$map3 = _Json_map3;
 var $elm$json$Json$Decode$oneOf = _Json_oneOf;
 var $elm$json$Json$Decode$maybe = function (decoder) {
 	return $elm$json$Json$Decode$oneOf(
@@ -5438,17 +5440,28 @@ var $author$project$Save$maybeToRemoteData = F2(
 				$author$project$Save$NoteData(ds)),
 			maybeValue);
 	});
+var $author$project$Save$Saved = {$: 'Saved'};
+var $author$project$FP$const = F2(
+	function (a, _v0) {
+		return a;
+	});
+var $author$project$Save$maybeToSaveStatus = A2(
+	$author$project$FP$maybe,
+	$author$project$Save$NotSaved,
+	$author$project$FP$const($author$project$Save$Saved));
 var $elm$json$Json$Decode$string = _Json_decodeString;
 var $author$project$Save$modelDecoder = function (ds) {
-	return A3(
-		$elm$json$Json$Decode$map2,
+	var maybeNoteId = $elm$json$Json$Decode$maybe(
+		A2($elm$json$Json$Decode$field, 'noteId', $elm$json$Json$Decode$int));
+	return A4(
+		$elm$json$Json$Decode$map3,
 		$author$project$Save$Model,
 		A2($elm$json$Json$Decode$field, 'noteText', $elm$json$Json$Decode$string),
 		A2(
 			$elm$json$Json$Decode$map,
 			$author$project$Save$maybeToRemoteData(ds),
-			$elm$json$Json$Decode$maybe(
-				A2($elm$json$Json$Decode$field, 'noteId', $elm$json$Json$Decode$int))));
+			maybeNoteId),
+		A2($elm$json$Json$Decode$map, $author$project$Save$maybeToSaveStatus, maybeNoteId));
 };
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
@@ -5476,6 +5489,7 @@ var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
 var $author$project$Save$subscriptions = function (_v0) {
 	return $elm$core$Platform$Sub$none;
 };
+var $author$project$Save$Stale = {$: 'Stale'};
 var $elm$browser$Browser$Navigation$load = _Browser_load;
 var $krisajenkins$remotedata$RemoteData$Loading = {$: 'Loading'};
 var $author$project$Note$Note = F2(
@@ -6394,6 +6408,14 @@ var $author$project$Save$saveNote = function (model) {
 					])));
 	}
 };
+var $author$project$Save$saveStatusFromResponse = F2(
+	function (prevSaveStatus, remoteData) {
+		if (remoteData.$ === 'Success') {
+			return $author$project$Save$Saved;
+		} else {
+			return prevSaveStatus;
+		}
+	});
 var $author$project$Save$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
@@ -6403,7 +6425,7 @@ var $author$project$Save$update = F2(
 				var noteText = msg.a;
 				var updatedModel = _Utils_update(
 					model,
-					{noteText: noteText});
+					{noteText: noteText, saveStatus: $author$project$Save$Stale});
 				return _Utils_Tuple2(
 					updatedModel,
 					$author$project$Save$scribMessage(
@@ -6411,7 +6433,7 @@ var $author$project$Save$update = F2(
 			case 'NewNote':
 				var updatedModel = _Utils_update(
 					model,
-					{noteId: $krisajenkins$remotedata$RemoteData$NotAsked, noteText: ''});
+					{noteId: $krisajenkins$remotedata$RemoteData$NotAsked, noteText: '', saveStatus: $author$project$Save$NotSaved});
 				return _Utils_Tuple2(
 					updatedModel,
 					$author$project$Save$scribMessage(
@@ -6425,7 +6447,10 @@ var $author$project$Save$update = F2(
 				return $author$project$ElmCommon$onlyModel(
 					_Utils_update(
 						model,
-						{noteId: noteResponse}));
+						{
+							noteId: noteResponse,
+							saveStatus: A2($author$project$Save$saveStatusFromResponse, model.saveStatus, noteResponse)
+						}));
 		}
 	});
 var $elm$json$Json$Decode$value = _Json_decodeValue;
@@ -6508,6 +6533,44 @@ var $elm$html$Html$Attributes$classList = function (classes) {
 				$elm$core$List$map,
 				$elm$core$Tuple$first,
 				A2($elm$core$List$filter, $elm$core$Tuple$second, classes))));
+};
+var $author$project$ElmCommon$addClasses = function (classes) {
+	return A2($elm$core$List$map, $elm$html$Html$Attributes$class, classes);
+};
+var $elm$html$Html$span = _VirtualDom_node('span');
+var $author$project$Save$modifiedTag = function (saveStatus) {
+	switch (saveStatus.$) {
+		case 'Saved':
+			return A2(
+				$elm$html$Html$span,
+				$author$project$ElmCommon$addClasses(
+					_List_fromArray(
+						['tag', 'is-success'])),
+				_List_fromArray(
+					[
+						$elm$html$Html$text('+')
+					]));
+		case 'Stale':
+			return A2(
+				$elm$html$Html$span,
+				$author$project$ElmCommon$addClasses(
+					_List_fromArray(
+						['tag', 'is-info'])),
+				_List_fromArray(
+					[
+						$elm$html$Html$text('*')
+					]));
+		default:
+			return A2(
+				$elm$html$Html$span,
+				$author$project$ElmCommon$addClasses(
+					_List_fromArray(
+						['tag', 'is-info'])),
+				_List_fromArray(
+					[
+						$elm$html$Html$text('?')
+					]));
+	}
 };
 var $elm$virtual_dom$VirtualDom$Normal = function (a) {
 	return {$: 'Normal', a: a};
@@ -6612,7 +6675,8 @@ var $author$project$Save$viewControls = function (model) {
 				_List_fromArray(
 					[
 						$elm$html$Html$text('View Notes')
-					]))
+					])),
+				$author$project$Save$modifiedTag(model.saveStatus)
 			]));
 };
 var $author$project$Save$NoteEdited = function (a) {
@@ -6671,9 +6735,6 @@ var $author$project$Save$viewNotesTextArea = function (model) {
 				$elm$html$Html$Attributes$value(model.noteText)
 			]),
 		_List_Nil);
-};
-var $author$project$ElmCommon$addClasses = function (classes) {
-	return A2($elm$core$List$map, $elm$html$Html$Attributes$class, classes);
 };
 var $author$project$ElmCommon$addFailureAlert = function (textValue) {
 	return A2(
