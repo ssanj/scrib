@@ -48,25 +48,28 @@ type NoteWithContent = NoteWithoutId String
 type Note = BrandNewNote
           | HavingContent NoteWithContent
 
+type ContentStatus = NeedsToSave
+                   | UpToDate
+
 type alias Model =
   {
     note: Note
   , dataSource: DataSource
   , remoteSaveStatus: RemoteNoteData
-  --, noteContentStatus: SaveStatus
+  , noteContentStatus: ContentStatus
   }
 
 
 init : E.Value -> (Model, Cmd Msg)
 init json =
-  let result = D.decodeValue (modelDecoder LocalLoad) json
+  let result = D.decodeValue modelDecoder json
   in case result of
     Ok model  -> (model, scribMessage <| encode PreviewMessage model)
     Err _     -> onlyModel defaultModel
 
 
 defaultModel: Model
-defaultModel = Model BrandNewNote InitNote NotAsked
+defaultModel = Model BrandNewNote InitNote NotAsked UpToDate
 
 --
 -- UPDATE
@@ -91,9 +94,9 @@ update msg model =
     (NoteEditedMsg newNoteText) ->
        let updatedModel =
             case model.note of
-              BrandNewNote                          -> { model | note = HavingContent <| NoteWithoutId newNoteText }
-              (HavingContent (NoteWithoutId _))     -> { model | note = HavingContent <| NoteWithoutId newNoteText }
-              (HavingContent (NoteWithId noteId _)) -> { model | note = HavingContent <| NoteWithId noteId newNoteText }
+              BrandNewNote                          -> { model | note = HavingContent <| NoteWithoutId newNoteText,     noteContentStatus  = NeedsToSave }
+              (HavingContent (NoteWithoutId _))     -> { model | note = HavingContent <| NoteWithoutId newNoteText,     noteContentStatus  = NeedsToSave }
+              (HavingContent (NoteWithId noteId _)) -> { model | note = HavingContent <| NoteWithId noteId newNoteText, noteContentStatus  = NeedsToSave }
        in (updatedModel, scribMessage (encode PreviewMessage updatedModel))
 
     NewNoteMsg ->
@@ -107,8 +110,12 @@ update msg model =
             case model.note of
               BrandNewNote            -> model.note -- illegal
               (HavingContent content) -> HavingContent <| noteFromRemoteSave content noteResponse
-          updatedModel = {model | remoteSaveStatus = noteResponse, note = updatedNote }
+          updatedModel = {model | remoteSaveStatus = noteResponse, note = updatedNote, noteContentStatus = contentStatusFromRemoteSave noteResponse }
       in (updatedModel, sendSaveMessage updatedModel)
+
+contentStatusFromRemoteSave : RemoteNoteData -> ContentStatus
+contentStatusFromRemoteSave remoteData =
+  if RemoteData.isSuccess remoteData then UpToDate else NeedsToSave
 
 noteFromRemoteSave : NoteWithContent -> RemoteNoteData -> NoteWithContent
 noteFromRemoteSave existingNote remoteData =
@@ -117,12 +124,6 @@ noteFromRemoteSave existingNote remoteData =
     (NoteWithoutId _, _)  -> existingNote -- if we didn't succeed in updating the note, then there's no id to save
     ((NoteWithId _ _), _) -> existingNote -- if we already have an id, then there's nothing to update
 
-
---saveStatusFromResponse : SaveStatus -> RemoteNoteData Int -> SaveStatus
---saveStatusFromResponse prevSaveStatus remoteData =
---  case remoteData of
---   (Success _) -> Saved
---   _           -> prevSaveStatus
 
 saveNote: Model -> (Model, Cmd Msg)
 saveNote model =
@@ -227,25 +228,21 @@ viewControls model =
         ]
         , button [ id "view-notes-button", class "button", class "is-text", onClick ViewNoteMsg ]
             [ text "View Notes" ]
-        --, modifiedTag model.saveStatus
+        , modifiedTag model.noteContentStatus
 
     ]
 
---modifiedTag : SaveStatus -> Html a
---modifiedTag saveStatus =
---  case saveStatus of
---    Saved    ->
---        span
---          (addClasses ["tag", "is-success"])
---          [ text "+" ]
---    Stale    ->
---        span
---          (addClasses ["tag", "is-info"])
---          [ text "*" ]
---    NotSaved ->
---        span
---          (addClasses ["tag", "is-info"])
---          [ text "?" ]
+modifiedTag : ContentStatus -> Html a
+modifiedTag contentStatus =
+  case contentStatus of
+    UpToDate    ->
+        span
+          (addClasses ["tag", "is-success"])
+          [ text "+" ]
+    NeedsToSave    ->
+        span
+          (addClasses ["tag", "is-info"])
+          [ text "*" ]
 
 viewSaveButton: Model -> Html Msg
 viewSaveButton model =
@@ -331,15 +328,15 @@ getNoteText note =
     (HavingContent (NoteWithId _ noteText))  -> noteText
     (HavingContent (NoteWithoutId noteText)) -> noteText
 
-modelDecoder : DataSource -> D.Decoder Model
-modelDecoder ds =
+modelDecoder : D.Decoder Model
+modelDecoder =
   let maybeNoteId   = D.maybe (D.field "noteId" D.int)
       noteText      =  (D.field "noteText" D.string)
       remoteSave    = NotAsked
       noteWithoutId = D.map (HavingContent << NoteWithoutId) noteText
       noteWithId    = \noteId -> D.map (HavingContent << NoteWithId noteId) noteText
       note          = D.andThen (maybe noteWithoutId noteWithId) maybeNoteId
-  in D.map (\n -> Model n ds remoteSave) note
+  in D.map (\n -> Model n LocalLoad remoteSave UpToDate) note
 
 --maybeToSaveStatus : Maybe a -> SaveStatus
 --maybeToSaveStatus = maybe NotSaved (const Saved)

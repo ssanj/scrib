@@ -54,15 +54,11 @@
     }
 
     function previewMarkdown(noteEvent) {
-      if (isDefined(marked) && isDefined(markdownView)) {
+      if (typeof marked !== 'undefined' && markdownView) {
         markdownView.innerHTML = marked(noteEvent.noteText, markedOptions);
       } else {
         console.log("error", "markdown renderer has not loaded.")
       }
-    }
-
-    function isDefined(myVal) {
-      return typeof myVal !== 'undefined'
     }
 
     function saveMessageToLocalStorage(noteEvent) {
