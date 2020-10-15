@@ -34,28 +34,27 @@ main =
 -- MODEL
 --
 
+-- Where did the note originate?
 type DataSource = LocalLoad
-                | RemoteSave
+                | InitNote
+                | UserCreated
 
-type alias NoteData a = {
-    dataSource: DataSource
-  , dataValue: a
-  }
+type alias RemoteNoteData = WebData Int
 
+type NoteWithContent = NoteWithoutId String
+                     | NoteWithId Int String
 
-type alias RemoteNoteData a = WebData (NoteData a)
-
+-- What information do we have about the note?
+type Note = BrandNewNote
+          | HavingContent NoteWithContent
 
 type alias Model =
   {
-    noteText: String
-  , noteId: RemoteNoteData Int
-  , saveStatus: SaveStatus
+    note: Note
+  , dataSource: DataSource
+  , remoteSaveStatus: RemoteNoteData
+  --, noteContentStatus: SaveStatus
   }
-
-type SaveStatus = NotSaved
-                | Saved
-                | Stale
 
 
 init : E.Value -> (Model, Cmd Msg)
@@ -67,7 +66,7 @@ init json =
 
 
 defaultModel: Model
-defaultModel = Model "" NotAsked NotSaved
+defaultModel = Model BrandNewNote InitNote NotAsked
 
 --
 -- UPDATE
@@ -77,67 +76,87 @@ type PortType = SaveMessage
               | PreviewMessage
 
 
-type Msg = NoteSaved
-         | NoteEdited String
-         | NewNote
-         | ViewNote
-         | NoteSaveResponse (RemoteNoteData Int)
+type Msg = NoteSavedMsg
+         | NoteEditedMsg String
+         | NewNoteMsg
+         | ViewNoteMsg
+         | NoteSaveResponseMsg RemoteNoteData
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    NoteSaved             -> saveNote model
-    (NoteEdited noteText) ->
-       let updatedModel = { model | noteText = noteText, saveStatus = Stale }
+    NoteSavedMsg -> saveNote model
+
+    (NoteEditedMsg newNoteText) ->
+       let updatedModel =
+            case model.note of
+              BrandNewNote                          -> { model | note = HavingContent <| NoteWithoutId newNoteText }
+              (HavingContent (NoteWithoutId _))     -> { model | note = HavingContent <| NoteWithoutId newNoteText }
+              (HavingContent (NoteWithId noteId _)) -> { model | note = HavingContent <| NoteWithId noteId newNoteText }
        in (updatedModel, scribMessage (encode PreviewMessage updatedModel))
-    NewNote               ->
-      let updatedModel = { model | noteText = "", noteId = NotAsked, saveStatus = NotSaved }
-      in (updatedModel, scribMessage (encode PreviewMessage updatedModel))
 
-    ViewNote              -> (model, Browser.Navigation.load "view.html")
-    (NoteSaveResponse noteResponse) -> onlyModel {model | noteId = noteResponse, saveStatus = saveStatusFromResponse model.saveStatus noteResponse}
+    NewNoteMsg ->
+      let updatedModel = { defaultModel | dataSource =  UserCreated }
+      in (updatedModel, scribMessage (encode PreviewMessage updatedModel)) -- TODO: we should be clearing the preview here not rendering it.
+
+    ViewNoteMsg -> (model, Browser.Navigation.load "view.html")
+
+    (NoteSaveResponseMsg noteResponse) ->
+      let updatedNote =
+            case model.note of
+              BrandNewNote            -> model.note -- illegal
+              (HavingContent content) -> HavingContent <| noteFromRemoteSave content noteResponse
+          updatedModel = {model | remoteSaveStatus = noteResponse, note = updatedNote }
+      in (updatedModel, sendSaveMessage updatedModel)
+
+noteFromRemoteSave : NoteWithContent -> RemoteNoteData -> NoteWithContent
+noteFromRemoteSave existingNote remoteData =
+  case (existingNote, remoteData) of
+    (NoteWithoutId noteText, Success noteId) -> NoteWithId noteId noteText
+    (NoteWithoutId _, _)  -> existingNote -- if we didn't succeed in updating the note, then there's no id to save
+    ((NoteWithId _ _), _) -> existingNote -- if we already have an id, then there's nothing to update
 
 
-saveStatusFromResponse : SaveStatus -> RemoteNoteData Int -> SaveStatus
-saveStatusFromResponse prevSaveStatus remoteData =
-  case remoteData of
-   (Success _) -> Saved
-   _           -> prevSaveStatus
+--saveStatusFromResponse : SaveStatus -> RemoteNoteData Int -> SaveStatus
+--saveStatusFromResponse prevSaveStatus remoteData =
+--  case remoteData of
+--   (Success _) -> Saved
+--   _           -> prevSaveStatus
 
 saveNote: Model -> (Model, Cmd Msg)
 saveNote model =
-  case model.noteId of
+  case model.remoteSaveStatus of
     Loading       -> (model, Cmd.none) -- still loading from a previous save...
     _             ->
-      let (newModel, remoteSaveCmd) = performSaveNote model
-      in (newModel, Cmd.batch [remoteSaveCmd, sendSaveMessage model])
+      case model.note of
+        BrandNewNote -> (model, Cmd.none)
+        HavingContent content ->
+          let  (newModel, remoteSaveCmd) = performSaveNote content model
+          in (newModel, Cmd.batch [remoteSaveCmd, sendSaveMessage newModel])
 
 sendSaveMessage: Model -> Cmd Msg
 sendSaveMessage model = scribMessage (encode SaveMessage model)
 
-
-
-performSaveNote: Model -> (Model, Cmd Msg)
-performSaveNote model =
+performSaveNote: NoteWithContent -> Model -> (Model, Cmd Msg)
+performSaveNote note model =
     let remoteCall =
           Http.post {
             url = "http://localhost:3000/note" -- This should be configurable
-          , body = Http.jsonBody <| encodeSaveNote model
+          , body = Http.jsonBody <| encodeSaveNote note
           , expect = Http.expectJson processSaveNoteResults D.int
           }
-    in ({model | noteId = Loading }, remoteCall)
+    in ({model | remoteSaveStatus = Loading }, remoteCall)
 
 
 processSaveNoteResults: Result Http.Error Int -> Msg
-processSaveNoteResults = processHttpResult (NoteData RemoteSave) NoteSaveResponse
+processSaveNoteResults = processHttpResult NoteSaveResponseMsg
 
 
-processHttpResult: (a -> b) -> (WebData b -> Msg) -> Result Http.Error a -> Msg
-processHttpResult toNotesData toMsg httpResult =
-  let result  = RemoteData.fromResult httpResult  -- WebData Int
-      result2 = RemoteData.map toNotesData result -- WebData (NotesData Int) == RemoteNoteData Int == RemoteData Http.Error (NotesData Int)
-  in toMsg result2
+processHttpResult: (RemoteNoteData -> Msg) -> Result Http.Error Int -> Msg
+processHttpResult toMsg httpResult   =
+  let result  = RemoteData.fromResult httpResult
+  in toMsg result
 
 --
 -- VIEW
@@ -170,27 +189,24 @@ viewNoteEditingArea : Model -> Html Msg
 viewNoteEditingArea model =
   plainDiv
     [
-      viewNotificationsArea model
-    , viewNotesTextArea model
-    , viewControls model
+      viewNotificationsArea model.remoteSaveStatus
+    , viewNotesTextArea model.note
+    , viewControls model -- TODO: Fix
     ]
 
 
-viewNotificationsArea: Model -> Html a
-viewNotificationsArea {noteId} =
-  case noteId of
-    Failure e              -> addFailureAlert <| "Save failed: " ++ fromHttpError e -- show error
-    (Success {dataSource}) ->
-      case dataSource of
-        RemoteSave -> addSuccessAlert "Saved note" -- only show for remote save
-        LocalLoad  -> hideAlertSpace -- do not show for local load
-    _              -> hideAlertSpace -- do not show for other states
+viewNotificationsArea: RemoteNoteData -> Html a
+viewNotificationsArea remoteSaveStatus =
+  case remoteSaveStatus of
+    Failure e   -> addFailureAlert <| "Save failed: " ++ fromHttpError e -- show error
+    (Success _) -> addSuccessAlert "Saved note"
+    _           -> hideAlertSpace
 
 
-viewNotesTextArea: Model -> Html Msg
-viewNotesTextArea model =
+viewNotesTextArea: Note -> Html Msg
+viewNotesTextArea note =
   textarea
-    [id "note-content", class "textarea", rows 10, placeholder "e.g. My awesome idea", onInput NoteEdited, value model.noteText]
+    [id "note-content", class "textarea", rows 10, placeholder "e.g. My awesome idea", onInput NoteEditedMsg, value <| getNoteText note]
     []
 
 
@@ -203,48 +219,48 @@ viewControls model =
           viewSaveButton model
         , button [
             id "new-note"
-          , onClick NewNote
+          , onClick NewNoteMsg
           , classList
-              [("button", True), ("is-text", True){--, ("is-hidden", not (hasBeenSaved model))--}]
+              [ ("button", True), ("is-text", True) ]
           ]
-            [text "New Note"]
+            [ text "New Note"]
         ]
-        , button [id "view-notes-button", class "button", class "is-text", onClick ViewNote]
-            [text "View Notes"]
-        , modifiedTag model.saveStatus
+        , button [ id "view-notes-button", class "button", class "is-text", onClick ViewNoteMsg ]
+            [ text "View Notes" ]
+        --, modifiedTag model.saveStatus
 
     ]
 
-modifiedTag : SaveStatus -> Html a
-modifiedTag saveStatus =
-  case saveStatus of
-    Saved    ->
-        span
-          (addClasses ["tag", "is-success"])
-          [ text "+" ]
-    Stale    ->
-        span
-          (addClasses ["tag", "is-info"])
-          [ text "*" ]
-    NotSaved ->
-        span
-          (addClasses ["tag", "is-info"])
-          [ text "?" ]
+--modifiedTag : SaveStatus -> Html a
+--modifiedTag saveStatus =
+--  case saveStatus of
+--    Saved    ->
+--        span
+--          (addClasses ["tag", "is-success"])
+--          [ text "+" ]
+--    Stale    ->
+--        span
+--          (addClasses ["tag", "is-info"])
+--          [ text "*" ]
+--    NotSaved ->
+--        span
+--          (addClasses ["tag", "is-info"])
+--          [ text "?" ]
 
 viewSaveButton: Model -> Html Msg
 viewSaveButton model =
   let showSpinner =
-        case model.noteId of
+        case model.remoteSaveStatus of
           Loading -> True
           _       -> False
   in button [
        id "save-note"
-       , onClick NoteSaved
+       , onClick NoteSavedMsg
        , classList
            [
              ("button", True)
            , ("is-success", True)
-           , ("is-static", not (hasContent model))
+           , ("is-static", not (hasContent model.note))
            , ("is-loading", showSpinner)
            ]
      ]
@@ -276,15 +292,14 @@ subscriptions _ = Sub.none
 -- JSON ENCODE/DECODE
 --
 
-encodeSaveNote: Model -> E.Value
-encodeSaveNote {noteText, noteId} =
-  let maybeId = remoteDataToMaybe noteId
-  in maybe (encodeUnsavedNote noteText) (\{dataValue} -> encodeSavedNote noteText dataValue) maybeId
-
+encodeSaveNote: NoteWithContent -> E.Value
+encodeSaveNote note =
+  case note of
+    (NoteWithoutId noteText)     -> encodeUnsavedNote noteText
+    (NoteWithId noteId noteText) -> encodeSavedNote noteText noteId
 
 encodeSavedNote: String -> Int -> E.Value
 encodeSavedNote noteText noteId = N.encodeNote <| N.Note noteText noteId
-
 
 encodeUnsavedNote: String -> E.Value
 encodeUnsavedNote noteText =
@@ -298,49 +313,67 @@ encode : PortType -> Model -> E.Value
 encode portType model =
   E.object
     [ ("eventType", E.string (showPortType portType))
-    , ("noteText", E.string model.noteText)
-    , ("noteId", maybe E.null E.int <| Maybe.map .dataValue (remoteDataToMaybe model.noteId))
+    , ("noteText", E.string <| getNoteText model.note)
+    , ("noteId", maybe E.null E.int <| getNoteId model.note)
     ]
 
+getNoteId : Note -> Maybe Int
+getNoteId note =
+  case note of
+    BrandNewNote           -> Nothing
+    (HavingContent (NoteWithId noteId _))  -> Just noteId
+    (HavingContent (NoteWithoutId _))      -> Nothing
+
+getNoteText : Note -> String
+getNoteText note =
+  case note of
+    BrandNewNote                             -> ""
+    (HavingContent (NoteWithId _ noteText))  -> noteText
+    (HavingContent (NoteWithoutId noteText)) -> noteText
 
 modelDecoder : DataSource -> D.Decoder Model
 modelDecoder ds =
-  let maybeNoteId = D.maybe (D.field "noteId" D.int)
-  in D.map3 Model
-      (D.field "noteText" D.string)
-      (D.map (maybeToRemoteData ds) maybeNoteId)
-      (D.map maybeToSaveStatus maybeNoteId)
+  let maybeNoteId   = D.maybe (D.field "noteId" D.int)
+      noteText      =  (D.field "noteText" D.string)
+      remoteSave    = NotAsked
+      noteWithoutId = D.map (HavingContent << NoteWithoutId) noteText
+      noteWithId    = \noteId -> D.map (HavingContent << NoteWithId noteId) noteText
+      note          = D.andThen (maybe noteWithoutId noteWithId) maybeNoteId
+  in D.map (\n -> Model n ds remoteSave) note
 
-maybeToSaveStatus : Maybe a -> SaveStatus
-maybeToSaveStatus = maybe NotSaved (const Saved)
+--maybeToSaveStatus : Maybe a -> SaveStatus
+--maybeToSaveStatus = maybe NotSaved (const Saved)
 
-maybeToRemoteData : DataSource ->  Maybe a -> RemoteNoteData a
-maybeToRemoteData ds maybeValue =
-  maybe NotAsked (Success << NoteData ds) maybeValue
+--maybeToRemoteData : DataSource ->  Maybe a -> RemoteNoteData a
+--maybeToRemoteData ds maybeValue =
+--  maybe NotAsked (Success << NoteData ds) maybeValue
 
 --
 -- UTIL
 --
 
-hasContent: Model -> Bool
-hasContent {noteText} = not (String.isEmpty noteText)
+hasContent: Note -> Bool
+hasContent note =
+  case note of
+    BrandNewNote -> False
+    (HavingContent (NoteWithoutId noteText)) -> not (String.isEmpty noteText)
+    (HavingContent (NoteWithId _ noteText))  -> not (String.isEmpty noteText)
+
+--hasBeenSaved: Model -> Bool
+--hasBeenSaved {noteId} = maybe False (const True) (remoteDataToMaybe noteId)
 
 
-hasBeenSaved: Model -> Bool
-hasBeenSaved {noteId} = maybe False (const True) (remoteDataToMaybe noteId)
-
-
-remoteDataToMaybe: RemoteData e a -> Maybe a
-remoteDataToMaybe remoteData =
-  case remoteData of
-    Success a -> Just a
-    _ -> Nothing
+--remoteDataToMaybe: RemoteData e a -> Maybe a
+--remoteDataToMaybe remoteData =
+--  case remoteData of
+--    Success a -> Just a
+--    _ -> Nothing
 
 
 showPortType: PortType -> String
 showPortType portType =
   case portType of
-    SaveMessage -> "save_message"
+    SaveMessage    -> "save_message"
     PreviewMessage -> "preview_message"
 
 
