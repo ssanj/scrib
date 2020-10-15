@@ -5,7 +5,7 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import ElmCommon exposing (..)
 
-import Html.Events exposing (onClick)
+import Html.Events exposing (onClick, onInput)
 import FP exposing (maybe)
 import Browser.Navigation
 
@@ -34,7 +34,7 @@ main =
 
 type alias Model =
   {
-    query: Maybe String
+    query: Maybe String -- TODO: We are not using this at the moment. Consider removing it.
   , notes: RemoteNotesData
   , selectedNote: Maybe N.Note
   }
@@ -61,19 +61,27 @@ init notes =
          Ok validNotes -> onlyModel { emptyModel | notes = Success validNotes }
          Err err       -> (
                             { emptyModel | notes = Loading }
-                          , Cmd.batch [getRemoteNotes, logMessage <| "Could not load view data: " ++ D.errorToString err]
+                          , Cmd.batch [getTopRemoteNotes, logMessage <| "Could not load view data: " ++ D.errorToString err]
                           )
 
 -- UPDATE
 
 
-getRemoteNotes: Cmd Msg
-getRemoteNotes =
+getTopRemoteNotes: Cmd Msg
+getTopRemoteNotes =
   Http.get {
     url = "http://localhost:3000/notes"
-  , expect = Http.expectJson (RemoteData.fromResult >> NotesResponse) N.decodeNotes
+  , expect = Http.expectJson (RemoteData.fromResult >> TopNotesResponse) N.decodeNotes
   }
 
+searchRemoteNotes: String -> Cmd Msg
+searchRemoteNotes query =
+  Http.get {
+    url = "http://localhost:3000/search?q=" ++ query
+  , expect = Http.expectJson (RemoteData.fromResult >> SearchNotesResponse) N.decodeNotes
+  }
+
+type SaveType = SaveResponse | DontSaveResponse
 
 type Msg = NoteSelected N.Note
          | NoteEdited N.Note
@@ -81,9 +89,11 @@ type Msg = NoteSelected N.Note
          | NoteRemovedFromLocalStorage
          | JSNotificationError String
          | AddNote
-         | SearchEdited
+         | SearchEdited String
          | SearchPerformed
-         | NotesResponse RemoteNotesData
+         | NotesRefreshed
+         | TopNotesResponse RemoteNotesData
+         | SearchNotesResponse RemoteNotesData
 
 
 
@@ -96,20 +106,23 @@ update msg model =
     NoteRemovedFromLocalStorage -> (model, Browser.Navigation.load "save.html")
     (JSNotificationError error) -> (model, scribMessage(encodeLogToConsole error))
     AddNote                     -> (model, scribMessage encodeRemoveFromLocalStorage)
-    (NotesResponse notes)       -> ({ model | notes = notes}, logResponseErrors notes)
-    SearchPerformed             -> ({ model | notes = Loading }, getRemoteNotes)
-    _                           -> onlyModel model
+    (TopNotesResponse notes)    -> ({ model | notes = notes}, logResponseErrors SaveResponse notes)
+    (SearchNotesResponse notes) -> ({ model | notes = notes}, logResponseErrors DontSaveResponse notes)
+    NotesRefreshed              -> ({ model | notes = Loading }, getTopRemoteNotes)
+    (SearchEdited query)        -> (model, searchRemoteNotes query)
+    SearchPerformed             -> (model, searchRemoteNotes "")
 
 
 logMessage: String -> Cmd Msg
 logMessage = scribMessage << encodeLogToConsole
 
-logResponseErrors: RemoteNotesData -> Cmd Msg
-logResponseErrors remoteData =
-  case remoteData of
-    Failure e     -> scribMessage <| encodeLogToConsole <| fromHttpError e
-    Success notes -> scribMessage <| encodeViewNotes notes
-    _             -> Cmd.none
+logResponseErrors: SaveType -> RemoteNotesData -> Cmd Msg
+logResponseErrors saveContent remoteData =
+  case (saveContent, remoteData) of
+    (_, Failure e)                -> scribMessage <| encodeLogToConsole <| fromHttpError e
+    (SaveResponse, Success notes) -> scribMessage <| encodeViewNotes notes
+    (DontSaveResponse, Success _) -> Cmd.none
+    (_, _)                        -> Cmd.none
 
 
 -- VIEW
@@ -134,12 +147,12 @@ view model =
             , p [ class "panel-tabs" ]
               [ button [ class "button", class "is-text", onClick AddNote]
                 [ text "Add Note" ]
-              , button [ class "button", class "is-text", onClick SearchPerformed ]
+              , button [ class "button", class "is-text", onClick NotesRefreshed ]
                 [ text "Refresh" ]
               ]
             , div [ class "panel-block" ]
               [ p [ class "control has-icons-left" ]
-                [ input [ class "input", class "is-primary", placeholder "Search", type_ "text" ]
+                [ input [ class "input", class "is-primary", placeholder "Search", type_ "text", onInput SearchEdited ]
                   []
                 , span [ class "icon is-left" ]
                   [ i [ attribute "aria-hidden" "true", class "fas", class "fa-search" ]

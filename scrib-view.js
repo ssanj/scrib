@@ -5345,8 +5345,8 @@ var $author$project$View$Model = F3(
 	});
 var $krisajenkins$remotedata$RemoteData$NotAsked = {$: 'NotAsked'};
 var $author$project$View$emptyModel = A3($author$project$View$Model, $elm$core$Maybe$Nothing, $krisajenkins$remotedata$RemoteData$NotAsked, $elm$core$Maybe$Nothing);
-var $author$project$View$NotesResponse = function (a) {
-	return {$: 'NotesResponse', a: a};
+var $author$project$View$TopNotesResponse = function (a) {
+	return {$: 'TopNotesResponse', a: a};
 };
 var $elm$core$Basics$composeR = F3(
 	function (f, g, x) {
@@ -6147,11 +6147,11 @@ var $elm$http$Http$get = function (r) {
 	return $elm$http$Http$request(
 		{body: $elm$http$Http$emptyBody, expect: r.expect, headers: _List_Nil, method: 'GET', timeout: $elm$core$Maybe$Nothing, tracker: $elm$core$Maybe$Nothing, url: r.url});
 };
-var $author$project$View$getRemoteNotes = $elm$http$Http$get(
+var $author$project$View$getTopRemoteNotes = $elm$http$Http$get(
 	{
 		expect: A2(
 			$elm$http$Http$expectJson,
-			A2($elm$core$Basics$composeR, $krisajenkins$remotedata$RemoteData$fromResult, $author$project$View$NotesResponse),
+			A2($elm$core$Basics$composeR, $krisajenkins$remotedata$RemoteData$fromResult, $author$project$View$TopNotesResponse),
 			$author$project$Note$decodeNotes),
 		url: 'http://localhost:3000/notes'
 	});
@@ -6227,7 +6227,7 @@ var $author$project$View$init = function (notes) {
 			$elm$core$Platform$Cmd$batch(
 				_List_fromArray(
 					[
-						$author$project$View$getRemoteNotes,
+						$author$project$View$getTopRemoteNotes,
 						$author$project$View$logMessage(
 						'Could not load view data: ' + $elm$json$Json$Decode$errorToString(err))
 					])));
@@ -6275,7 +6275,9 @@ var $author$project$View$subscriptions = function (_v0) {
 	return $author$project$View$jsMessage(
 		A2($elm$core$Basics$composeL, handleDecoded, decoded));
 };
+var $author$project$View$DontSaveResponse = {$: 'DontSaveResponse'};
 var $author$project$View$PreviewMessage = {$: 'PreviewMessage'};
+var $author$project$View$SaveResponse = {$: 'SaveResponse'};
 var $author$project$View$SaveToLocalStorage = {$: 'SaveToLocalStorage'};
 var $elm$json$Json$Encode$int = _Json_wrap;
 var $author$project$View$encode = F2(
@@ -6359,20 +6361,41 @@ var $author$project$View$fromHttpError = function (error) {
 			return 'bad body: ' + body;
 	}
 };
-var $author$project$View$logResponseErrors = function (remoteData) {
-	switch (remoteData.$) {
-		case 'Failure':
-			var e = remoteData.a;
-			return $author$project$View$scribMessage(
-				$author$project$View$encodeLogToConsole(
-					$author$project$View$fromHttpError(e)));
-		case 'Success':
-			var notes = remoteData.a;
-			return $author$project$View$scribMessage(
-				$author$project$View$encodeViewNotes(notes));
-		default:
-			return $elm$core$Platform$Cmd$none;
-	}
+var $author$project$View$logResponseErrors = F2(
+	function (saveContent, remoteData) {
+		var _v0 = _Utils_Tuple2(saveContent, remoteData);
+		switch (_v0.b.$) {
+			case 'Failure':
+				var e = _v0.b.a;
+				return $author$project$View$scribMessage(
+					$author$project$View$encodeLogToConsole(
+						$author$project$View$fromHttpError(e)));
+			case 'Success':
+				if (_v0.a.$ === 'SaveResponse') {
+					var _v1 = _v0.a;
+					var notes = _v0.b.a;
+					return $author$project$View$scribMessage(
+						$author$project$View$encodeViewNotes(notes));
+				} else {
+					var _v2 = _v0.a;
+					return $elm$core$Platform$Cmd$none;
+				}
+			default:
+				return $elm$core$Platform$Cmd$none;
+		}
+	});
+var $author$project$View$SearchNotesResponse = function (a) {
+	return {$: 'SearchNotesResponse', a: a};
+};
+var $author$project$View$searchRemoteNotes = function (query) {
+	return $elm$http$Http$get(
+		{
+			expect: A2(
+				$elm$http$Http$expectJson,
+				A2($elm$core$Basics$composeR, $krisajenkins$remotedata$RemoteData$fromResult, $author$project$View$SearchNotesResponse),
+				$author$project$Note$decodeNotes),
+			url: 'http://localhost:3000/search?q=' + query
+		});
 };
 var $author$project$View$update = F2(
 	function (msg, model) {
@@ -6411,25 +6434,42 @@ var $author$project$View$update = F2(
 				return _Utils_Tuple2(
 					model,
 					$author$project$View$scribMessage($author$project$View$encodeRemoveFromLocalStorage));
-			case 'NotesResponse':
+			case 'TopNotesResponse':
 				var notes = msg.a;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{notes: notes}),
-					$author$project$View$logResponseErrors(notes));
-			case 'SearchPerformed':
+					A2($author$project$View$logResponseErrors, $author$project$View$SaveResponse, notes));
+			case 'SearchNotesResponse':
+				var notes = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{notes: notes}),
+					A2($author$project$View$logResponseErrors, $author$project$View$DontSaveResponse, notes));
+			case 'NotesRefreshed':
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{notes: $krisajenkins$remotedata$RemoteData$Loading}),
-					$author$project$View$getRemoteNotes);
+					$author$project$View$getTopRemoteNotes);
+			case 'SearchEdited':
+				var query = msg.a;
+				return _Utils_Tuple2(
+					model,
+					$author$project$View$searchRemoteNotes(query));
 			default:
-				return $author$project$ElmCommon$onlyModel(model);
+				return _Utils_Tuple2(
+					model,
+					$author$project$View$searchRemoteNotes(''));
 		}
 	});
 var $author$project$View$AddNote = {$: 'AddNote'};
-var $author$project$View$SearchPerformed = {$: 'SearchPerformed'};
+var $author$project$View$NotesRefreshed = {$: 'NotesRefreshed'};
+var $author$project$View$SearchEdited = function (a) {
+	return {$: 'SearchEdited', a: a};
+};
 var $elm$html$Html$article = _VirtualDom_node('article');
 var $elm$virtual_dom$VirtualDom$attribute = F2(
 	function (key, value) {
@@ -6556,6 +6596,37 @@ var $author$project$View$getNoteCount = function (remoteNoteData) {
 var $elm$html$Html$h1 = _VirtualDom_node('h1');
 var $elm$html$Html$i = _VirtualDom_node('i');
 var $elm$html$Html$input = _VirtualDom_node('input');
+var $elm$html$Html$Events$alwaysStop = function (x) {
+	return _Utils_Tuple2(x, true);
+};
+var $elm$virtual_dom$VirtualDom$MayStopPropagation = function (a) {
+	return {$: 'MayStopPropagation', a: a};
+};
+var $elm$html$Html$Events$stopPropagationOn = F2(
+	function (event, decoder) {
+		return A2(
+			$elm$virtual_dom$VirtualDom$on,
+			event,
+			$elm$virtual_dom$VirtualDom$MayStopPropagation(decoder));
+	});
+var $elm$json$Json$Decode$at = F2(
+	function (fields, decoder) {
+		return A3($elm$core$List$foldr, $elm$json$Json$Decode$field, decoder, fields);
+	});
+var $elm$html$Html$Events$targetValue = A2(
+	$elm$json$Json$Decode$at,
+	_List_fromArray(
+		['target', 'value']),
+	$elm$json$Json$Decode$string);
+var $elm$html$Html$Events$onInput = function (tagger) {
+	return A2(
+		$elm$html$Html$Events$stopPropagationOn,
+		'input',
+		A2(
+			$elm$json$Json$Decode$map,
+			$elm$html$Html$Events$alwaysStop,
+			A2($elm$json$Json$Decode$map, tagger, $elm$html$Html$Events$targetValue)));
+};
 var $elm$html$Html$p = _VirtualDom_node('p');
 var $elm$html$Html$Attributes$placeholder = $elm$html$Html$Attributes$stringProperty('placeholder');
 var $elm$html$Html$section = _VirtualDom_node('section');
@@ -6791,7 +6862,7 @@ var $author$project$View$view = function (model) {
 															[
 																$elm$html$Html$Attributes$class('button'),
 																$elm$html$Html$Attributes$class('is-text'),
-																$elm$html$Html$Events$onClick($author$project$View$SearchPerformed)
+																$elm$html$Html$Events$onClick($author$project$View$NotesRefreshed)
 															]),
 														_List_fromArray(
 															[
@@ -6821,7 +6892,8 @@ var $author$project$View$view = function (model) {
 																		$elm$html$Html$Attributes$class('input'),
 																		$elm$html$Html$Attributes$class('is-primary'),
 																		$elm$html$Html$Attributes$placeholder('Search'),
-																		$elm$html$Html$Attributes$type_('text')
+																		$elm$html$Html$Attributes$type_('text'),
+																		$elm$html$Html$Events$onInput($author$project$View$SearchEdited)
 																	]),
 																_List_Nil),
 																A2(

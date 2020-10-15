@@ -6371,12 +6371,27 @@ var $author$project$Save$performSaveNote = function (model) {
 			{noteId: $krisajenkins$remotedata$RemoteData$Loading}),
 		remoteCall);
 };
+var $author$project$Save$SaveMessage = {$: 'SaveMessage'};
+var $author$project$Save$sendSaveMessage = function (model) {
+	return $author$project$Save$scribMessage(
+		A2($author$project$Save$encode, $author$project$Save$SaveMessage, model));
+};
 var $author$project$Save$saveNote = function (model) {
 	var _v0 = model.noteId;
 	if (_v0.$ === 'Loading') {
 		return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 	} else {
-		return $author$project$Save$performSaveNote(model);
+		var _v1 = $author$project$Save$performSaveNote(model);
+		var newModel = _v1.a;
+		var remoteSaveCmd = _v1.b;
+		return _Utils_Tuple2(
+			newModel,
+			$elm$core$Platform$Cmd$batch(
+				_List_fromArray(
+					[
+						remoteSaveCmd,
+						$author$project$Save$sendSaveMessage(model)
+					])));
 	}
 };
 var $author$project$Save$update = F2(

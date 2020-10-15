@@ -83,8 +83,6 @@ update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
     NoteSaved             -> saveNote model
-      --let newModel = { model | noteId = Just 10 }
-      --in (newModel, scribMessage (encode SaveMessage newModel))
     (NoteEdited noteText) ->
        let updatedModel = { model | noteText = noteText }
        in (updatedModel, scribMessage (encode PreviewMessage updatedModel))
@@ -100,7 +98,13 @@ saveNote: Model -> (Model, Cmd Msg)
 saveNote model =
   case model.noteId of
     Loading       -> (model, Cmd.none) -- still loading from a previous save...
-    _             -> performSaveNote model
+    _             ->
+      let (newModel, remoteSaveCmd) = performSaveNote model
+      in (newModel, Cmd.batch [remoteSaveCmd, sendSaveMessage model])
+
+sendSaveMessage: Model -> Cmd Msg
+sendSaveMessage model = scribMessage (encode SaveMessage model)
+
 
 
 performSaveNote: Model -> (Model, Cmd Msg)
