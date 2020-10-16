@@ -7,7 +7,7 @@ import ElmCommon exposing (..)
 
 import Html.Events exposing (onClick, onInput)
 import FP exposing (maybe)
-import ApiKey exposing (ApiKey, apiKeyHeader, decodeApiKey, performApiKey)
+import ApiKey exposing (..)
 import Browser.Navigation
 
 import Browser

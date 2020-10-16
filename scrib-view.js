@@ -5328,11 +5328,11 @@ var $author$project$View$LocalNotes = F2(
 	function (apiKey, notes) {
 		return {apiKey: apiKey, notes: notes};
 	});
-var $author$project$View$ApiKey = function (value) {
+var $author$project$ApiKey$ApiKey = function (value) {
 	return {value: value};
 };
 var $elm$json$Json$Decode$string = _Json_decodeString;
-var $author$project$View$decodeApiKey = A2($elm$json$Json$Decode$map, $author$project$View$ApiKey, $elm$json$Json$Decode$string);
+var $author$project$ApiKey$decodeApiKey = A2($elm$json$Json$Decode$map, $author$project$ApiKey$ApiKey, $elm$json$Json$Decode$string);
 var $author$project$Note$Note = F2(
 	function (noteText, noteId) {
 		return {noteId: noteId, noteText: noteText};
@@ -5349,7 +5349,7 @@ var $author$project$Note$decodeNotes = $elm$json$Json$Decode$list($author$projec
 var $author$project$View$decodeLocalNotes = A3(
 	$elm$json$Json$Decode$map2,
 	$author$project$View$LocalNotes,
-	A2($elm$json$Json$Decode$field, 'apiKey', $author$project$View$decodeApiKey),
+	A2($elm$json$Json$Decode$field, 'apiKey', $author$project$ApiKey$decodeApiKey),
 	A2($elm$json$Json$Decode$field, 'notes', $author$project$Note$decodeNotes));
 var $elm$json$Json$Decode$decodeValue = _Json_run;
 var $author$project$View$Model = F4(
@@ -5366,7 +5366,7 @@ var $elm$http$Http$Header = F2(
 		return {$: 'Header', a: a, b: b};
 	});
 var $elm$http$Http$header = $elm$http$Http$Header;
-var $author$project$View$apiKeyHeader = function (apiKey) {
+var $author$project$ApiKey$apiKeyHeader = function (apiKey) {
 	return A2($elm$http$Http$header, 'X-API-KEY', apiKey.value);
 };
 var $elm$core$Basics$composeR = F3(
@@ -6174,7 +6174,7 @@ var $author$project$View$getTopRemoteNotes = function (apiKey) {
 				$author$project$Note$decodeNotes),
 			headers: _List_fromArray(
 				[
-					$author$project$View$apiKeyHeader(apiKey)
+					$author$project$ApiKey$apiKeyHeader(apiKey)
 				]),
 			method: 'GET',
 			timeout: $elm$core$Maybe$Nothing,
@@ -6425,7 +6425,7 @@ var $author$project$View$logResponseErrors = F2(
 				return $elm$core$Platform$Cmd$none;
 		}
 	});
-var $author$project$View$performApiKey = F3(
+var $author$project$ApiKey$performApiKey = F3(
 	function (maybeApiKey, _v0, _v1) {
 		var model1 = _v0.a;
 		var apiKeyCmd = _v0.b;
@@ -6443,7 +6443,7 @@ var $author$project$View$performApiKey = F3(
 var $author$project$View$performOrGotoConfig = F2(
 	function (oldModel, apiKeyCommand) {
 		return A3(
-			$author$project$View$performApiKey,
+			$author$project$ApiKey$performApiKey,
 			oldModel.apiKey,
 			apiKeyCommand,
 			_Utils_Tuple2(
@@ -6464,7 +6464,7 @@ var $author$project$View$searchRemoteNotes = F2(
 					$author$project$Note$decodeNotes),
 				headers: _List_fromArray(
 					[
-						$author$project$View$apiKeyHeader(apiKey)
+						$author$project$ApiKey$apiKeyHeader(apiKey)
 					]),
 				method: 'GET',
 				timeout: $elm$core$Maybe$Nothing,

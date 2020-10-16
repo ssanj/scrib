@@ -24,9 +24,10 @@
   <script>
 
     const appEditKey = 'scrib.edit';
+    const appApiKey  = 'scrib.api.key';
 
     const app = Elm.Save.init({
-      flags: loadEditFromLocalStorage(appEditKey),
+      flags: initLoad(appEditKey),
       node: document.getElementById('myapp')
     });
 
@@ -48,9 +49,11 @@
       }
     });
 
-    function loadEditFromLocalStorage(appKey) {
-      const storedData = localStorage.getItem(appKey);
-      return storedData ? JSON.parse(storedData) : null;
+    function initLoad(appKey) {
+      const storedData     = localStorage.getItem(appKey);
+      const noteForEditing = storedData ? JSON.parse(storedData) : null;
+      const apiKey         = localStorage.getItem(appApiKey);
+      return { "note" : noteForEditing, "apiKey" :  apiKey };
     }
 
     function previewMarkdown(noteEvent) {

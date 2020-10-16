@@ -1,0 +1,4 @@
+#!/bin/bash
+
+cp save.html view.html scrib-save.js scrib-view.js md.css /Volumes/Work/projects/code/haskell/toy/slate/static/
+echo "copied resources"

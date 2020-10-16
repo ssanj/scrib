@@ -4,6 +4,7 @@ import Html exposing (..)
 import RemoteData exposing (..)
 import Html.Attributes exposing (..)
 import ElmCommon exposing (..)
+import ApiKey exposing (..)
 
 import Html.Events exposing (onClick, onInput)
 import FP exposing (maybe, const)
@@ -51,25 +52,31 @@ type Note = BrandNewNote
 type ContentStatus = NeedsToSave
                    | UpToDate
 
+type alias LocalEdit = { apiKey: ApiKey, note: Note }
+
 type alias Model =
   {
     note: Note
   , dataSource: DataSource
   , remoteSaveStatus: RemoteNoteData
   , noteContentStatus: ContentStatus
+  , apiKey: Maybe ApiKey
   }
 
 
 init : E.Value -> (Model, Cmd Msg)
 init json =
-  let result = D.decodeValue modelDecoder json
-  in case result of
-    Ok model  -> (model, scribMessage <| encode PreviewMessage model)
-    Err _     -> onlyModel defaultModel
+  let localEdit = D.decodeValue decoderLocalEdits json
+  in case localEdit of
+    (Ok {apiKey, note})  ->
+      let model =
+            {defaultModel | note = note, apiKey = Just apiKey, dataSource = LocalLoad}
+      in (model, scribMessage <| encode PreviewMessage model)
+    Err _     -> (defaultModel, Browser.Navigation.load "config.html")
 
 
 defaultModel: Model
-defaultModel = Model BrandNewNote InitNote NotAsked UpToDate
+defaultModel = Model BrandNewNote InitNote NotAsked UpToDate Nothing
 
 --
 -- UPDATE
@@ -133,22 +140,42 @@ saveNote model =
       case model.note of
         BrandNewNote -> (model, Cmd.none)
         HavingContent content ->
-          let  (newModel, remoteSaveCmd) = performSaveNote content model
-          in (newModel, Cmd.batch [remoteSaveCmd, sendSaveMessage newModel])
+          let  (newModel, remoteSaveCmd) =  performOrGotoConfig model ({model | remoteSaveStatus = Loading }, performSaveNote content)
+          in (newModel, Cmd.batch [remoteSaveCmd, sendSaveMessage newModel]) -- TODO: Change this into a Task
 
 sendSaveMessage: Model -> Cmd Msg
 sendSaveMessage model = scribMessage (encode SaveMessage model)
 
-performSaveNote: NoteWithContent -> Model -> (Model, Cmd Msg)
-performSaveNote note model =
-    let remoteCall =
-          Http.post {
-            url = "http://localhost:3000/note" -- This should be configurable
-          , body = Http.jsonBody <| encodeSaveNote note
-          , expect = Http.expectJson processSaveNoteResults D.int
-          }
-    in ({model | remoteSaveStatus = Loading }, remoteCall)
 
+performSaveNote: NoteWithContent ->  ApiKey -> Cmd Msg
+performSaveNote note apiKey =
+  Http.request {
+   method    = "POST"
+  , headers  = [apiKeyHeader apiKey]
+  , url      = "http://localhost:3000/note"
+  , body     = Http.jsonBody <| encodeSaveNote note
+  , expect = Http.expectJson processSaveNoteResults D.int
+  , timeout  = Nothing
+  , tracker  = Nothing
+  }
+
+performOrGotoConfig : Model -> (Model, (ApiKey -> Cmd Msg)) -> (Model, Cmd Msg)
+performOrGotoConfig oldModel apiKeyCommand =
+  performApiKey
+    oldModel.apiKey
+    apiKeyCommand
+    (oldModel, Browser.Navigation.load "config.html")
+
+
+--performSaveNote: NoteWithContent -> Model -> ApiKey -> (Model, Cmd Msg)
+--performSaveNote note model =
+--    let remoteCall =
+--          Http.post {
+--            url = "http://localhost:3000/note" -- This should be configurable
+--          , body = Http.jsonBody <| encodeSaveNote note
+--          , expect = Http.expectJson processSaveNoteResults D.int
+--          }
+--    in ({model | remoteSaveStatus = Loading }, remoteCall)
 
 processSaveNoteResults: Result Http.Error Int -> Msg
 processSaveNoteResults = processHttpResult NoteSaveResponseMsg
@@ -328,22 +355,40 @@ getNoteText note =
     (HavingContent (NoteWithId _ noteText))  -> noteText
     (HavingContent (NoteWithoutId noteText)) -> noteText
 
-modelDecoder : D.Decoder Model
-modelDecoder =
-  let maybeNoteId   = D.maybe (D.field "noteId" D.int)
-      noteText      =  (D.field "noteText" D.string)
-      remoteSave    = NotAsked
-      noteWithoutId = D.map (HavingContent << NoteWithoutId) noteText
-      noteWithId    = \noteId -> D.map (HavingContent << NoteWithId noteId) noteText
-      note          = D.andThen (maybe noteWithoutId noteWithId) maybeNoteId
-  in D.map (\n -> Model n LocalLoad remoteSave UpToDate) note
+--decoderLocalEdits : D.Decoder Model
+--decoderLocalEdits =
+--  let maybeNoteId   = D.maybe (D.field "noteId" D.int)
+--      noteText      =  (D.field "noteText" D.string)
+--      remoteSave    = NotAsked
+--      noteWithoutId = D.map (HavingContent << NoteWithoutId) noteText
+--      noteWithId    = \noteId -> D.map (HavingContent << NoteWithId noteId) noteText
+--      note          = D.andThen (maybe noteWithoutId noteWithId) maybeNoteId
+--  in D.map (\n -> Model n LocalLoad remoteSave UpToDate) note
 
---maybeToSaveStatus : Maybe a -> SaveStatus
---maybeToSaveStatus = maybe NotSaved (const Saved)
+-- TODO: What happens if we go directly to Save without saving an edit?
+decoderLocalEdits : D.Decoder LocalEdit
+decoderLocalEdits =
+  let maybeNoteIdDecoder   = D.maybe (D.at ["note", "noteId"] D.int)
+      maybeNoteTextDecoder = D.maybe (D.at ["note", "noteText"] D.string)
+      apiKeyDecoder        = D.field "apiKey" decodeApiKey
+      noteDecoder          =
+        D.map2
+          maybeNoteContent
+          maybeNoteIdDecoder
+          maybeNoteTextDecoder
+  in D.map2
+      LocalEdit
+      apiKeyDecoder
+      noteDecoder
 
---maybeToRemoteData : DataSource ->  Maybe a -> RemoteNoteData a
---maybeToRemoteData ds maybeValue =
---  maybe NotAsked (Success << NoteData ds) maybeValue
+
+maybeNoteContent : Maybe Int -> Maybe String -> Note
+maybeNoteContent maybeNoteId maybeNoteText =
+  case (maybeNoteId, maybeNoteText) of
+    (Just noteId, Just noteText) -> HavingContent <| NoteWithId noteId noteText
+    (Just noteId, Nothing)       -> BrandNewNote -- technically shouldn't happen, treat it as no note
+    (Nothing, Just noteText)     -> HavingContent <| NoteWithoutId noteText
+    (Nothing, Nothing)           -> BrandNewNote
 
 --
 -- UTIL
@@ -355,16 +400,6 @@ hasContent note =
     BrandNewNote -> False
     (HavingContent (NoteWithoutId noteText)) -> not (String.isEmpty noteText)
     (HavingContent (NoteWithId _ noteText))  -> not (String.isEmpty noteText)
-
---hasBeenSaved: Model -> Bool
---hasBeenSaved {noteId} = maybe False (const True) (remoteDataToMaybe noteId)
-
-
---remoteDataToMaybe: RemoteData e a -> Maybe a
---remoteDataToMaybe remoteData =
---  case remoteData of
---    Success a -> Just a
---    _ -> Nothing
 
 
 showPortType: PortType -> String
