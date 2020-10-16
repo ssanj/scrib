@@ -7,6 +7,7 @@ import ElmCommon exposing (..)
 
 import Html.Events exposing (onClick, onInput)
 import FP exposing (maybe)
+import ApiKey exposing (ApiKey, apiKeyHeader, decodeApiKey, performApiKey)
 import Browser.Navigation
 
 import Browser
@@ -20,6 +21,7 @@ import Note        as N
 
 -- MAIN
 
+
 main: Program E.Value Model Msg
 main =
   Browser.element
@@ -32,7 +34,6 @@ main =
 
 -- MODEL
 
-type alias ApiKey = { value: String }
 
 type alias LocalNotes = { apiKey: ApiKey, notes: List N.Note }
 
@@ -76,11 +77,8 @@ init localNotes =
                             emptyModel, Browser.Navigation.load "config.html"
                           )
 
+
 -- UPDATE
-
-apiKeyHeader: ApiKey -> Http.Header
-apiKeyHeader apiKey = Http.header "X-API-KEY" apiKey.value
-
 
 
 getTopRemoteNotes: ApiKey -> Cmd Msg
@@ -94,12 +92,6 @@ getTopRemoteNotes apiKey =
   , timeout  = Nothing
   , tracker  = Nothing
   }
-
-
-  --Http.get {
-  --  url = "http://localhost:3000/notes"
-  --, expect = Http.expectJson (RemoteData.fromResult >> TopNotesResponse) N.decodeNotes
-  --}
 
 searchRemoteNotes: String -> ApiKey -> Cmd Msg
 searchRemoteNotes query apiKey =
@@ -127,8 +119,6 @@ type Msg = NoteSelected N.Note
          | TopNotesResponse RemoteNotesData
          | SearchNotesResponse RemoteNotesData
 
-
-
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
@@ -145,13 +135,11 @@ update msg model =
     --SearchPerformed             -> (model, searchRemoteNotes "")
 
 performOrGotoConfig : Model -> (Model, (ApiKey -> Cmd Msg)) -> (Model, Cmd Msg)
-performOrGotoConfig oldModel apiKeyCommand = performApiKey oldModel.apiKey apiKeyCommand (oldModel, Browser.Navigation.load "config.html")
-
-performApiKey : Maybe ApiKey -> (Model, (ApiKey -> Cmd Msg)) -> (Model, Cmd Msg) -> (Model, Cmd Msg)
-performApiKey maybeApiKey (model1, apiKeyCmd) (model2, nonApiKeyCmd) =
-  case maybeApiKey of
-    Just apiKey -> (model1, apiKeyCmd apiKey)
-    Nothing     -> (model2, nonApiKeyCmd)
+performOrGotoConfig oldModel apiKeyCommand =
+  performApiKey
+    oldModel.apiKey
+    apiKeyCommand
+    (oldModel, Browser.Navigation.load "config.html")
 
 logMessage: String -> Cmd Msg
 logMessage = scribMessage << encodeLogToConsole
@@ -344,9 +332,6 @@ encodeViewNotes notes =
     , ("view_data", E.list N.encodeNote notes)
     ]
 
-
-decodeApiKey : D.Decoder ApiKey
-decodeApiKey = D.map ApiKey D.string
 
 decodeLocalNotes : D.Decoder LocalNotes
 decodeLocalNotes  =
