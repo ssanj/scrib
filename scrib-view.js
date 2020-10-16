@@ -6425,11 +6425,36 @@ var $author$project$View$logResponseErrors = F2(
 				return $elm$core$Platform$Cmd$none;
 		}
 	});
+var $author$project$View$performApiKey = F3(
+	function (maybeApiKey, _v0, _v1) {
+		var model1 = _v0.a;
+		var apiKeyCmd = _v0.b;
+		var model2 = _v1.a;
+		var nonApiKeyCmd = _v1.b;
+		if (maybeApiKey.$ === 'Just') {
+			var apiKey = maybeApiKey.a;
+			return _Utils_Tuple2(
+				model1,
+				apiKeyCmd(apiKey));
+		} else {
+			return _Utils_Tuple2(model2, nonApiKeyCmd);
+		}
+	});
+var $author$project$View$performOrGotoConfig = F2(
+	function (oldModel, apiKeyCommand) {
+		return A3(
+			$author$project$View$performApiKey,
+			oldModel.apiKey,
+			apiKeyCommand,
+			_Utils_Tuple2(
+				oldModel,
+				$elm$browser$Browser$Navigation$load('config.html')));
+	});
 var $author$project$View$SearchNotesResponse = function (a) {
 	return {$: 'SearchNotesResponse', a: a};
 };
 var $author$project$View$searchRemoteNotes = F2(
-	function (apiKey, query) {
+	function (query, apiKey) {
 		return $elm$http$Http$request(
 			{
 				body: $elm$http$Http$emptyBody,
@@ -6499,36 +6524,22 @@ var $author$project$View$update = F2(
 						{notes: notes}),
 					A2($author$project$View$logResponseErrors, $author$project$View$DontSaveResponse, notes));
 			case 'NotesRefreshed':
-				var _v1 = model.apiKey;
-				if (_v1.$ === 'Just') {
-					var apiKey = _v1.a;
-					return _Utils_Tuple2(
+				return A2(
+					$author$project$View$performOrGotoConfig,
+					model,
+					_Utils_Tuple2(
 						_Utils_update(
 							model,
 							{notes: $krisajenkins$remotedata$RemoteData$Loading}),
-						$author$project$View$getTopRemoteNotes(apiKey));
-				} else {
-					return _Utils_Tuple2(
-						_Utils_update(
-							model,
-							{notes: $krisajenkins$remotedata$RemoteData$Loading}),
-						$elm$browser$Browser$Navigation$load('config.html'));
-				}
+						$author$project$View$getTopRemoteNotes));
 			default:
 				var query = msg.a;
-				var _v2 = model.apiKey;
-				if (_v2.$ === 'Just') {
-					var apiKey = _v2.a;
-					return _Utils_Tuple2(
+				return A2(
+					$author$project$View$performOrGotoConfig,
+					model,
+					_Utils_Tuple2(
 						model,
-						A2($author$project$View$searchRemoteNotes, apiKey, query));
-				} else {
-					return _Utils_Tuple2(
-						_Utils_update(
-							model,
-							{notes: $krisajenkins$remotedata$RemoteData$Loading}),
-						$elm$browser$Browser$Navigation$load('config.html'));
-				}
+						$author$project$View$searchRemoteNotes(query)));
 		}
 	});
 var $author$project$View$AddNote = {$: 'AddNote'};

@@ -101,8 +101,8 @@ getTopRemoteNotes apiKey =
   --, expect = Http.expectJson (RemoteData.fromResult >> TopNotesResponse) N.decodeNotes
   --}
 
-searchRemoteNotes: ApiKey -> String -> Cmd Msg
-searchRemoteNotes apiKey query =
+searchRemoteNotes: String -> ApiKey -> Cmd Msg
+searchRemoteNotes query apiKey =
   Http.request {
    method    = "GET"
   , headers  = [apiKeyHeader apiKey]
@@ -140,18 +140,18 @@ update msg model =
     AddNote                     -> (model, scribMessage encodeRemoveFromLocalStorage)
     (TopNotesResponse notes)    -> ({ model | notes = notes}, logResponseErrors SaveResponse notes)
     (SearchNotesResponse notes) -> ({ model | notes = notes}, logResponseErrors DontSaveResponse notes)
-    NotesRefreshed              ->
-      case model.apiKey of
-        Just apiKey ->  ({ model | notes = Loading }, getTopRemoteNotes apiKey)
-        Nothing     ->  ({ model | notes = Loading }, Browser.Navigation.load "config.html")
-
-    (SearchEdited query)        ->
-      case model.apiKey of
-        Just apiKey -> (model, searchRemoteNotes apiKey query)
-        Nothing     -> ({ model | notes = Loading }, Browser.Navigation.load "config.html")
-
+    NotesRefreshed              -> performOrGotoConfig model ({ model | notes = Loading }, getTopRemoteNotes)
+    (SearchEdited query)        -> performOrGotoConfig model (model, searchRemoteNotes query)
     --SearchPerformed             -> (model, searchRemoteNotes "")
 
+performOrGotoConfig : Model -> (Model, (ApiKey -> Cmd Msg)) -> (Model, Cmd Msg)
+performOrGotoConfig oldModel apiKeyCommand = performApiKey oldModel.apiKey apiKeyCommand (oldModel, Browser.Navigation.load "config.html")
+
+performApiKey : Maybe ApiKey -> (Model, (ApiKey -> Cmd Msg)) -> (Model, Cmd Msg) -> (Model, Cmd Msg)
+performApiKey maybeApiKey (model1, apiKeyCmd) (model2, nonApiKeyCmd) =
+  case maybeApiKey of
+    Just apiKey -> (model1, apiKeyCmd apiKey)
+    Nothing     -> (model2, nonApiKeyCmd)
 
 logMessage: String -> Cmd Msg
 logMessage = scribMessage << encodeLogToConsole
