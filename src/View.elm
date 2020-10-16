@@ -32,11 +32,16 @@ main =
 
 -- MODEL
 
+type alias ApiKey = { value: String }
+
+type alias LocalNotes = { apiKey: ApiKey, notes: List N.Note }
+
 type alias Model =
   {
     query: Maybe String -- TODO: We are not using this at the moment. Consider removing it.
   , notes: RemoteNotesData
   , selectedNote: Maybe N.Note
+  , apiKey: Maybe ApiKey -- How can I make this mandatory? An ADT of models?
   }
 
 type alias RemoteNotesData = WebData (List N.Note)
@@ -51,34 +56,61 @@ type JsResponseEvent = SavedToLocalStorage
                      | RemovedFromLocalStorage
 
 emptyModel: Model
-emptyModel = Model Nothing NotAsked Nothing
+emptyModel = Model Nothing NotAsked Nothing Nothing
 
 
 init : E.Value -> (Model, Cmd Msg)
-init notes =
-    let decodeResult = D.decodeValue N.decodeNotes notes
+init localNotes =
+    let decodeResult = D.decodeValue decodeLocalNotes localNotes
     in case decodeResult of
-         Ok validNotes -> onlyModel { emptyModel | notes = Success validNotes }
+         (Ok {apiKey, notes}) ->
+           let mc =
+                if List.isEmpty notes
+                  then (
+                         { emptyModel | notes = Loading, apiKey = Just apiKey }
+                       , Cmd.batch [getTopRemoteNotes apiKey, logMessage <| "No cached data, refreshing"]
+                       )
+                  else onlyModel { emptyModel | notes = Success notes, apiKey = Just apiKey }
+           in mc
          Err err       -> (
-                            { emptyModel | notes = Loading }
-                          , Cmd.batch [getTopRemoteNotes, logMessage <| "Could not load view data: " ++ D.errorToString err]
+                            emptyModel, Browser.Navigation.load "config.html"
                           )
 
 -- UPDATE
 
+apiKeyHeader: ApiKey -> Http.Header
+apiKeyHeader apiKey = Http.header "X-API-KEY" apiKey.value
 
-getTopRemoteNotes: Cmd Msg
-getTopRemoteNotes =
-  Http.get {
-    url = "http://localhost:3000/notes"
-  , expect = Http.expectJson (RemoteData.fromResult >> TopNotesResponse) N.decodeNotes
+
+
+getTopRemoteNotes: ApiKey -> Cmd Msg
+getTopRemoteNotes apiKey =
+  Http.request {
+   method    = "GET"
+  , headers  = [apiKeyHeader apiKey]
+  , url      = "http://localhost:3000/notes"
+  , body     = Http.emptyBody
+  , expect   = Http.expectJson (RemoteData.fromResult >> TopNotesResponse) N.decodeNotes
+  , timeout  = Nothing
+  , tracker  = Nothing
   }
 
-searchRemoteNotes: String -> Cmd Msg
-searchRemoteNotes query =
-  Http.get {
-    url = "http://localhost:3000/search?q=" ++ query
+
+  --Http.get {
+  --  url = "http://localhost:3000/notes"
+  --, expect = Http.expectJson (RemoteData.fromResult >> TopNotesResponse) N.decodeNotes
+  --}
+
+searchRemoteNotes: ApiKey -> String -> Cmd Msg
+searchRemoteNotes apiKey query =
+  Http.request {
+   method    = "GET"
+  , headers  = [apiKeyHeader apiKey]
+  , url = "http://localhost:3000/search?q=" ++ query
+  , body     = Http.emptyBody
   , expect = Http.expectJson (RemoteData.fromResult >> SearchNotesResponse) N.decodeNotes
+  , timeout  = Nothing
+  , tracker  = Nothing
   }
 
 type SaveType = SaveResponse | DontSaveResponse
@@ -90,7 +122,7 @@ type Msg = NoteSelected N.Note
          | JSNotificationError String
          | AddNote
          | SearchEdited String
-         | SearchPerformed
+         --| SearchPerformed
          | NotesRefreshed
          | TopNotesResponse RemoteNotesData
          | SearchNotesResponse RemoteNotesData
@@ -108,9 +140,17 @@ update msg model =
     AddNote                     -> (model, scribMessage encodeRemoveFromLocalStorage)
     (TopNotesResponse notes)    -> ({ model | notes = notes}, logResponseErrors SaveResponse notes)
     (SearchNotesResponse notes) -> ({ model | notes = notes}, logResponseErrors DontSaveResponse notes)
-    NotesRefreshed              -> ({ model | notes = Loading }, getTopRemoteNotes)
-    (SearchEdited query)        -> (model, searchRemoteNotes query)
-    SearchPerformed             -> (model, searchRemoteNotes "")
+    NotesRefreshed              ->
+      case model.apiKey of
+        Just apiKey ->  ({ model | notes = Loading }, getTopRemoteNotes apiKey)
+        Nothing     ->  ({ model | notes = Loading }, Browser.Navigation.load "config.html")
+
+    (SearchEdited query)        ->
+      case model.apiKey of
+        Just apiKey -> (model, searchRemoteNotes apiKey query)
+        Nothing     -> ({ model | notes = Loading }, Browser.Navigation.load "config.html")
+
+    --SearchPerformed             -> (model, searchRemoteNotes "")
 
 
 logMessage: String -> Cmd Msg
@@ -287,6 +327,7 @@ encodeLogToConsole  error =
     , ("output", E.string error)
     ]
 
+-- TODO: Create an encapsulating type for a Note + Port Type
 encode : PortType -> N.Note -> E.Value
 encode portType model =
   E.object
@@ -302,6 +343,17 @@ encodeViewNotes notes =
     [ ("eventType", E.string (showPortType SaveToSessionStorage))
     , ("view_data", E.list N.encodeNote notes)
     ]
+
+
+decodeApiKey : D.Decoder ApiKey
+decodeApiKey = D.map ApiKey D.string
+
+decodeLocalNotes : D.Decoder LocalNotes
+decodeLocalNotes  =
+  D.map2
+    LocalNotes
+    (D.field "apiKey" decodeApiKey)
+    (D.field "notes" N.decodeNotes)
 
 
 decoderJsResponseEvent: D.Decoder JsResponseEvent

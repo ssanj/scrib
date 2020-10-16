@@ -31,9 +31,10 @@
 
       const appEditKey = 'scrib.edit';
       const appViewKey = 'scrib.view';
+      const appApiKey  = 'scrib.api.key';
 
       const app = Elm.View.init({
-        flags: loadMessageToSessionStorage(appViewKey),
+        flags: initLoad(appViewKey),
         node: document.getElementById('myapp')
       });
 
@@ -88,9 +89,11 @@
         console.log("you saved your view: " + viewData);
       }
 
-     function loadMessageToSessionStorage(appKey) {
+     function initLoad(appKey) {
       const storedData = sessionStorage.getItem(appKey);
-      return storedData ? JSON.parse(storedData) : null;
+      const notes      = storedData ? JSON.parse(storedData) : null;
+      const apiKey     = localStorage.getItem(appApiKey);
+      return { "notes" : notes, "apiKey" :  apiKey };
     }
 
   </script>

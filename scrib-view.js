@@ -5324,13 +5324,21 @@ var $krisajenkins$remotedata$RemoteData$Success = function (a) {
 	return {$: 'Success', a: a};
 };
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
+var $author$project$View$LocalNotes = F2(
+	function (apiKey, notes) {
+		return {apiKey: apiKey, notes: notes};
+	});
+var $author$project$View$ApiKey = function (value) {
+	return {value: value};
+};
+var $elm$json$Json$Decode$string = _Json_decodeString;
+var $author$project$View$decodeApiKey = A2($elm$json$Json$Decode$map, $author$project$View$ApiKey, $elm$json$Json$Decode$string);
 var $author$project$Note$Note = F2(
 	function (noteText, noteId) {
 		return {noteId: noteId, noteText: noteText};
 	});
 var $elm$json$Json$Decode$field = _Json_decodeField;
 var $elm$json$Json$Decode$int = _Json_decodeInt;
-var $elm$json$Json$Decode$string = _Json_decodeString;
 var $author$project$Note$decodeNote = A3(
 	$elm$json$Json$Decode$map2,
 	$author$project$Note$Note,
@@ -5338,22 +5346,34 @@ var $author$project$Note$decodeNote = A3(
 	A2($elm$json$Json$Decode$field, 'noteId', $elm$json$Json$Decode$int));
 var $elm$json$Json$Decode$list = _Json_decodeList;
 var $author$project$Note$decodeNotes = $elm$json$Json$Decode$list($author$project$Note$decodeNote);
+var $author$project$View$decodeLocalNotes = A3(
+	$elm$json$Json$Decode$map2,
+	$author$project$View$LocalNotes,
+	A2($elm$json$Json$Decode$field, 'apiKey', $author$project$View$decodeApiKey),
+	A2($elm$json$Json$Decode$field, 'notes', $author$project$Note$decodeNotes));
 var $elm$json$Json$Decode$decodeValue = _Json_run;
-var $author$project$View$Model = F3(
-	function (query, notes, selectedNote) {
-		return {notes: notes, query: query, selectedNote: selectedNote};
+var $author$project$View$Model = F4(
+	function (query, notes, selectedNote, apiKey) {
+		return {apiKey: apiKey, notes: notes, query: query, selectedNote: selectedNote};
 	});
 var $krisajenkins$remotedata$RemoteData$NotAsked = {$: 'NotAsked'};
-var $author$project$View$emptyModel = A3($author$project$View$Model, $elm$core$Maybe$Nothing, $krisajenkins$remotedata$RemoteData$NotAsked, $elm$core$Maybe$Nothing);
+var $author$project$View$emptyModel = A4($author$project$View$Model, $elm$core$Maybe$Nothing, $krisajenkins$remotedata$RemoteData$NotAsked, $elm$core$Maybe$Nothing, $elm$core$Maybe$Nothing);
 var $author$project$View$TopNotesResponse = function (a) {
 	return {$: 'TopNotesResponse', a: a};
+};
+var $elm$http$Http$Header = F2(
+	function (a, b) {
+		return {$: 'Header', a: a, b: b};
+	});
+var $elm$http$Http$header = $elm$http$Http$Header;
+var $author$project$View$apiKeyHeader = function (apiKey) {
+	return A2($elm$http$Http$header, 'X-API-KEY', apiKey.value);
 };
 var $elm$core$Basics$composeR = F3(
 	function (f, g, x) {
 		return g(
 			f(x));
 	});
-var $elm$json$Json$Decode$decodeString = _Json_runOnString;
 var $elm$http$Http$BadStatus_ = F2(
 	function (a, b) {
 		return {$: 'BadStatus_', a: a, b: b};
@@ -5896,6 +5916,8 @@ var $elm$core$Dict$update = F3(
 			return A2($elm$core$Dict$remove, targetKey, dictionary);
 		}
 	});
+var $elm$http$Http$emptyBody = _Http_emptyBody;
+var $elm$json$Json$Decode$decodeString = _Json_runOnString;
 var $elm$http$Http$expectStringResponse = F2(
 	function (toMsg, toResult) {
 		return A3(
@@ -5974,7 +5996,6 @@ var $krisajenkins$remotedata$RemoteData$fromResult = function (result) {
 		return $krisajenkins$remotedata$RemoteData$Success(x);
 	}
 };
-var $elm$http$Http$emptyBody = _Http_emptyBody;
 var $elm$http$Http$Request = function (a) {
 	return {$: 'Request', a: a};
 };
@@ -6143,18 +6164,32 @@ var $elm$http$Http$request = function (r) {
 		$elm$http$Http$Request(
 			{allowCookiesFromOtherDomains: false, body: r.body, expect: r.expect, headers: r.headers, method: r.method, timeout: r.timeout, tracker: r.tracker, url: r.url}));
 };
-var $elm$http$Http$get = function (r) {
+var $author$project$View$getTopRemoteNotes = function (apiKey) {
 	return $elm$http$Http$request(
-		{body: $elm$http$Http$emptyBody, expect: r.expect, headers: _List_Nil, method: 'GET', timeout: $elm$core$Maybe$Nothing, tracker: $elm$core$Maybe$Nothing, url: r.url});
+		{
+			body: $elm$http$Http$emptyBody,
+			expect: A2(
+				$elm$http$Http$expectJson,
+				A2($elm$core$Basics$composeR, $krisajenkins$remotedata$RemoteData$fromResult, $author$project$View$TopNotesResponse),
+				$author$project$Note$decodeNotes),
+			headers: _List_fromArray(
+				[
+					$author$project$View$apiKeyHeader(apiKey)
+				]),
+			method: 'GET',
+			timeout: $elm$core$Maybe$Nothing,
+			tracker: $elm$core$Maybe$Nothing,
+			url: 'http://localhost:3000/notes'
+		});
 };
-var $author$project$View$getTopRemoteNotes = $elm$http$Http$get(
-	{
-		expect: A2(
-			$elm$http$Http$expectJson,
-			A2($elm$core$Basics$composeR, $krisajenkins$remotedata$RemoteData$fromResult, $author$project$View$TopNotesResponse),
-			$author$project$Note$decodeNotes),
-		url: 'http://localhost:3000/notes'
-	});
+var $elm$core$List$isEmpty = function (xs) {
+	if (!xs.b) {
+		return true;
+	} else {
+		return false;
+	}
+};
+var $elm$browser$Browser$Navigation$load = _Browser_load;
 var $elm$core$Basics$composeL = F3(
 	function (g, f, x) {
 		return g(
@@ -6208,29 +6243,36 @@ var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
 var $author$project$ElmCommon$onlyModel = function (model) {
 	return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 };
-var $author$project$View$init = function (notes) {
-	var decodeResult = A2($elm$json$Json$Decode$decodeValue, $author$project$Note$decodeNotes, notes);
+var $author$project$View$init = function (localNotes) {
+	var decodeResult = A2($elm$json$Json$Decode$decodeValue, $author$project$View$decodeLocalNotes, localNotes);
 	if (decodeResult.$ === 'Ok') {
-		var validNotes = decodeResult.a;
-		return $author$project$ElmCommon$onlyModel(
+		var apiKey = decodeResult.a.apiKey;
+		var notes = decodeResult.a.notes;
+		var mc = $elm$core$List$isEmpty(notes) ? _Utils_Tuple2(
 			_Utils_update(
 				$author$project$View$emptyModel,
 				{
-					notes: $krisajenkins$remotedata$RemoteData$Success(validNotes)
-				}));
-	} else {
-		var err = decodeResult.a;
-		return _Utils_Tuple2(
-			_Utils_update(
-				$author$project$View$emptyModel,
-				{notes: $krisajenkins$remotedata$RemoteData$Loading}),
+					apiKey: $elm$core$Maybe$Just(apiKey),
+					notes: $krisajenkins$remotedata$RemoteData$Loading
+				}),
 			$elm$core$Platform$Cmd$batch(
 				_List_fromArray(
 					[
-						$author$project$View$getTopRemoteNotes,
-						$author$project$View$logMessage(
-						'Could not load view data: ' + $elm$json$Json$Decode$errorToString(err))
-					])));
+						$author$project$View$getTopRemoteNotes(apiKey),
+						$author$project$View$logMessage('No cached data, refreshing')
+					]))) : $author$project$ElmCommon$onlyModel(
+			_Utils_update(
+				$author$project$View$emptyModel,
+				{
+					apiKey: $elm$core$Maybe$Just(apiKey),
+					notes: $krisajenkins$remotedata$RemoteData$Success(notes)
+				}));
+		return mc;
+	} else {
+		var err = decodeResult.a;
+		return _Utils_Tuple2(
+			$author$project$View$emptyModel,
+			$elm$browser$Browser$Navigation$load('config.html'));
 	}
 };
 var $author$project$View$JSNotificationError = function (a) {
@@ -6306,7 +6348,6 @@ var $author$project$View$encodeRemoveFromLocalStorage = $elm$json$Json$Encode$ob
 			$elm$json$Json$Encode$string(
 				$author$project$View$showPortType($author$project$View$RemoveFromLocalStorage)))
 		]));
-var $elm$browser$Browser$Navigation$load = _Browser_load;
 var $author$project$View$SaveToSessionStorage = {$: 'SaveToSessionStorage'};
 var $author$project$Note$encodeNote = function (_v0) {
 	var noteText = _v0.noteText;
@@ -6387,16 +6428,25 @@ var $author$project$View$logResponseErrors = F2(
 var $author$project$View$SearchNotesResponse = function (a) {
 	return {$: 'SearchNotesResponse', a: a};
 };
-var $author$project$View$searchRemoteNotes = function (query) {
-	return $elm$http$Http$get(
-		{
-			expect: A2(
-				$elm$http$Http$expectJson,
-				A2($elm$core$Basics$composeR, $krisajenkins$remotedata$RemoteData$fromResult, $author$project$View$SearchNotesResponse),
-				$author$project$Note$decodeNotes),
-			url: 'http://localhost:3000/search?q=' + query
-		});
-};
+var $author$project$View$searchRemoteNotes = F2(
+	function (apiKey, query) {
+		return $elm$http$Http$request(
+			{
+				body: $elm$http$Http$emptyBody,
+				expect: A2(
+					$elm$http$Http$expectJson,
+					A2($elm$core$Basics$composeR, $krisajenkins$remotedata$RemoteData$fromResult, $author$project$View$SearchNotesResponse),
+					$author$project$Note$decodeNotes),
+				headers: _List_fromArray(
+					[
+						$author$project$View$apiKeyHeader(apiKey)
+					]),
+				method: 'GET',
+				timeout: $elm$core$Maybe$Nothing,
+				tracker: $elm$core$Maybe$Nothing,
+				url: 'http://localhost:3000/search?q=' + query
+			});
+	});
 var $author$project$View$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
@@ -6449,20 +6499,36 @@ var $author$project$View$update = F2(
 						{notes: notes}),
 					A2($author$project$View$logResponseErrors, $author$project$View$DontSaveResponse, notes));
 			case 'NotesRefreshed':
-				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{notes: $krisajenkins$remotedata$RemoteData$Loading}),
-					$author$project$View$getTopRemoteNotes);
-			case 'SearchEdited':
-				var query = msg.a;
-				return _Utils_Tuple2(
-					model,
-					$author$project$View$searchRemoteNotes(query));
+				var _v1 = model.apiKey;
+				if (_v1.$ === 'Just') {
+					var apiKey = _v1.a;
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{notes: $krisajenkins$remotedata$RemoteData$Loading}),
+						$author$project$View$getTopRemoteNotes(apiKey));
+				} else {
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{notes: $krisajenkins$remotedata$RemoteData$Loading}),
+						$elm$browser$Browser$Navigation$load('config.html'));
+				}
 			default:
-				return _Utils_Tuple2(
-					model,
-					$author$project$View$searchRemoteNotes(''));
+				var query = msg.a;
+				var _v2 = model.apiKey;
+				if (_v2.$ === 'Just') {
+					var apiKey = _v2.a;
+					return _Utils_Tuple2(
+						model,
+						A2($author$project$View$searchRemoteNotes, apiKey, query));
+				} else {
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{notes: $krisajenkins$remotedata$RemoteData$Loading}),
+						$elm$browser$Browser$Navigation$load('config.html'));
+				}
 		}
 	});
 var $author$project$View$AddNote = {$: 'AddNote'};
