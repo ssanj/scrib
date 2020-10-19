@@ -107,7 +107,7 @@ update msg model =
        in (updatedModel, scribMessage (encode PreviewMessage updatedModel))
 
     NewNoteMsg ->
-      let updatedModel = { defaultModel | dataSource =  UserCreated }
+      let updatedModel = { defaultModel | dataSource =  UserCreated, apiKey = model.apiKey }
       in (updatedModel, scribMessage (encode PreviewMessage updatedModel)) -- TODO: we should be clearing the preview here not rendering it.
 
     ViewNoteMsg -> (model, Browser.Navigation.load "view.html")

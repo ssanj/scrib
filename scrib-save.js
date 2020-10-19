@@ -6537,7 +6537,7 @@ var $author$project$Save$update = F2(
 			case 'NewNoteMsg':
 				var updatedModel = _Utils_update(
 					$author$project$Save$defaultModel,
-					{dataSource: $author$project$Save$UserCreated});
+					{apiKey: model.apiKey, dataSource: $author$project$Save$UserCreated});
 				return _Utils_Tuple2(
 					updatedModel,
 					$author$project$Save$scribMessage(
