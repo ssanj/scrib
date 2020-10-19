@@ -1,0 +1,54 @@
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Scrib!</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.0/css/bulma.min.css">
+  </head>
+  <body>
+  <section class="section">
+    <div class="container">
+      <h1 class="title">
+        Scrib
+      </h1>
+      <p class="subtitle">
+        Making scribbling effortless
+      </p>
+      <div>
+        <article class="panel is-primary">
+          <p class="panel-heading">
+            Config
+          </p>
+
+          <div class="field">
+            <label class="label px-1">Api Key</label>
+            <div class="control px-1">
+              <input id="api-key-text-input" class="input" type="text" placeholder="Text input">
+            </div>
+          </div>
+
+         <div class="field">
+          <div class="control  px-1">
+            <button id="add-api-key-button" class="button is-link is-fullwidth">Add</button>
+          </div>
+        </div>
+        </article>
+      </div>
+    </div>
+    <div id="api-key-debug"></div>
+  </section>
+  <script>
+      const addApiKeyButton = document.getElementById('add-api-key-button');
+      const apiKeyTextInput = document.getElementById('api-key-text-input');
+      const debugApiKey     = document.getElementById('api-key-debug');
+      const appApiKey  = 'scrib.api.key';
+
+      debugApiKey.innerHTML = localStorage.getItem(appApiKey);
+
+      addApiKeyButton.addEventListener('click', function(event) {
+        localStorage.setItem(appApiKey, apiKeyTextInput.value);
+        debugApiKey.innerHTML = localStorage.getItem(appApiKey);
+      });
+  </script>
+  </body>
+</html>
