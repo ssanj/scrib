@@ -130,8 +130,8 @@ update msg model =
     AddNote                     -> (model, scribMessage encodeRemoveFromLocalStorage)
     (TopNotesResponse notes)    -> ({ model | notes = notes}, logResponseErrors SaveResponse notes)
     (SearchNotesResponse notes) -> ({ model | notes = notes}, logResponseErrors DontSaveResponse notes)
-    NotesRefreshed              -> performOrGotoConfig model ({ model | notes = Loading }, getTopRemoteNotes)
-    (SearchEdited query)        -> performOrGotoConfig model (model, searchRemoteNotes query)
+    NotesRefreshed              -> performOrGotoConfig model ({ model | notes = Loading, query = Nothing }, getTopRemoteNotes)
+    (SearchEdited query)        -> performOrGotoConfig model ({ model | query = Just query }, searchRemoteNotes query)
     --SearchPerformed             -> (model, searchRemoteNotes "")
 
 performOrGotoConfig : Model -> (Model, (ApiKey -> Cmd Msg)) -> (Model, Cmd Msg)
@@ -180,7 +180,7 @@ view model =
               ]
             , div [ class "panel-block" ]
               [ p [ class "control has-icons-left" ]
-                [ input [ class "input", class "is-primary", placeholder "Search", type_ "text", onInput SearchEdited ]
+                [ input [ class "input", class "is-primary", placeholder "Search", type_ "text", onInput SearchEdited, value <| getQueryText model.query ]
                   []
                 , span [ class "icon is-left" ]
                   [ i [ attribute "aria-hidden" "true", class "fas", class "fa-search" ]
@@ -196,6 +196,9 @@ view model =
       ]
    , createEditButton model.selectedNote
    ]
+
+getQueryText : Maybe String -> String
+getQueryText = maybe "" identity
 
 getNoteCount: RemoteNotesData -> String
 getNoteCount remoteNoteData =

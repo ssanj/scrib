@@ -6538,7 +6538,7 @@ var $author$project$View$update = F2(
 					_Utils_Tuple2(
 						_Utils_update(
 							model,
-							{notes: $krisajenkins$remotedata$RemoteData$Loading}),
+							{notes: $krisajenkins$remotedata$RemoteData$Loading, query: $elm$core$Maybe$Nothing}),
 						$author$project$View$getTopRemoteNotes));
 			default:
 				var query = msg.a;
@@ -6546,7 +6546,11 @@ var $author$project$View$update = F2(
 					$author$project$View$performOrGotoConfig,
 					model,
 					_Utils_Tuple2(
-						model,
+						_Utils_update(
+							model,
+							{
+								query: $elm$core$Maybe$Just(query)
+							}),
 						$author$project$View$searchRemoteNotes(query)));
 		}
 	});
@@ -6678,6 +6682,7 @@ var $author$project$View$getNoteCount = function (remoteNoteData) {
 		return '-';
 	}
 };
+var $author$project$View$getQueryText = A2($author$project$FP$maybe, '', $elm$core$Basics$identity);
 var $elm$html$Html$h1 = _VirtualDom_node('h1');
 var $elm$html$Html$i = _VirtualDom_node('i');
 var $elm$html$Html$input = _VirtualDom_node('input');
@@ -6717,6 +6722,7 @@ var $elm$html$Html$Attributes$placeholder = $elm$html$Html$Attributes$stringProp
 var $elm$html$Html$section = _VirtualDom_node('section');
 var $elm$html$Html$span = _VirtualDom_node('span');
 var $elm$html$Html$Attributes$type_ = $elm$html$Html$Attributes$stringProperty('type');
+var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty('value');
 var $author$project$ElmCommon$addClasses = function (classes) {
 	return A2($elm$core$List$map, $elm$html$Html$Attributes$class, classes);
 };
@@ -6978,7 +6984,9 @@ var $author$project$View$view = function (model) {
 																		$elm$html$Html$Attributes$class('is-primary'),
 																		$elm$html$Html$Attributes$placeholder('Search'),
 																		$elm$html$Html$Attributes$type_('text'),
-																		$elm$html$Html$Events$onInput($author$project$View$SearchEdited)
+																		$elm$html$Html$Events$onInput($author$project$View$SearchEdited),
+																		$elm$html$Html$Attributes$value(
+																		$author$project$View$getQueryText(model.query))
 																	]),
 																_List_Nil),
 																A2(
