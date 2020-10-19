@@ -18,8 +18,11 @@ encodeNote {noteText, noteId} =
    ]
 
 
+emptyNotes : List Note
+emptyNotes = []
+
 decodeNotes : D.Decoder (List Note)
-decodeNotes = D.list decodeNote
+decodeNotes = D.oneOf [D.list decodeNote, D.null emptyNotes]
 
 decodeNote: D.Decoder Note
 decodeNote = D.map2 Note (D.field "noteText" D.string) (D.field "noteId" D.int)

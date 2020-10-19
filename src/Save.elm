@@ -152,7 +152,7 @@ performSaveNote note apiKey =
   Http.request {
    method    = "POST"
   , headers  = [apiKeyHeader apiKey]
-  , url      = "http://localhost:3000/note"
+  , url      = "/note"
   , body     = Http.jsonBody <| encodeSaveNote note
   , expect = Http.expectJson processSaveNoteResults D.int
   , timeout  = Nothing
@@ -171,7 +171,7 @@ performOrGotoConfig oldModel apiKeyCommand =
 --performSaveNote note model =
 --    let remoteCall =
 --          Http.post {
---            url = "http://localhost:3000/note" -- This should be configurable
+--            url = "/note" -- This should be configurable
 --          , body = Http.jsonBody <| encodeSaveNote note
 --          , expect = Http.expectJson processSaveNoteResults D.int
 --          }

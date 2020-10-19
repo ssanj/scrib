@@ -5344,8 +5344,16 @@ var $author$project$Note$decodeNote = A3(
 	$author$project$Note$Note,
 	A2($elm$json$Json$Decode$field, 'noteText', $elm$json$Json$Decode$string),
 	A2($elm$json$Json$Decode$field, 'noteId', $elm$json$Json$Decode$int));
+var $author$project$Note$emptyNotes = _List_Nil;
 var $elm$json$Json$Decode$list = _Json_decodeList;
-var $author$project$Note$decodeNotes = $elm$json$Json$Decode$list($author$project$Note$decodeNote);
+var $elm$json$Json$Decode$null = _Json_decodeNull;
+var $elm$json$Json$Decode$oneOf = _Json_oneOf;
+var $author$project$Note$decodeNotes = $elm$json$Json$Decode$oneOf(
+	_List_fromArray(
+		[
+			$elm$json$Json$Decode$list($author$project$Note$decodeNote),
+			$elm$json$Json$Decode$null($author$project$Note$emptyNotes)
+		]));
 var $author$project$View$decodeLocalNotes = A3(
 	$elm$json$Json$Decode$map2,
 	$author$project$View$LocalNotes,
@@ -6179,7 +6187,7 @@ var $author$project$View$getTopRemoteNotes = function (apiKey) {
 			method: 'GET',
 			timeout: $elm$core$Maybe$Nothing,
 			tracker: $elm$core$Maybe$Nothing,
-			url: 'http://localhost:3000/notes'
+			url: '/notes'
 		});
 };
 var $elm$core$List$isEmpty = function (xs) {
@@ -6469,7 +6477,7 @@ var $author$project$View$searchRemoteNotes = F2(
 				method: 'GET',
 				timeout: $elm$core$Maybe$Nothing,
 				tracker: $elm$core$Maybe$Nothing,
-				url: 'http://localhost:3000/search?q=' + query
+				url: '/search?q=' + query
 			});
 	});
 var $author$project$View$update = F2(

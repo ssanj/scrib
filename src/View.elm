@@ -86,7 +86,7 @@ getTopRemoteNotes apiKey =
   Http.request {
    method    = "GET"
   , headers  = [apiKeyHeader apiKey]
-  , url      = "http://localhost:3000/notes"
+  , url      = "/notes"
   , body     = Http.emptyBody
   , expect   = Http.expectJson (RemoteData.fromResult >> TopNotesResponse) N.decodeNotes
   , timeout  = Nothing
@@ -98,7 +98,7 @@ searchRemoteNotes query apiKey =
   Http.request {
    method    = "GET"
   , headers  = [apiKeyHeader apiKey]
-  , url = "http://localhost:3000/search?q=" ++ query
+  , url = "/search?q=" ++ query
   , body     = Http.emptyBody
   , expect = Http.expectJson (RemoteData.fromResult >> SearchNotesResponse) N.decodeNotes
   , timeout  = Nothing

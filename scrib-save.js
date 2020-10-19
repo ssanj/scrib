@@ -6452,7 +6452,7 @@ var $author$project$Save$performSaveNote = F2(
 				method: 'POST',
 				timeout: $elm$core$Maybe$Nothing,
 				tracker: $elm$core$Maybe$Nothing,
-				url: 'http://localhost:3000/note'
+				url: '/note'
 			});
 	});
 var $author$project$Save$SaveMessage = {$: 'SaveMessage'};
