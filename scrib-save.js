@@ -5337,6 +5337,7 @@ var $author$project$ApiKey$ApiKey = function (value) {
 var $elm$json$Json$Decode$string = _Json_decodeString;
 var $author$project$ApiKey$decodeApiKey = A2($elm$json$Json$Decode$map, $author$project$ApiKey$ApiKey, $elm$json$Json$Decode$string);
 var $elm$json$Json$Decode$int = _Json_decodeInt;
+var $elm$json$Json$Decode$map3 = _Json_map3;
 var $elm$json$Json$Decode$oneOf = _Json_oneOf;
 var $elm$json$Json$Decode$maybe = function (decoder) {
 	return $elm$json$Json$Decode$oneOf(
@@ -5350,28 +5351,16 @@ var $author$project$Save$BrandNewNote = {$: 'BrandNewNote'};
 var $author$project$Save$HavingContent = function (a) {
 	return {$: 'HavingContent', a: a};
 };
-var $author$project$Save$NoteWithId = F2(
-	function (a, b) {
-		return {$: 'NoteWithId', a: a, b: b};
-	});
+var $author$project$Save$NoteWithId = function (a) {
+	return {$: 'NoteWithId', a: a};
+};
 var $author$project$Save$NoteWithoutId = function (a) {
 	return {$: 'NoteWithoutId', a: a};
 };
-var $author$project$Save$maybeNoteContent = F2(
-	function (maybeNoteId, maybeNoteText) {
-		var _v0 = _Utils_Tuple2(maybeNoteId, maybeNoteText);
-		if (_v0.a.$ === 'Just') {
-			if (_v0.b.$ === 'Just') {
-				var noteId = _v0.a.a;
-				var noteText = _v0.b.a;
-				return $author$project$Save$HavingContent(
-					A2($author$project$Save$NoteWithId, noteId, noteText));
-			} else {
-				var noteId = _v0.a.a;
-				var _v1 = _v0.b;
-				return $author$project$Save$BrandNewNote;
-			}
-		} else {
+var $author$project$Save$maybeNoteContent = F3(
+	function (maybeNoteId, maybeNoteText, maybeNoteVersion) {
+		var _v0 = _Utils_Tuple3(maybeNoteId, maybeNoteText, maybeNoteVersion);
+		if (_v0.a.$ === 'Nothing') {
 			if (_v0.b.$ === 'Just') {
 				var _v2 = _v0.a;
 				var noteText = _v0.b.a;
@@ -5382,9 +5371,35 @@ var $author$project$Save$maybeNoteContent = F2(
 				var _v4 = _v0.b;
 				return $author$project$Save$BrandNewNote;
 			}
+		} else {
+			if (_v0.b.$ === 'Nothing') {
+				var noteId = _v0.a.a;
+				var _v1 = _v0.b;
+				return $author$project$Save$BrandNewNote;
+			} else {
+				if (_v0.c.$ === 'Just') {
+					var noteId = _v0.a.a;
+					var noteText = _v0.b.a;
+					var noteVersion = _v0.c.a;
+					return $author$project$Save$HavingContent(
+						$author$project$Save$NoteWithId(
+							{noteId: noteId, noteText: noteText, noteVersion: noteVersion}));
+				} else {
+					var noteId = _v0.a.a;
+					var noteText = _v0.b.a;
+					var _v5 = _v0.c;
+					return $author$project$Save$BrandNewNote;
+				}
+			}
 		}
 	});
 var $author$project$Save$decoderLocalEdits = function () {
+	var maybeNoteVersionDecoder = $elm$json$Json$Decode$maybe(
+		A2(
+			$elm$json$Json$Decode$at,
+			_List_fromArray(
+				['note', 'noteVersion']),
+			$elm$json$Json$Decode$int));
 	var maybeNoteTextDecoder = $elm$json$Json$Decode$maybe(
 		A2(
 			$elm$json$Json$Decode$at,
@@ -5397,7 +5412,7 @@ var $author$project$Save$decoderLocalEdits = function () {
 			_List_fromArray(
 				['note', 'noteId']),
 			$elm$json$Json$Decode$int));
-	var noteDecoder = A3($elm$json$Json$Decode$map2, $author$project$Save$maybeNoteContent, maybeNoteIdDecoder, maybeNoteTextDecoder);
+	var noteDecoder = A4($elm$json$Json$Decode$map3, $author$project$Save$maybeNoteContent, maybeNoteIdDecoder, maybeNoteTextDecoder, maybeNoteVersionDecoder);
 	var apiKeyDecoder = A2($elm$json$Json$Decode$field, 'apiKey', $author$project$ApiKey$decodeApiKey);
 	return A3($elm$json$Json$Decode$map2, $author$project$Save$LocalEdit, apiKeyDecoder, noteDecoder);
 }();
@@ -5414,8 +5429,7 @@ var $author$project$Save$getNoteId = function (note) {
 		return $elm$core$Maybe$Nothing;
 	} else {
 		if (note.a.$ === 'NoteWithId') {
-			var _v1 = note.a;
-			var noteId = _v1.a;
+			var noteId = note.a.a.noteId;
 			return $elm$core$Maybe$Just(noteId);
 		} else {
 			return $elm$core$Maybe$Nothing;
@@ -5427,12 +5441,23 @@ var $author$project$Save$getNoteText = function (note) {
 		return '';
 	} else {
 		if (note.a.$ === 'NoteWithId') {
-			var _v1 = note.a;
-			var noteText = _v1.b;
+			var noteText = note.a.a.noteText;
 			return noteText;
 		} else {
 			var noteText = note.a.a;
 			return noteText;
+		}
+	}
+};
+var $author$project$Save$getNoteVersion = function (note) {
+	if (note.$ === 'BrandNewNote') {
+		return $elm$core$Maybe$Nothing;
+	} else {
+		if (note.a.$ === 'NoteWithId') {
+			var noteVersion = note.a.a.noteVersion;
+			return $elm$core$Maybe$Just(noteVersion);
+		} else {
+			return $elm$core$Maybe$Nothing;
 		}
 	}
 };
@@ -5460,6 +5485,31 @@ var $elm$json$Json$Encode$object = function (pairs) {
 			_Json_emptyObject(_Utils_Tuple0),
 			pairs));
 };
+var $elm$json$Json$Encode$string = _Json_wrap;
+var $author$project$Save$encodeNoteForLocalSave = function (note) {
+	return $elm$json$Json$Encode$object(
+		_List_fromArray(
+			[
+				_Utils_Tuple2(
+				'noteText',
+				$elm$json$Json$Encode$string(
+					$author$project$Save$getNoteText(note))),
+				_Utils_Tuple2(
+				'noteId',
+				A3(
+					$author$project$FP$maybe,
+					$elm$json$Json$Encode$null,
+					$elm$json$Json$Encode$int,
+					$author$project$Save$getNoteId(note))),
+				_Utils_Tuple2(
+				'noteVersion',
+				A3(
+					$author$project$FP$maybe,
+					$elm$json$Json$Encode$null,
+					$elm$json$Json$Encode$int,
+					$author$project$Save$getNoteVersion(note)))
+			]));
+};
 var $author$project$Save$showPortType = function (portType) {
 	if (portType.$ === 'SaveMessage') {
 		return 'save_message';
@@ -5467,7 +5517,6 @@ var $author$project$Save$showPortType = function (portType) {
 		return 'preview_message';
 	}
 };
-var $elm$json$Json$Encode$string = _Json_wrap;
 var $author$project$Save$encode = F2(
 	function (portType, model) {
 		return $elm$json$Json$Encode$object(
@@ -5478,16 +5527,8 @@ var $author$project$Save$encode = F2(
 					$elm$json$Json$Encode$string(
 						$author$project$Save$showPortType(portType))),
 					_Utils_Tuple2(
-					'noteText',
-					$elm$json$Json$Encode$string(
-						$author$project$Save$getNoteText(model.note))),
-					_Utils_Tuple2(
-					'noteId',
-					A3(
-						$author$project$FP$maybe,
-						$elm$json$Json$Encode$null,
-						$elm$json$Json$Encode$int,
-						$author$project$Save$getNoteId(model.note)))
+					'note',
+					$author$project$Save$encodeNoteForLocalSave(model.note))
 				]));
 	});
 var $elm$browser$Browser$Navigation$load = _Browser_load;
@@ -5538,13 +5579,14 @@ var $author$project$Save$noteFromRemoteSave = F2(
 		if (_v0.a.$ === 'NoteWithoutId') {
 			if (_v0.b.$ === 'Success') {
 				var noteText = _v0.a.a;
-				var noteId = _v0.b.a;
-				return A2($author$project$Save$NoteWithId, noteId, noteText);
+				var noteId = _v0.b.a.noteId;
+				var noteVersion = _v0.b.a.noteVersion;
+				return $author$project$Save$NoteWithId(
+					{noteId: noteId, noteText: noteText, noteVersion: noteVersion});
 			} else {
 				return existingNote;
 			}
 		} else {
-			var _v1 = _v0.a;
 			return existingNote;
 		}
 	});
@@ -5584,13 +5626,19 @@ var $elm$http$Http$header = $elm$http$Http$Header;
 var $author$project$ApiKey$apiKeyHeader = function (apiKey) {
 	return A2($elm$http$Http$header, 'X-API-KEY', apiKey.value);
 };
-var $author$project$Note$Note = F2(
-	function (noteText, noteId) {
-		return {noteId: noteId, noteText: noteText};
+var $author$project$Save$NoteIdVersion = F2(
+	function (noteId, noteVersion) {
+		return {noteId: noteId, noteVersion: noteVersion};
 	});
+var $author$project$Save$decoderNoteIdVersion = A3(
+	$elm$json$Json$Decode$map2,
+	$author$project$Save$NoteIdVersion,
+	A2($elm$json$Json$Decode$field, 'noteId', $elm$json$Json$Decode$int),
+	A2($elm$json$Json$Decode$field, 'noteVersion', $elm$json$Json$Decode$int));
 var $author$project$Note$encodeNote = function (_v0) {
 	var noteText = _v0.noteText;
 	var noteId = _v0.noteId;
+	var noteVersion = _v0.noteVersion;
 	return $elm$json$Json$Encode$object(
 		_List_fromArray(
 			[
@@ -5599,14 +5647,12 @@ var $author$project$Note$encodeNote = function (_v0) {
 				$elm$json$Json$Encode$string(noteText)),
 				_Utils_Tuple2(
 				'noteId',
-				$elm$json$Json$Encode$int(noteId))
+				$elm$json$Json$Encode$int(noteId)),
+				_Utils_Tuple2(
+				'noteVersion',
+				$elm$json$Json$Encode$int(noteVersion))
 			]));
 };
-var $author$project$Save$encodeSavedNote = F2(
-	function (noteText, noteId) {
-		return $author$project$Note$encodeNote(
-			A2($author$project$Note$Note, noteText, noteId));
-	});
 var $author$project$Save$encodeUnsavedNote = function (noteText) {
 	return $elm$json$Json$Encode$object(
 		_List_fromArray(
@@ -5621,9 +5667,11 @@ var $author$project$Save$encodeSaveNote = function (note) {
 		var noteText = note.a;
 		return $author$project$Save$encodeUnsavedNote(noteText);
 	} else {
-		var noteId = note.a;
-		var noteText = note.b;
-		return A2($author$project$Save$encodeSavedNote, noteText, noteId);
+		var noteId = note.a.noteId;
+		var noteText = note.a.noteText;
+		var noteVersion = note.a.noteVersion;
+		return $author$project$Note$encodeNote(
+			{noteId: noteId, noteText: noteText, noteVersion: noteVersion});
 	}
 };
 var $elm$json$Json$Decode$decodeString = _Json_runOnString;
@@ -6444,7 +6492,7 @@ var $author$project$Save$performSaveNote = F2(
 			{
 				body: $elm$http$Http$jsonBody(
 					$author$project$Save$encodeSaveNote(note)),
-				expect: A2($elm$http$Http$expectJson, $author$project$Save$processSaveNoteResults, $elm$json$Json$Decode$int),
+				expect: A2($elm$http$Http$expectJson, $author$project$Save$processSaveNoteResults, $author$project$Save$decoderNoteIdVersion),
 				headers: _List_fromArray(
 					[
 						$author$project$ApiKey$apiKeyHeader(apiKey)
@@ -6518,13 +6566,14 @@ var $author$project$Save$update = F2(
 									noteContentStatus: $author$project$Save$NeedsToSave
 								});
 						} else {
-							var _v2 = _v1.a;
-							var noteId = _v2.a;
+							var noteId = _v1.a.a.noteId;
+							var noteVersion = _v1.a.a.noteVersion;
 							return _Utils_update(
 								model,
 								{
 									note: $author$project$Save$HavingContent(
-										A2($author$project$Save$NoteWithId, noteId, newNoteText)),
+										$author$project$Save$NoteWithId(
+											{noteId: noteId, noteText: newNoteText, noteVersion: noteVersion})),
 									noteContentStatus: $author$project$Save$NeedsToSave
 								});
 						}
@@ -6549,11 +6598,11 @@ var $author$project$Save$update = F2(
 			default:
 				var noteResponse = msg.a;
 				var updatedNote = function () {
-					var _v3 = model.note;
-					if (_v3.$ === 'BrandNewNote') {
+					var _v2 = model.note;
+					if (_v2.$ === 'BrandNewNote') {
 						return model.note;
 					} else {
-						var content = _v3.a;
+						var content = _v2.a;
 						return $author$project$Save$HavingContent(
 							A2($author$project$Save$noteFromRemoteSave, content, noteResponse));
 					}
@@ -6705,8 +6754,7 @@ var $author$project$Save$hasContent = function (note) {
 			var noteText = note.a.a;
 			return !$elm$core$String$isEmpty(noteText);
 		} else {
-			var _v1 = note.a;
-			var noteText = _v1.b;
+			var noteText = note.a.a.noteText;
 			return !$elm$core$String$isEmpty(noteText);
 		}
 	}

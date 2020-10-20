@@ -71,7 +71,7 @@
       function previewMarkdown(noteEvent) {
         const markdownView = document.getElementById('markdown-view');
         if (typeof marked !== 'undefined' && markdownView) {
-          markdownView.innerHTML = marked(noteEvent.noteText, markedOptions);
+          markdownView.innerHTML = marked(noteEvent.note.noteText, markedOptions);
         } else {
          console.log("error", "markdown renderer has not loaded.")
         }

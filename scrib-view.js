@@ -5333,17 +5333,19 @@ var $author$project$ApiKey$ApiKey = function (value) {
 };
 var $elm$json$Json$Decode$string = _Json_decodeString;
 var $author$project$ApiKey$decodeApiKey = A2($elm$json$Json$Decode$map, $author$project$ApiKey$ApiKey, $elm$json$Json$Decode$string);
-var $author$project$Note$Note = F2(
-	function (noteText, noteId) {
-		return {noteId: noteId, noteText: noteText};
+var $author$project$Note$Note = F3(
+	function (noteText, noteId, noteVersion) {
+		return {noteId: noteId, noteText: noteText, noteVersion: noteVersion};
 	});
 var $elm$json$Json$Decode$field = _Json_decodeField;
 var $elm$json$Json$Decode$int = _Json_decodeInt;
-var $author$project$Note$decodeNote = A3(
-	$elm$json$Json$Decode$map2,
+var $elm$json$Json$Decode$map3 = _Json_map3;
+var $author$project$Note$decodeNote = A4(
+	$elm$json$Json$Decode$map3,
 	$author$project$Note$Note,
 	A2($elm$json$Json$Decode$field, 'noteText', $elm$json$Json$Decode$string),
-	A2($elm$json$Json$Decode$field, 'noteId', $elm$json$Json$Decode$int));
+	A2($elm$json$Json$Decode$field, 'noteId', $elm$json$Json$Decode$int),
+	A2($elm$json$Json$Decode$field, 'noteVersion', $elm$json$Json$Decode$int));
 var $author$project$Note$emptyNotes = _List_Nil;
 var $elm$json$Json$Decode$list = _Json_decodeList;
 var $elm$json$Json$Decode$null = _Json_decodeNull;
@@ -6330,6 +6332,24 @@ var $author$project$View$PreviewMessage = {$: 'PreviewMessage'};
 var $author$project$View$SaveResponse = {$: 'SaveResponse'};
 var $author$project$View$SaveToLocalStorage = {$: 'SaveToLocalStorage'};
 var $elm$json$Json$Encode$int = _Json_wrap;
+var $author$project$Note$encodeNote = function (_v0) {
+	var noteText = _v0.noteText;
+	var noteId = _v0.noteId;
+	var noteVersion = _v0.noteVersion;
+	return $elm$json$Json$Encode$object(
+		_List_fromArray(
+			[
+				_Utils_Tuple2(
+				'noteText',
+				$elm$json$Json$Encode$string(noteText)),
+				_Utils_Tuple2(
+				'noteId',
+				$elm$json$Json$Encode$int(noteId)),
+				_Utils_Tuple2(
+				'noteVersion',
+				$elm$json$Json$Encode$int(noteVersion))
+			]));
+};
 var $author$project$View$encode = F2(
 	function (portType, model) {
 		return $elm$json$Json$Encode$object(
@@ -6340,11 +6360,8 @@ var $author$project$View$encode = F2(
 					$elm$json$Json$Encode$string(
 						$author$project$View$showPortType(portType))),
 					_Utils_Tuple2(
-					'noteText',
-					$elm$json$Json$Encode$string(model.noteText)),
-					_Utils_Tuple2(
-					'noteId',
-					$elm$json$Json$Encode$int(model.noteId))
+					'note',
+					$author$project$Note$encodeNote(model))
 				]));
 	});
 var $author$project$View$RemoveFromLocalStorage = {$: 'RemoveFromLocalStorage'};
@@ -6357,20 +6374,6 @@ var $author$project$View$encodeRemoveFromLocalStorage = $elm$json$Json$Encode$ob
 				$author$project$View$showPortType($author$project$View$RemoveFromLocalStorage)))
 		]));
 var $author$project$View$SaveToSessionStorage = {$: 'SaveToSessionStorage'};
-var $author$project$Note$encodeNote = function (_v0) {
-	var noteText = _v0.noteText;
-	var noteId = _v0.noteId;
-	return $elm$json$Json$Encode$object(
-		_List_fromArray(
-			[
-				_Utils_Tuple2(
-				'noteText',
-				$elm$json$Json$Encode$string(noteText)),
-				_Utils_Tuple2(
-				'noteId',
-				$elm$json$Json$Encode$int(noteId))
-			]));
-};
 var $elm$json$Json$Encode$list = F2(
 	function (func, entries) {
 		return _Json_wrap(
@@ -6769,6 +6772,7 @@ var $author$project$View$removeHeading = A2($elm$core$String$replace, '# ', '');
 var $author$project$View$createNoteItem = function (_v0) {
 	var noteText = _v0.noteText;
 	var noteId = _v0.noteId;
+	var noteVersion = _v0.noteVersion;
 	return A2(
 		$elm$html$Html$a,
 		_List_fromArray(
@@ -6776,7 +6780,7 @@ var $author$project$View$createNoteItem = function (_v0) {
 				$elm$html$Html$Attributes$class('panel-block'),
 				$elm$html$Html$Events$onClick(
 				$author$project$View$NoteSelected(
-					{noteId: noteId, noteText: noteText}))
+					{noteId: noteId, noteText: noteText, noteVersion: noteVersion}))
 			]),
 		_List_fromArray(
 			[

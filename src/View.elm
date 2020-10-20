@@ -231,8 +231,8 @@ createEditButton = maybe viewMarkdownPreviewDefault viewMarkdownPreview
 
 -- Update this to only create a note with the text for the first line
 createNoteItem: N.Note -> Html Msg
-createNoteItem {noteText, noteId} =
-  a [class "panel-block", onClick (NoteSelected { noteText = noteText, noteId = noteId })]
+createNoteItem {noteText, noteId, noteVersion } =
+  a [class "panel-block", onClick (NoteSelected { noteText = noteText, noteId = noteId, noteVersion = noteVersion })]
   [ span [class "panel-icon"]
     [ i [ class "fas", class "fa-book", attribute "aria-hidden" "true"]
       []
@@ -318,13 +318,11 @@ encodeLogToConsole  error =
     , ("output", E.string error)
     ]
 
--- TODO: Create an encapsulating type for a Note + Port Type
 encode : PortType -> N.Note -> E.Value
 encode portType model =
   E.object
     [ ("eventType", E.string (showPortType portType))
-    , ("noteText", E.string model.noteText)
-    , ("noteId", E.int model.noteId)
+    , ("note", N.encodeNote model)
     ]
 
 

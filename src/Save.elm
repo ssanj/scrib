@@ -35,15 +35,17 @@ main =
 -- MODEL
 --
 
+type alias NoteIdVersion = { noteId : Int, noteVersion : Int }
+
 -- Where did the note originate?
 type DataSource = LocalLoad
                 | InitNote
                 | UserCreated
 
-type alias RemoteNoteData = WebData Int
+type alias RemoteNoteData = WebData NoteIdVersion
 
 type NoteWithContent = NoteWithoutId String
-                     | NoteWithId Int String
+                     | NoteWithId N.Note
 
 -- What information do we have about the note?
 type Note = BrandNewNote
@@ -103,7 +105,7 @@ update msg model =
             case model.note of
               BrandNewNote                          -> { model | note = HavingContent <| NoteWithoutId newNoteText,     noteContentStatus  = NeedsToSave }
               (HavingContent (NoteWithoutId _))     -> { model | note = HavingContent <| NoteWithoutId newNoteText,     noteContentStatus  = NeedsToSave }
-              (HavingContent (NoteWithId noteId _)) -> { model | note = HavingContent <| NoteWithId noteId newNoteText, noteContentStatus  = NeedsToSave }
+              (HavingContent (NoteWithId { noteId, noteVersion })) -> { model | note = HavingContent <| NoteWithId { noteId = noteId, noteVersion = noteVersion, noteText = newNoteText }, noteContentStatus  = NeedsToSave }
        in (updatedModel, scribMessage (encode PreviewMessage updatedModel))
 
     NewNoteMsg ->
@@ -127,9 +129,9 @@ contentStatusFromRemoteSave remoteData =
 noteFromRemoteSave : NoteWithContent -> RemoteNoteData -> NoteWithContent
 noteFromRemoteSave existingNote remoteData =
   case (existingNote, remoteData) of
-    (NoteWithoutId noteText, Success noteId) -> NoteWithId noteId noteText
-    (NoteWithoutId _, _)  -> existingNote -- if we didn't succeed in updating the note, then there's no id to save
-    ((NoteWithId _ _), _) -> existingNote -- if we already have an id, then there's nothing to update
+    (NoteWithoutId noteText, Success { noteId, noteVersion }) -> NoteWithId  { noteId = noteId, noteText = noteText, noteVersion = noteVersion }
+    (NoteWithoutId _, _) -> existingNote -- if we didn't succeed in updating the note, then there's no id to save
+    ((NoteWithId _ ), _) -> existingNote -- if we already have an id, then there's nothing to update
 
 
 saveNote: Model -> (Model, Cmd Msg)
@@ -147,14 +149,14 @@ sendSaveMessage: Model -> Cmd Msg
 sendSaveMessage model = scribMessage (encode SaveMessage model)
 
 
-performSaveNote: NoteWithContent ->  ApiKey -> Cmd Msg
+performSaveNote: NoteWithContent -> ApiKey -> Cmd Msg
 performSaveNote note apiKey =
   Http.request {
    method    = "POST"
   , headers  = [apiKeyHeader apiKey]
   , url      = "/note"
   , body     = Http.jsonBody <| encodeSaveNote note
-  , expect = Http.expectJson processSaveNoteResults D.int
+  , expect = Http.expectJson processSaveNoteResults decoderNoteIdVersion
   , timeout  = Nothing
   , tracker  = Nothing
   }
@@ -166,22 +168,10 @@ performOrGotoConfig oldModel apiKeyCommand =
     apiKeyCommand
     (oldModel, Browser.Navigation.load "config.html")
 
-
---performSaveNote: NoteWithContent -> Model -> ApiKey -> (Model, Cmd Msg)
---performSaveNote note model =
---    let remoteCall =
---          Http.post {
---            url = "/note" -- This should be configurable
---          , body = Http.jsonBody <| encodeSaveNote note
---          , expect = Http.expectJson processSaveNoteResults D.int
---          }
---    in ({model | remoteSaveStatus = Loading }, remoteCall)
-
-processSaveNoteResults: Result Http.Error Int -> Msg
+processSaveNoteResults: Result Http.Error NoteIdVersion -> Msg
 processSaveNoteResults = processHttpResult NoteSaveResponseMsg
 
-
-processHttpResult: (RemoteNoteData -> Msg) -> Result Http.Error Int -> Msg
+processHttpResult: (RemoteNoteData -> Msg) -> Result Http.Error NoteIdVersion -> Msg
 processHttpResult toMsg httpResult   =
   let result  = RemoteData.fromResult httpResult
   in toMsg result
@@ -319,11 +309,11 @@ subscriptions _ = Sub.none
 encodeSaveNote: NoteWithContent -> E.Value
 encodeSaveNote note =
   case note of
-    (NoteWithoutId noteText)     -> encodeUnsavedNote noteText
-    (NoteWithId noteId noteText) -> encodeSavedNote noteText noteId
+    (NoteWithoutId noteText)            -> encodeUnsavedNote noteText
+    (NoteWithId { noteId, noteText, noteVersion }) -> N.encodeNote { noteId = noteId, noteText = noteText, noteVersion = noteVersion }
 
-encodeSavedNote: String -> Int -> E.Value
-encodeSavedNote noteText noteId = N.encodeNote <| N.Note noteText noteId
+--encodeSavedNote: String -> Int -> E.Value
+--encodeSavedNote noteText noteId = N.encodeNote <| N.Note noteText noteId
 
 encodeUnsavedNote: String -> E.Value
 encodeUnsavedNote noteText =
@@ -336,59 +326,76 @@ encodeUnsavedNote noteText =
 encode : PortType -> Model -> E.Value
 encode portType model =
   E.object
-    [ ("eventType", E.string (showPortType portType))
-    , ("noteText", E.string <| getNoteText model.note)
-    , ("noteId", maybe E.null E.int <| getNoteId model.note)
+    [
+      ("eventType", E.string (showPortType portType))
+    , ("note", encodeNoteForLocalSave model.note)
     ]
+
+
+encodeNoteForLocalSave : Note -> E.Value
+encodeNoteForLocalSave note =
+  E.object
+    [
+      ("noteText", E.string <| getNoteText note)
+    , ("noteId", maybe E.null E.int <| getNoteId note)
+    , ("noteVersion", maybe E.null E.int <| getNoteVersion note)
+    ]
+
+getNoteVersion : Note -> Maybe Int
+getNoteVersion note =
+  case note of
+    BrandNewNote                                 -> Nothing
+    (HavingContent (NoteWithId { noteVersion })) -> Just noteVersion
+    (HavingContent (NoteWithoutId _))            -> Nothing
 
 getNoteId : Note -> Maybe Int
 getNoteId note =
   case note of
     BrandNewNote           -> Nothing
-    (HavingContent (NoteWithId noteId _))  -> Just noteId
-    (HavingContent (NoteWithoutId _))      -> Nothing
+    (HavingContent (NoteWithId { noteId }))  -> Just noteId
+    (HavingContent (NoteWithoutId _))        -> Nothing
 
 getNoteText : Note -> String
 getNoteText note =
   case note of
-    BrandNewNote                             -> ""
-    (HavingContent (NoteWithId _ noteText))  -> noteText
-    (HavingContent (NoteWithoutId noteText)) -> noteText
+    BrandNewNote                              -> ""
+    (HavingContent (NoteWithId { noteText })) -> noteText
+    (HavingContent (NoteWithoutId noteText))  -> noteText
 
---decoderLocalEdits : D.Decoder Model
---decoderLocalEdits =
---  let maybeNoteId   = D.maybe (D.field "noteId" D.int)
---      noteText      =  (D.field "noteText" D.string)
---      remoteSave    = NotAsked
---      noteWithoutId = D.map (HavingContent << NoteWithoutId) noteText
---      noteWithId    = \noteId -> D.map (HavingContent << NoteWithId noteId) noteText
---      note          = D.andThen (maybe noteWithoutId noteWithId) maybeNoteId
---  in D.map (\n -> Model n LocalLoad remoteSave UpToDate) note
+decoderNoteIdVersion : D.Decoder NoteIdVersion
+decoderNoteIdVersion =
+  D.map2
+    NoteIdVersion
+    (D.field "noteId" D.int)
+    (D.field "noteVersion" D.int)
 
 -- TODO: What happens if we go directly to Save without saving an edit?
 decoderLocalEdits : D.Decoder LocalEdit
 decoderLocalEdits =
-  let maybeNoteIdDecoder   = D.maybe (D.at ["note", "noteId"] D.int)
-      maybeNoteTextDecoder = D.maybe (D.at ["note", "noteText"] D.string)
+  let maybeNoteIdDecoder      = D.maybe (D.at ["note", "noteId"] D.int)
+      maybeNoteTextDecoder    = D.maybe (D.at ["note", "noteText"] D.string)
+      maybeNoteVersionDecoder = D.maybe (D.at ["note", "noteVersion"] D.int)
       apiKeyDecoder        = D.field "apiKey" decodeApiKey
       noteDecoder          =
-        D.map2
+        D.map3
           maybeNoteContent
           maybeNoteIdDecoder
           maybeNoteTextDecoder
+          maybeNoteVersionDecoder
   in D.map2
       LocalEdit
       apiKeyDecoder
       noteDecoder
 
 
-maybeNoteContent : Maybe Int -> Maybe String -> Note
-maybeNoteContent maybeNoteId maybeNoteText =
-  case (maybeNoteId, maybeNoteText) of
-    (Just noteId, Just noteText) -> HavingContent <| NoteWithId noteId noteText
-    (Just noteId, Nothing)       -> BrandNewNote -- technically shouldn't happen, treat it as no note
-    (Nothing, Just noteText)     -> HavingContent <| NoteWithoutId noteText
-    (Nothing, Nothing)           -> BrandNewNote
+maybeNoteContent : Maybe Int -> Maybe String -> Maybe Int -> Note
+maybeNoteContent maybeNoteId maybeNoteText maybeNoteVersion =
+  case (maybeNoteId, maybeNoteText, maybeNoteVersion) of
+    (Just noteId, Just noteText, Just noteVersion) -> HavingContent <| NoteWithId { noteId = noteId,  noteText = noteText, noteVersion = noteVersion }
+    (Just noteId, Nothing, _)                      -> BrandNewNote -- technically shouldn't happen, treat it as no note
+    (Nothing, Just noteText, _)                    -> HavingContent <| NoteWithoutId noteText -- ignore version as it's an illegal state
+    (Nothing, Nothing, _)                          -> BrandNewNote
+    (Just noteId, Just noteText, Nothing)          -> BrandNewNote -- TODO: we need to couple noteId and Version as they don't make sense separately
 
 --
 -- UTIL
@@ -398,8 +405,8 @@ hasContent: Note -> Bool
 hasContent note =
   case note of
     BrandNewNote -> False
-    (HavingContent (NoteWithoutId noteText)) -> not (String.isEmpty noteText)
-    (HavingContent (NoteWithId _ noteText))  -> not (String.isEmpty noteText)
+    (HavingContent (NoteWithoutId noteText))   -> not (String.isEmpty noteText)
+    (HavingContent (NoteWithId { noteText } )) -> not (String.isEmpty noteText)
 
 
 showPortType: PortType -> String
