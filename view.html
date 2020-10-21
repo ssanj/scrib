@@ -61,7 +61,7 @@
           console.log("clearing local storage");
           localStorage.removeItem(appEditKey);
           app.ports.jsMessage.send(responseJson("message_removed"));
-        } else if (noteEvent.eventType=== "log_text") {
+        } else if (noteEvent.eventType=== "log_message_to_console") {
           console.log("output: " + JSON.stringify(noteEvent.output));
         } else {
           console.log("error, unknown noteEvent:" + JSON.stringify(noteEvent));

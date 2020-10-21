@@ -2,6 +2,9 @@ module ElmCommon exposing (..)
 
 import Html exposing (Html, div, text, Attribute)
 import Html.Attributes exposing (class)
+import Json.Encode exposing (Value)
+
+type alias Encoder a = a -> Value
 
 onlyModel: a -> (a, Cmd msg)
 onlyModel model = (model, Cmd.none)
