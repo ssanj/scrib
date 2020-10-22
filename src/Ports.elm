@@ -14,6 +14,12 @@ import Note        as SCRIB
 
 type PortTypeName = PortTypeName String
 
+{-| Actions we can perform through JS
+  | Preview something
+  | Save something to some kind of storage somewhere
+  | Delete something to some kind of storage somewhere
+  | Log console messages
+-}
 type ViewPortType = PreviewViewNote SCRIB.NoteFull
                   | SaveViewNoteToLocalStorage SCRIB.NoteFull
                   | SaveTopNotesToSessionStorage (List SCRIB.NoteFull)

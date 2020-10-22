@@ -3,8 +3,15 @@ module ElmCommon exposing (..)
 import Html exposing (Html, div, text, Attribute)
 import Html.Attributes exposing (class)
 import Json.Encode exposing (Value)
+import Debug
 
 type alias Encoder a = a -> Value
+
+debug : String -> ()
+debug message = Debug.log message ()
+
+debugWith : String -> a -> a
+debugWith = Debug.log
 
 onlyModel: a -> (a, Cmd msg)
 onlyModel model = (model, Cmd.none)

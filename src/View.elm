@@ -57,28 +57,42 @@ type alias RemoteNotesData = WebData (List SC.NoteFull)
 emptyModel: Model
 emptyModel = Model Nothing NotAsked Nothing Nothing
 
-debug : String -> ()
-debug message = Debug.log message ()
 
 init : E.Value -> (Model, Cmd Msg)
 init topNotes =
     let _ = debug <| "called init with: " ++ (E.encode 2 topNotes)
         decodeResult = D.decodeValue decodeLocalNotes topNotes
-    in case decodeResult of
-         (Ok { apiKey, payload }) ->
-           let  _ = debug "decoded!!"
-                notes = maybe [] identity payload
-                mc    =
-                  if List.isEmpty notes
-                  then (
-                         { emptyModel | notes = Loading, apiKey = Just apiKey }
-                       , Cmd.batch [getTopRemoteNotes apiKey, logMessage <| "No cached data, refreshing"]
-                       )
-                  else onlyModel { emptyModel | notes = Success notes, apiKey = Just apiKey }
-           in mc
-         Err err       ->
-            let _ = debug "failed!!"
-            in (emptyModel, Browser.Navigation.load "config.html")
+    in handleDecodeResult decodeResult handleInitSuccess handleInitError
+
+handleInitSuccess : ApiKeyWithPayload (List SC.NoteFull) -> (Model, Cmd Msg)
+handleInitSuccess { apiKey, payload } =
+  let _     = debug "handleInitSuccess!!"
+      notes = maybe [] identity payload
+      mc    =
+        if List.isEmpty notes
+        then (
+               { emptyModel | notes = Loading, apiKey = Just apiKey }
+             , Cmd.batch [getTopRemoteNotes apiKey, logMessage <| "No cached data, refreshing"]
+             )
+        else onlyModel { emptyModel | notes = Success notes, apiKey = Just apiKey }
+ in mc
+
+handleInitError : D.Error -> (Model, Cmd Msg)
+handleInitError err = debugWith "failed!!"
+                        (
+                          emptyModel
+                        , Cmd.batch
+                          [
+                            Browser.Navigation.load "config.html"
+                          , logMessage ("Decode of init data failued due to: " ++ D.errorToString err)
+                          ]
+                        )
+
+handleDecodeResult : Result D.Error a -> (a -> b) -> (D.Error -> b) -> b
+handleDecodeResult result success failure =
+  case result of
+    (Ok value)  -> success value
+    (Err error) -> failure error
 
 decodeLocalNotes : D.Decoder (ApiKeyWithPayload (List SC.NoteFull))
 decodeLocalNotes = decodeApiKeyWithPayload topNotesKey SC.decodeFullNotes

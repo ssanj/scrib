@@ -5319,13 +5319,8 @@ var $elm$core$Task$perform = F2(
 				A2($elm$core$Task$map, toMessage, task)));
 	});
 var $elm$browser$Browser$element = _Browser_element;
-var $krisajenkins$remotedata$RemoteData$Loading = {$: 'Loading'};
-var $krisajenkins$remotedata$RemoteData$Success = function (a) {
-	return {$: 'Success', a: a};
-};
-var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Debug$log = _Debug_log;
-var $author$project$View$debug = function (message) {
+var $author$project$ElmCommon$debug = function (message) {
 	return A2($elm$core$Debug$log, message, _Utils_Tuple0);
 };
 var $author$project$ApiKey$ApiKeyWithPayload = F2(
@@ -5387,12 +5382,286 @@ var $author$project$Note$decodeFullNotes = $elm$json$Json$Decode$list($author$pr
 var $author$project$StorageKeys$topNotesKey = $author$project$StorageKeys$JsonKey('top_notes');
 var $author$project$View$decodeLocalNotes = A2($author$project$ApiKey$decodeApiKeyWithPayload, $author$project$StorageKeys$topNotesKey, $author$project$Note$decodeFullNotes);
 var $elm$json$Json$Decode$decodeValue = _Json_run;
+var $author$project$View$handleDecodeResult = F3(
+	function (result, success, failure) {
+		if (result.$ === 'Ok') {
+			var value = result.a;
+			return success(value);
+		} else {
+			var error = result.a;
+			return failure(error);
+		}
+	});
+var $elm$core$Platform$Cmd$batch = _Platform_batch;
+var $author$project$ElmCommon$debugWith = $elm$core$Debug$log;
 var $author$project$View$Model = F4(
 	function (query, notes, selectedNote, apiKey) {
 		return {apiKey: apiKey, notes: notes, query: query, selectedNote: selectedNote};
 	});
 var $krisajenkins$remotedata$RemoteData$NotAsked = {$: 'NotAsked'};
 var $author$project$View$emptyModel = A4($author$project$View$Model, $elm$core$Maybe$Nothing, $krisajenkins$remotedata$RemoteData$NotAsked, $elm$core$Maybe$Nothing, $elm$core$Maybe$Nothing);
+var $elm$browser$Browser$Navigation$load = _Browser_load;
+var $author$project$Ports$LogMessageToConsole = function (a) {
+	return {$: 'LogMessageToConsole', a: a};
+};
+var $author$project$Ports$ViewPort = function (a) {
+	return {$: 'ViewPort', a: a};
+};
+var $elm$core$Basics$composeL = F3(
+	function (g, f, x) {
+		return g(
+			f(x));
+	});
+var $author$project$Ports$PortTypeName = function (a) {
+	return {$: 'PortTypeName', a: a};
+};
+var $elm$json$Json$Encode$int = _Json_wrap;
+var $elm$json$Json$Encode$object = function (pairs) {
+	return _Json_wrap(
+		A3(
+			$elm$core$List$foldl,
+			F2(
+				function (_v0, obj) {
+					var k = _v0.a;
+					var v = _v0.b;
+					return A3(_Json_addField, k, v, obj);
+				}),
+			_Json_emptyObject(_Utils_Tuple0),
+			pairs));
+};
+var $elm$json$Json$Encode$string = _Json_wrap;
+var $author$project$Note$encodeFullNote = function (_v0) {
+	var noteText = _v0.noteText;
+	var noteId = _v0.noteId;
+	var noteVersion = _v0.noteVersion;
+	return $elm$json$Json$Encode$object(
+		_List_fromArray(
+			[
+				_Utils_Tuple2(
+				'noteText',
+				$elm$json$Json$Encode$string(noteText)),
+				_Utils_Tuple2(
+				'noteId',
+				$elm$json$Json$Encode$int(noteId)),
+				_Utils_Tuple2(
+				'noteVersion',
+				$elm$json$Json$Encode$int(noteVersion))
+			]));
+};
+var $author$project$Note$encodeLightNote = function (_v0) {
+	var noteText = _v0.noteText;
+	return $elm$json$Json$Encode$object(
+		_List_fromArray(
+			[
+				_Utils_Tuple2(
+				'noteText',
+				$elm$json$Json$Encode$string(noteText))
+			]));
+};
+var $author$project$Note$encodeNote = function (note) {
+	if (note.$ === 'Note') {
+		var noteFull = note.a;
+		return $author$project$Note$encodeFullNote(noteFull);
+	} else {
+		var noteLight = note.a;
+		return $author$project$Note$encodeLightNote(noteLight);
+	}
+};
+var $author$project$StorageKeys$encodeKeyAndPayload = F3(
+	function (_v0, payloadEncoder, payload) {
+		var key = _v0.a;
+		return _Utils_Tuple2(
+			key,
+			payloadEncoder(payload));
+	});
+var $author$project$Ports$encodePortAndPayload = F4(
+	function (_v0, key, payloadEncoder, payload) {
+		var portType = _v0.a;
+		return $elm$json$Json$Encode$object(
+			_List_fromArray(
+				[
+					_Utils_Tuple2(
+					'eventType',
+					$elm$json$Json$Encode$string(portType)),
+					A3($author$project$StorageKeys$encodeKeyAndPayload, key, payloadEncoder, payload)
+				]));
+	});
+var $author$project$StorageKeys$noteKey = $author$project$StorageKeys$JsonKey('note');
+var $author$project$Ports$encodeSavePortRequest = function (savePort) {
+	if (savePort.$ === 'SaveEditNoteToLocalStorage') {
+		var note = savePort.a;
+		return A4(
+			$author$project$Ports$encodePortAndPayload,
+			$author$project$Ports$PortTypeName('save_note_to_local_storage'),
+			$author$project$StorageKeys$noteKey,
+			$author$project$Note$encodeNote,
+			note);
+	} else {
+		var note = savePort.a;
+		return A4(
+			$author$project$Ports$encodePortAndPayload,
+			$author$project$Ports$PortTypeName('preview_note'),
+			$author$project$StorageKeys$noteKey,
+			$author$project$Note$encodeNote,
+			note);
+	}
+};
+var $elm$json$Json$Encode$list = F2(
+	function (func, entries) {
+		return _Json_wrap(
+			A3(
+				$elm$core$List$foldl,
+				_Json_addEntry(func),
+				_Json_emptyArray(_Utils_Tuple0),
+				entries));
+	});
+var $author$project$Note$encodeFullNotes = $elm$json$Json$Encode$list($author$project$Note$encodeFullNote);
+var $author$project$StorageKeys$encodeStorageType = function (st) {
+	if (st.$ === 'Local') {
+		return $elm$json$Json$Encode$string('local');
+	} else {
+		return $elm$json$Json$Encode$string('session');
+	}
+};
+var $author$project$StorageKeys$encodeStorageArea = function (_v0) {
+	var st = _v0.a;
+	var key = _v0.b.a;
+	return $elm$json$Json$Encode$object(
+		_List_fromArray(
+			[
+				_Utils_Tuple2(
+				'storageType',
+				$author$project$StorageKeys$encodeStorageType(st)),
+				_Utils_Tuple2(
+				'storageKey',
+				$elm$json$Json$Encode$string(key))
+			]));
+};
+var $author$project$Ports$encodePortAndPayloadWithStorageAccess = F5(
+	function (_v0, storageArea, key, payloadEncoder, payload) {
+		var portType = _v0.a;
+		return $elm$json$Json$Encode$object(
+			_List_fromArray(
+				[
+					_Utils_Tuple2(
+					'eventType',
+					$elm$json$Json$Encode$string(portType)),
+					_Utils_Tuple2(
+					'storage',
+					$author$project$StorageKeys$encodeStorageArea(storageArea)),
+					A3($author$project$StorageKeys$encodeKeyAndPayload, key, payloadEncoder, payload)
+				]));
+	});
+var $author$project$Ports$encodePortWithStorageAccess = F2(
+	function (_v0, storageArea) {
+		var portType = _v0.a;
+		return $elm$json$Json$Encode$object(
+			_List_fromArray(
+				[
+					_Utils_Tuple2(
+					'eventType',
+					$elm$json$Json$Encode$string(portType)),
+					_Utils_Tuple2(
+					'storage',
+					$author$project$StorageKeys$encodeStorageArea(storageArea))
+				]));
+	});
+var $author$project$StorageKeys$outputKey = $author$project$StorageKeys$JsonKey('output');
+var $author$project$StorageKeys$Local = {$: 'Local'};
+var $author$project$StorageKeys$StorageArea = F2(
+	function (a, b) {
+		return {$: 'StorageArea', a: a, b: b};
+	});
+var $author$project$StorageKeys$StorageKey = function (a) {
+	return {$: 'StorageKey', a: a};
+};
+var $author$project$StorageKeys$viewSelectedNoteStorageArea = A2(
+	$author$project$StorageKeys$StorageArea,
+	$author$project$StorageKeys$Local,
+	$author$project$StorageKeys$StorageKey('scrib.edit'));
+var $author$project$StorageKeys$Session = {$: 'Session'};
+var $author$project$StorageKeys$viewTopNotesStorageArea = A2(
+	$author$project$StorageKeys$StorageArea,
+	$author$project$StorageKeys$Session,
+	$author$project$StorageKeys$StorageKey('scrib.view'));
+var $author$project$Ports$encodeViewPortRequest = function (viewPort) {
+	switch (viewPort.$) {
+		case 'PreviewViewNote':
+			var note = viewPort.a;
+			return A4(
+				$author$project$Ports$encodePortAndPayload,
+				$author$project$Ports$PortTypeName('preview_note'),
+				$author$project$StorageKeys$noteKey,
+				$author$project$Note$encodeFullNote,
+				note);
+		case 'SaveViewNoteToLocalStorage':
+			var note = viewPort.a;
+			return A5(
+				$author$project$Ports$encodePortAndPayloadWithStorageAccess,
+				$author$project$Ports$PortTypeName('save_note_to_local_storage'),
+				$author$project$StorageKeys$viewSelectedNoteStorageArea,
+				$author$project$StorageKeys$noteKey,
+				$author$project$Note$encodeFullNote,
+				note);
+		case 'SaveTopNotesToSessionStorage':
+			var notes = viewPort.a;
+			return A5(
+				$author$project$Ports$encodePortAndPayloadWithStorageAccess,
+				$author$project$Ports$PortTypeName('save_top_notes_to_session_storage'),
+				$author$project$StorageKeys$viewTopNotesStorageArea,
+				$author$project$StorageKeys$topNotesKey,
+				$author$project$Note$encodeFullNotes,
+				notes);
+		case 'RemoveNoteFromLocalStorage':
+			return A2(
+				$author$project$Ports$encodePortWithStorageAccess,
+				$author$project$Ports$PortTypeName('remove_note_from_local_storage'),
+				$author$project$StorageKeys$viewSelectedNoteStorageArea);
+		default:
+			var message = viewPort.a;
+			return A4(
+				$author$project$Ports$encodePortAndPayload,
+				$author$project$Ports$PortTypeName('log_message_to_console'),
+				$author$project$StorageKeys$outputKey,
+				$elm$json$Json$Encode$string,
+				message);
+	}
+};
+var $author$project$Ports$encodePort = function (portType) {
+	if (portType.$ === 'ViewPort') {
+		var vp = portType.a;
+		return $author$project$Ports$encodeViewPortRequest(vp);
+	} else {
+		var sp = portType.a;
+		return $author$project$Ports$encodeSavePortRequest(sp);
+	}
+};
+var $author$project$View$scribMessage = _Platform_outgoingPort('scribMessage', $elm$core$Basics$identity);
+var $author$project$View$logMessage = A2(
+	$elm$core$Basics$composeL,
+	A2(
+		$elm$core$Basics$composeL,
+		A2($elm$core$Basics$composeL, $author$project$View$scribMessage, $author$project$Ports$encodePort),
+		$author$project$Ports$ViewPort),
+	$author$project$Ports$LogMessageToConsole);
+var $author$project$View$handleInitError = function (err) {
+	return A2(
+		$author$project$ElmCommon$debugWith,
+		'failed!!',
+		_Utils_Tuple2(
+			$author$project$View$emptyModel,
+			$elm$core$Platform$Cmd$batch(
+				_List_fromArray(
+					[
+						$elm$browser$Browser$Navigation$load('config.html'),
+						$author$project$View$logMessage(
+						'Decode of init data failued due to: ' + $elm$json$Json$Decode$errorToString(err))
+					]))));
+};
+var $krisajenkins$remotedata$RemoteData$Loading = {$: 'Loading'};
+var $krisajenkins$remotedata$RemoteData$Success = function (a) {
+	return {$: 'Success', a: a};
+};
 var $author$project$View$TopNotesResponse = function (a) {
 	return {$: 'TopNotesResponse', a: a};
 };
@@ -6200,7 +6469,7 @@ var $elm$http$Http$request = function (r) {
 			{allowCookiesFromOtherDomains: false, body: r.body, expect: r.expect, headers: r.headers, method: r.method, timeout: r.timeout, tracker: r.tracker, url: r.url}));
 };
 var $author$project$View$getTopRemoteNotes = function (apiKey) {
-	var _v0 = $author$project$View$debug('calling slate');
+	var _v0 = $author$project$ElmCommon$debug('calling slate');
 	return $elm$http$Http$request(
 		{
 			body: $elm$http$Http$emptyBody,
@@ -6225,250 +6494,6 @@ var $elm$core$List$isEmpty = function (xs) {
 		return false;
 	}
 };
-var $elm$browser$Browser$Navigation$load = _Browser_load;
-var $author$project$Ports$LogMessageToConsole = function (a) {
-	return {$: 'LogMessageToConsole', a: a};
-};
-var $author$project$Ports$ViewPort = function (a) {
-	return {$: 'ViewPort', a: a};
-};
-var $elm$core$Basics$composeL = F3(
-	function (g, f, x) {
-		return g(
-			f(x));
-	});
-var $author$project$Ports$PortTypeName = function (a) {
-	return {$: 'PortTypeName', a: a};
-};
-var $elm$json$Json$Encode$int = _Json_wrap;
-var $elm$json$Json$Encode$object = function (pairs) {
-	return _Json_wrap(
-		A3(
-			$elm$core$List$foldl,
-			F2(
-				function (_v0, obj) {
-					var k = _v0.a;
-					var v = _v0.b;
-					return A3(_Json_addField, k, v, obj);
-				}),
-			_Json_emptyObject(_Utils_Tuple0),
-			pairs));
-};
-var $elm$json$Json$Encode$string = _Json_wrap;
-var $author$project$Note$encodeFullNote = function (_v0) {
-	var noteText = _v0.noteText;
-	var noteId = _v0.noteId;
-	var noteVersion = _v0.noteVersion;
-	return $elm$json$Json$Encode$object(
-		_List_fromArray(
-			[
-				_Utils_Tuple2(
-				'noteText',
-				$elm$json$Json$Encode$string(noteText)),
-				_Utils_Tuple2(
-				'noteId',
-				$elm$json$Json$Encode$int(noteId)),
-				_Utils_Tuple2(
-				'noteVersion',
-				$elm$json$Json$Encode$int(noteVersion))
-			]));
-};
-var $author$project$Note$encodeLightNote = function (_v0) {
-	var noteText = _v0.noteText;
-	return $elm$json$Json$Encode$object(
-		_List_fromArray(
-			[
-				_Utils_Tuple2(
-				'noteText',
-				$elm$json$Json$Encode$string(noteText))
-			]));
-};
-var $author$project$Note$encodeNote = function (note) {
-	if (note.$ === 'Note') {
-		var noteFull = note.a;
-		return $author$project$Note$encodeFullNote(noteFull);
-	} else {
-		var noteLight = note.a;
-		return $author$project$Note$encodeLightNote(noteLight);
-	}
-};
-var $author$project$StorageKeys$encodeKeyAndPayload = F3(
-	function (_v0, payloadEncoder, payload) {
-		var key = _v0.a;
-		return _Utils_Tuple2(
-			key,
-			payloadEncoder(payload));
-	});
-var $author$project$Ports$encodePortAndPayload = F4(
-	function (_v0, key, payloadEncoder, payload) {
-		var portType = _v0.a;
-		return $elm$json$Json$Encode$object(
-			_List_fromArray(
-				[
-					_Utils_Tuple2(
-					'eventType',
-					$elm$json$Json$Encode$string(portType)),
-					A3($author$project$StorageKeys$encodeKeyAndPayload, key, payloadEncoder, payload)
-				]));
-	});
-var $author$project$StorageKeys$noteKey = $author$project$StorageKeys$JsonKey('note');
-var $author$project$Ports$encodeSavePortRequest = function (savePort) {
-	if (savePort.$ === 'SaveEditNoteToLocalStorage') {
-		var note = savePort.a;
-		return A4(
-			$author$project$Ports$encodePortAndPayload,
-			$author$project$Ports$PortTypeName('save_note_to_local_storage'),
-			$author$project$StorageKeys$noteKey,
-			$author$project$Note$encodeNote,
-			note);
-	} else {
-		var note = savePort.a;
-		return A4(
-			$author$project$Ports$encodePortAndPayload,
-			$author$project$Ports$PortTypeName('preview_note'),
-			$author$project$StorageKeys$noteKey,
-			$author$project$Note$encodeNote,
-			note);
-	}
-};
-var $elm$json$Json$Encode$list = F2(
-	function (func, entries) {
-		return _Json_wrap(
-			A3(
-				$elm$core$List$foldl,
-				_Json_addEntry(func),
-				_Json_emptyArray(_Utils_Tuple0),
-				entries));
-	});
-var $author$project$Note$encodeFullNotes = $elm$json$Json$Encode$list($author$project$Note$encodeFullNote);
-var $author$project$StorageKeys$encodeStorageType = function (st) {
-	if (st.$ === 'Local') {
-		return $elm$json$Json$Encode$string('local');
-	} else {
-		return $elm$json$Json$Encode$string('session');
-	}
-};
-var $author$project$StorageKeys$encodeStorageArea = function (_v0) {
-	var st = _v0.a;
-	var key = _v0.b.a;
-	return $elm$json$Json$Encode$object(
-		_List_fromArray(
-			[
-				_Utils_Tuple2(
-				'storageType',
-				$author$project$StorageKeys$encodeStorageType(st)),
-				_Utils_Tuple2(
-				'storageKey',
-				$elm$json$Json$Encode$string(key))
-			]));
-};
-var $author$project$Ports$encodePortAndPayloadWithStorageAccess = F5(
-	function (_v0, storageArea, key, payloadEncoder, payload) {
-		var portType = _v0.a;
-		return $elm$json$Json$Encode$object(
-			_List_fromArray(
-				[
-					_Utils_Tuple2(
-					'eventType',
-					$elm$json$Json$Encode$string(portType)),
-					_Utils_Tuple2(
-					'storage',
-					$author$project$StorageKeys$encodeStorageArea(storageArea)),
-					A3($author$project$StorageKeys$encodeKeyAndPayload, key, payloadEncoder, payload)
-				]));
-	});
-var $author$project$Ports$encodePortWithStorageAccess = F2(
-	function (_v0, storageArea) {
-		var portType = _v0.a;
-		return $elm$json$Json$Encode$object(
-			_List_fromArray(
-				[
-					_Utils_Tuple2(
-					'eventType',
-					$elm$json$Json$Encode$string(portType)),
-					_Utils_Tuple2(
-					'storage',
-					$author$project$StorageKeys$encodeStorageArea(storageArea))
-				]));
-	});
-var $author$project$StorageKeys$outputKey = $author$project$StorageKeys$JsonKey('output');
-var $author$project$StorageKeys$Local = {$: 'Local'};
-var $author$project$StorageKeys$StorageArea = F2(
-	function (a, b) {
-		return {$: 'StorageArea', a: a, b: b};
-	});
-var $author$project$StorageKeys$StorageKey = function (a) {
-	return {$: 'StorageKey', a: a};
-};
-var $author$project$StorageKeys$viewSelectedNoteStorageArea = A2(
-	$author$project$StorageKeys$StorageArea,
-	$author$project$StorageKeys$Local,
-	$author$project$StorageKeys$StorageKey('scrib.edit'));
-var $author$project$StorageKeys$Session = {$: 'Session'};
-var $author$project$StorageKeys$viewTopNotesStorageArea = A2(
-	$author$project$StorageKeys$StorageArea,
-	$author$project$StorageKeys$Session,
-	$author$project$StorageKeys$StorageKey('scrib.view'));
-var $author$project$Ports$encodeViewPortRequest = function (viewPort) {
-	switch (viewPort.$) {
-		case 'PreviewViewNote':
-			var note = viewPort.a;
-			return A4(
-				$author$project$Ports$encodePortAndPayload,
-				$author$project$Ports$PortTypeName('preview_note'),
-				$author$project$StorageKeys$noteKey,
-				$author$project$Note$encodeFullNote,
-				note);
-		case 'SaveViewNoteToLocalStorage':
-			var note = viewPort.a;
-			return A5(
-				$author$project$Ports$encodePortAndPayloadWithStorageAccess,
-				$author$project$Ports$PortTypeName('save_note_to_local_storage'),
-				$author$project$StorageKeys$viewSelectedNoteStorageArea,
-				$author$project$StorageKeys$noteKey,
-				$author$project$Note$encodeFullNote,
-				note);
-		case 'SaveTopNotesToSessionStorage':
-			var notes = viewPort.a;
-			return A5(
-				$author$project$Ports$encodePortAndPayloadWithStorageAccess,
-				$author$project$Ports$PortTypeName('save_top_notes_to_session_storage'),
-				$author$project$StorageKeys$viewTopNotesStorageArea,
-				$author$project$StorageKeys$topNotesKey,
-				$author$project$Note$encodeFullNotes,
-				notes);
-		case 'RemoveNoteFromLocalStorage':
-			return A2(
-				$author$project$Ports$encodePortWithStorageAccess,
-				$author$project$Ports$PortTypeName('remove_note_from_local_storage'),
-				$author$project$StorageKeys$viewSelectedNoteStorageArea);
-		default:
-			var message = viewPort.a;
-			return A4(
-				$author$project$Ports$encodePortAndPayload,
-				$author$project$Ports$PortTypeName('log_message_to_console'),
-				$author$project$StorageKeys$outputKey,
-				$elm$json$Json$Encode$string,
-				message);
-	}
-};
-var $author$project$Ports$encodePort = function (portType) {
-	if (portType.$ === 'ViewPort') {
-		var vp = portType.a;
-		return $author$project$Ports$encodeViewPortRequest(vp);
-	} else {
-		var sp = portType.a;
-		return $author$project$Ports$encodeSavePortRequest(sp);
-	}
-};
-var $author$project$View$scribMessage = _Platform_outgoingPort('scribMessage', $elm$core$Basics$identity);
-var $author$project$View$logMessage = A2(
-	$elm$core$Basics$composeL,
-	A2(
-		$elm$core$Basics$composeL,
-		A2($elm$core$Basics$composeL, $author$project$View$scribMessage, $author$project$Ports$encodePort),
-		$author$project$Ports$ViewPort),
-	$author$project$Ports$LogMessageToConsole);
 var $author$project$FP$maybe = F3(
 	function (onNothing, onJust, maybeVal) {
 		if (maybeVal.$ === 'Just') {
@@ -6482,42 +6507,37 @@ var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
 var $author$project$ElmCommon$onlyModel = function (model) {
 	return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 };
+var $author$project$View$handleInitSuccess = function (_v0) {
+	var apiKey = _v0.apiKey;
+	var payload = _v0.payload;
+	var notes = A3($author$project$FP$maybe, _List_Nil, $elm$core$Basics$identity, payload);
+	var mc = $elm$core$List$isEmpty(notes) ? _Utils_Tuple2(
+		_Utils_update(
+			$author$project$View$emptyModel,
+			{
+				apiKey: $elm$core$Maybe$Just(apiKey),
+				notes: $krisajenkins$remotedata$RemoteData$Loading
+			}),
+		$elm$core$Platform$Cmd$batch(
+			_List_fromArray(
+				[
+					$author$project$View$getTopRemoteNotes(apiKey),
+					$author$project$View$logMessage('No cached data, refreshing')
+				]))) : $author$project$ElmCommon$onlyModel(
+		_Utils_update(
+			$author$project$View$emptyModel,
+			{
+				apiKey: $elm$core$Maybe$Just(apiKey),
+				notes: $krisajenkins$remotedata$RemoteData$Success(notes)
+			}));
+	var _v1 = $author$project$ElmCommon$debug('handleInitSuccess!!');
+	return mc;
+};
 var $author$project$View$init = function (topNotes) {
 	var decodeResult = A2($elm$json$Json$Decode$decodeValue, $author$project$View$decodeLocalNotes, topNotes);
-	var _v0 = $author$project$View$debug(
+	var _v0 = $author$project$ElmCommon$debug(
 		'called init with: ' + A2($elm$json$Json$Encode$encode, 2, topNotes));
-	if (decodeResult.$ === 'Ok') {
-		var apiKey = decodeResult.a.apiKey;
-		var payload = decodeResult.a.payload;
-		var notes = A3($author$project$FP$maybe, _List_Nil, $elm$core$Basics$identity, payload);
-		var mc = $elm$core$List$isEmpty(notes) ? _Utils_Tuple2(
-			_Utils_update(
-				$author$project$View$emptyModel,
-				{
-					apiKey: $elm$core$Maybe$Just(apiKey),
-					notes: $krisajenkins$remotedata$RemoteData$Loading
-				}),
-			$elm$core$Platform$Cmd$batch(
-				_List_fromArray(
-					[
-						$author$project$View$getTopRemoteNotes(apiKey),
-						$author$project$View$logMessage('No cached data, refreshing')
-					]))) : $author$project$ElmCommon$onlyModel(
-			_Utils_update(
-				$author$project$View$emptyModel,
-				{
-					apiKey: $elm$core$Maybe$Just(apiKey),
-					notes: $krisajenkins$remotedata$RemoteData$Success(notes)
-				}));
-		var _v2 = $author$project$View$debug('decoded!!');
-		return mc;
-	} else {
-		var err = decodeResult.a;
-		var _v3 = $author$project$View$debug('failed!!');
-		return _Utils_Tuple2(
-			$author$project$View$emptyModel,
-			$elm$browser$Browser$Navigation$load('config.html'));
-	}
+	return A3($author$project$View$handleDecodeResult, decodeResult, $author$project$View$handleInitSuccess, $author$project$View$handleInitError);
 };
 var $elm$core$Platform$Sub$batch = _Platform_batch;
 var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
