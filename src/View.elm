@@ -127,32 +127,32 @@ getTopRemoteNotes apiKey =
 --  , tracker  = Nothing
 --  }
 
---type SaveType = SaveResponse | DontSaveResponse
+type SaveType = SaveResponse | DontSaveResponse
 
-type Msg = -- NoteSelected N.Note
-         --| NoteEdited N.Note
+type Msg = NoteSelected SC.NoteFull
+         | NoteEdited SC.NoteFull
          --| NoteSavedToLocalStorage
          --| NoteRemovedFromLocalStorage
          --| JSNotificationError String
-         --| AddNote
-         --| SearchEdited String
-         --| NotesRefreshed
-         {-- | -} TopNotesResponse RemoteNotesData
+         | AddNote
+         |  SearchEdited String
+         | NotesRefreshed
+         | TopNotesResponse RemoteNotesData
          --| SearchNotesResponse RemoteNotesData
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-  --  (NoteSelected note)         -> ({model| selectedNote = Just note }, scribMessage (encode PreviewMessage note))
-  --  (NoteEdited note)           -> (model, scribMessage (encode SaveToLocalStorage note))
+    (NoteSelected note)         -> onlyModel model -- ({model| selectedNote = Just note }, scribMessage (encode PreviewMessage note))
+    (NoteEdited note)           -> onlyModel model --- (model, scribMessage (encode SaveToLocalStorage note))
   --  NoteSavedToLocalStorage     -> (model, Browser.Navigation.load "save.html")
   --  NoteRemovedFromLocalStorage -> (model, Browser.Navigation.load "save.html")
   --  (JSNotificationError error) -> (model, scribMessage(encodeLogToConsole error))
-  --  AddNote                     -> (model, scribMessage encodeRemoveFromLocalStorage)
-    (TopNotesResponse notes)    ->  onlyModel model -- ({ model | notes = notes}, logResponseErrors SaveResponse notes)
-  --  (SearchNotesResponse notes) -> ({ model | notes = notes}, logResponseErrors DontSaveResponse notes)
-  --  NotesRefreshed              -> performOrGotoConfig model ({ model | notes = Loading, query = Nothing }, getTopRemoteNotes)
-  --  (SearchEdited query)        -> performOrGotoConfig model ({ model | query = Just query }, searchRemoteNotes query)
+    AddNote                     -> onlyModel model -- (model, scribMessage encodeRemoveFromLocalStorage)
+    (TopNotesResponse notes)    ->  ({ model | notes = notes}, handleTopNotesResponse SaveResponse notes)
+  --  (SearchNotesResponse notes) -> ({ model | notes = notes}, handleTopNotesResponse DontSaveResponse notes)
+    NotesRefreshed              -> onlyModel model -- performOrGotoConfig model ({ model | notes = Loading, query = Nothing }, getTopRemoteNotes)
+    (SearchEdited query)        -> onlyModel model -- performOrGotoConfig model ({ model | query = Just query }, searchRemoteNotes query)
     --SearchPerformed             -> (model, searchRemoteNotes "")
 
 --performOrGotoConfig : Model -> (Model, (ApiKey -> Cmd Msg)) -> (Model, Cmd Msg)
@@ -166,131 +166,134 @@ update msg model =
 logMessage: String -> Cmd Msg
 logMessage = scribMessage << PORTS.encodePort << PORTS.ViewPort << PORTS.LogMessageToConsole
 
---logResponseErrors: SaveType -> RemoteNotesData -> Cmd Msg
---logResponseErrors saveContent remoteData =
---  case (saveContent, remoteData) of
---    (_, Failure e)                -> scribMessage <| encodeLogToConsole <| fromHttpError e
---    (SaveResponse, Success notes) -> scribMessage <| encodeViewNotes notes
---    (DontSaveResponse, Success _) -> Cmd.none
---    (_, _)                        -> Cmd.none
+saveTopNotesToSessionStorage : List SC.NoteFull -> Cmd Msg
+saveTopNotesToSessionStorage = scribMessage << PORTS.encodePort << PORTS.ViewPort << PORTS.SaveTopNotesToSessionStorage
+
+handleTopNotesResponse: SaveType -> RemoteNotesData -> Cmd Msg
+handleTopNotesResponse saveContent remoteData =
+  case (saveContent, remoteData) of
+    (_, Failure e)                -> logMessage <| fromHttpError e -- log any errors
+    (SaveResponse, Success notes) -> saveTopNotesToSessionStorage notes
+    (DontSaveResponse, Success _) -> Cmd.none
+    (_, _)                        -> Cmd.none
 
 
 -- VIEW
 
 
 view : Model -> Html Msg
-view model = div [] []
-  --div []
-  --  [ section [ class "section" ]
-  --    [ div [ class "container" ]
-  --      [ h1 [ class "title" ]
-  --        [ text "Scrib" ]
-  --      , p [ class "subtitle" ]
-  --        [ text "Making scribbling effortless" ]
-  --      , div []
-  --        [ article [ class "panel", class "is-primary" ]
-  --          [ p [ class "panel-heading" ]
-  --            [ text "Saved Notes"
-  --            , text " "
-  --            , span [class "tab", class "is-medium"] [text <| getNoteCount model.notes]
-  --            ]
-  --          , p [ class "panel-tabs" ]
-  --            [ button [ class "button", class "is-text", onClick AddNote]
-  --              [ text "Add Note" ]
-  --            , button [ class "button", class "is-text", onClick NotesRefreshed ]
-  --              [ text "Refresh" ]
-  --            ]
-  --          , div [ class "panel-block" ]
-  --            [ p [ class "control has-icons-left" ]
-  --              [ input [ class "input", class "is-primary", placeholder "Search", type_ "text", onInput SearchEdited, value <| getQueryText model.query ]
-  --                []
-  --              , span [ class "icon is-left" ]
-  --                [ i [ attribute "aria-hidden" "true", class "fas", class "fa-search" ]
-  --                  []
-  --                ]
-  --              ]
-  --            ]
-  --          , viewNotesList model.notes
+view model =
+  div []
+    [ section [ class "section" ]
+      [ div [ class "container" ]
+        [ h1 [ class "title" ]
+          [ text "Scrib" ]
+        , p [ class "subtitle" ]
+          [ text "Making scribbling effortless" ]
+        , div []
+          [ article [ class "panel", class "is-primary" ]
+            [ p [ class "panel-heading" ]
+              [ text "Saved Notes"
+              , text " "
+              , span [class "tab", class "is-medium"] [text <| getNoteCount model.notes]
+              ]
+            , p [ class "panel-tabs" ]
+              [ button [ class "button", class "is-text", onClick AddNote]
+                [ text "Add Note" ]
+              , button [ class "button", class "is-text", onClick NotesRefreshed ]
+                [ text "Refresh" ]
+              ]
+            , div [ class "panel-block" ]
+              [ p [ class "control has-icons-left" ]
+                [ input [ class "input", class "is-primary", placeholder "Search", type_ "text", onInput SearchEdited, value <| getQueryText model.query ]
+                  []
+                , span [ class "icon is-left" ]
+                  [ i [ attribute "aria-hidden" "true", class "fas", class "fa-search" ]
+                    []
+                  ]
+                ]
+              ]
+            , viewNotesList model.notes
 
-  --          ]
-  --        ]
-  --      ]
-  --    ]
-  -- , createEditButton model.selectedNote
-  -- ]
+            ]
+          ]
+        ]
+      ]
+   , createEditButton model.selectedNote
+   ]
 
---getQueryText : Maybe String -> String
---getQueryText = maybe "" identity
+getQueryText : Maybe String -> String
+getQueryText = maybe "" identity
 
---getNoteCount: RemoteNotesData -> String
---getNoteCount remoteNoteData =
---  case remoteNoteData of
---    Success notes -> String.fromInt <| List.length notes
---    _             -> "-"
+getNoteCount: RemoteNotesData -> String
+getNoteCount remoteNoteData =
+  case remoteNoteData of
+    Success notes -> String.fromInt <| List.length notes
+    _             -> "-"
 
---viewNotesList: RemoteNotesData -> Html Msg
---viewNotesList remoteNotesData =
---  let notesContent =
---        case remoteNotesData of
---          NotAsked      -> [div [] [text "No Data"]]
---          Loading       -> [div [] [text "Loading..."]]
---          Failure e     -> [addFailureAlert <| "oops! Could not get your data :(" ++ fromHttpError e]
---          Success notes -> List.map createNoteItem notes
---  in div [ id "notes-list" ] notesContent
+viewNotesList: RemoteNotesData -> Html Msg
+viewNotesList remoteNotesData =
+  let notesContent =
+        case remoteNotesData of
+          NotAsked      -> [div [] [text "No Data"]]
+          Loading       -> [div [] [text "Loading..."]]
+          Failure e     -> [addFailureAlert <| "oops! Could not get your data :(" ++ fromHttpError e]
+          Success notes -> List.map createNoteItem notes
+  in div [ id "notes-list" ] notesContent
 
---fromHttpError: Http.Error -> String
---fromHttpError error =
---  case error of
---    (Http.BadUrl burl)      -> "bad url: " ++ burl
---    Http.Timeout            -> "timeout"
---    Http.NetworkError       -> "network error"
---    (Http.BadStatus status) -> "bad status: " ++ String.fromInt status
---    (Http.BadBody body)     -> "bad body: " ++ body
+fromHttpError: Http.Error -> String
+fromHttpError error =
+  case error of
+    (Http.BadUrl burl)      -> "bad url: " ++ burl
+    Http.Timeout            -> "timeout"
+    Http.NetworkError       -> "network error"
+    (Http.BadStatus status) -> "bad status: " ++ String.fromInt status
+    (Http.BadBody body)     -> "bad body: " ++ body
 
 
---createEditButton: Maybe N.Note -> Html Msg
---createEditButton = maybe viewMarkdownPreviewDefault viewMarkdownPreview
+createEditButton: Maybe SC.NoteFull -> Html Msg
+createEditButton = maybe viewMarkdownPreviewDefault viewMarkdownPreview
 
 ---- Update this to only create a note with the text for the first line
---createNoteItem: N.Note -> Html Msg
---createNoteItem {noteText, noteId, noteVersion } =
---  a [class "panel-block", onClick (NoteSelected { noteText = noteText, noteId = noteId, noteVersion = noteVersion })]
---  [ span [class "panel-icon"]
---    [ i [ class "fas", class "fa-book", attribute "aria-hidden" "true"]
---      []
---    ]
---  , text <| removeHeading <| onlyHeading noteText
---   ]
+createNoteItem: SC.NoteFull -> Html Msg
+createNoteItem {noteText, noteId, noteVersion } =
+  a [class "panel-block", onClick (NoteSelected { noteText = noteText, noteId = noteId, noteVersion = noteVersion })]
+  [ span [class "panel-icon"]
+    [ i [ class "fas", class "fa-book", attribute "aria-hidden" "true"]
+      []
+    ]
+  , text <| removeHeading <| onlyHeading noteText
+   ]
 
---onlyHeading : String -> String
---onlyHeading note = maybe "-no title-" identity (List.head <| String.split "\n" note)
+onlyHeading : String -> String
+onlyHeading note = maybe "-no title-" identity (List.head <| String.split "\n" note)
 
---removeHeading : String -> String
---removeHeading = String.replace "# " ""
+removeHeading : String -> String
+removeHeading = String.replace "# " ""
 
---viewMarkdownPreview : N.Note -> Html Msg
---viewMarkdownPreview note =
---  div []
---    [ hr []
---      []
---    , div [ id "preview" ]
---      [ div [ id "markdown-view" ]
---        []
---      , button [ class "button", class "is-info", onClick (NoteEdited note) ]
---        [ text "Edit" ]
---      ]
---    ]
+viewMarkdownPreview : SC.NoteFull -> Html Msg
+viewMarkdownPreview note =
+  div []
+    [ hr []
+      []
+    , div [ id "preview" ]
+      [ div [ id "markdown-view" ]
+        []
+      , button [ class "button", class "is-info", onClick (NoteEdited note) ]
+        [ text "Edit" ]
+      ]
+    ]
 
---viewMarkdownPreviewDefault: Html Msg
---viewMarkdownPreviewDefault =
---  div []
---    [ hr []
---      []
---    , div [ id "preview" ]
---      [ div [ id "markdown-view" ]
---        []
---      ]
---    ]
+viewMarkdownPreviewDefault: Html Msg
+viewMarkdownPreviewDefault =
+  div []
+    [ hr []
+      []
+    , div [ id "preview" ]
+      [ div [ id "markdown-view" ]
+        []
+      ]
+    ]
 
 -- PORTS
 

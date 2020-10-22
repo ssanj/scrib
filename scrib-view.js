@@ -6544,15 +6544,535 @@ var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
 var $author$project$View$subscriptions = function (_v0) {
 	return $elm$core$Platform$Sub$none;
 };
+var $author$project$View$SaveResponse = {$: 'SaveResponse'};
+var $author$project$View$fromHttpError = function (error) {
+	switch (error.$) {
+		case 'BadUrl':
+			var burl = error.a;
+			return 'bad url: ' + burl;
+		case 'Timeout':
+			return 'timeout';
+		case 'NetworkError':
+			return 'network error';
+		case 'BadStatus':
+			var status = error.a;
+			return 'bad status: ' + $elm$core$String$fromInt(status);
+		default:
+			var body = error.a;
+			return 'bad body: ' + body;
+	}
+};
+var $author$project$Ports$SaveTopNotesToSessionStorage = function (a) {
+	return {$: 'SaveTopNotesToSessionStorage', a: a};
+};
+var $author$project$View$saveTopNotesToSessionStorage = A2(
+	$elm$core$Basics$composeL,
+	A2(
+		$elm$core$Basics$composeL,
+		A2($elm$core$Basics$composeL, $author$project$View$scribMessage, $author$project$Ports$encodePort),
+		$author$project$Ports$ViewPort),
+	$author$project$Ports$SaveTopNotesToSessionStorage);
+var $author$project$View$handleTopNotesResponse = F2(
+	function (saveContent, remoteData) {
+		var _v0 = _Utils_Tuple2(saveContent, remoteData);
+		switch (_v0.b.$) {
+			case 'Failure':
+				var e = _v0.b.a;
+				return $author$project$View$logMessage(
+					$author$project$View$fromHttpError(e));
+			case 'Success':
+				if (_v0.a.$ === 'SaveResponse') {
+					var _v1 = _v0.a;
+					var notes = _v0.b.a;
+					return $author$project$View$saveTopNotesToSessionStorage(notes);
+				} else {
+					var _v2 = _v0.a;
+					return $elm$core$Platform$Cmd$none;
+				}
+			default:
+				return $elm$core$Platform$Cmd$none;
+		}
+	});
 var $author$project$View$update = F2(
 	function (msg, model) {
-		var notes = msg.a;
-		return $author$project$ElmCommon$onlyModel(model);
+		switch (msg.$) {
+			case 'NoteSelected':
+				var note = msg.a;
+				return $author$project$ElmCommon$onlyModel(model);
+			case 'NoteEdited':
+				var note = msg.a;
+				return $author$project$ElmCommon$onlyModel(model);
+			case 'AddNote':
+				return $author$project$ElmCommon$onlyModel(model);
+			case 'TopNotesResponse':
+				var notes = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{notes: notes}),
+					A2($author$project$View$handleTopNotesResponse, $author$project$View$SaveResponse, notes));
+			case 'NotesRefreshed':
+				return $author$project$ElmCommon$onlyModel(model);
+			default:
+				var query = msg.a;
+				return $author$project$ElmCommon$onlyModel(model);
+		}
 	});
 var $elm$json$Json$Decode$value = _Json_decodeValue;
+var $author$project$View$AddNote = {$: 'AddNote'};
+var $author$project$View$NotesRefreshed = {$: 'NotesRefreshed'};
+var $author$project$View$SearchEdited = function (a) {
+	return {$: 'SearchEdited', a: a};
+};
+var $elm$html$Html$article = _VirtualDom_node('article');
+var $elm$virtual_dom$VirtualDom$attribute = F2(
+	function (key, value) {
+		return A2(
+			_VirtualDom_attribute,
+			_VirtualDom_noOnOrFormAction(key),
+			_VirtualDom_noJavaScriptOrHtmlUri(value));
+	});
+var $elm$html$Html$Attributes$attribute = $elm$virtual_dom$VirtualDom$attribute;
+var $elm$html$Html$button = _VirtualDom_node('button');
+var $elm$html$Html$Attributes$stringProperty = F2(
+	function (key, string) {
+		return A2(
+			_VirtualDom_property,
+			key,
+			$elm$json$Json$Encode$string(string));
+	});
+var $elm$html$Html$Attributes$class = $elm$html$Html$Attributes$stringProperty('className');
+var $author$project$View$NoteEdited = function (a) {
+	return {$: 'NoteEdited', a: a};
+};
 var $elm$html$Html$div = _VirtualDom_node('div');
+var $elm$html$Html$hr = _VirtualDom_node('hr');
+var $elm$html$Html$Attributes$id = $elm$html$Html$Attributes$stringProperty('id');
+var $elm$virtual_dom$VirtualDom$Normal = function (a) {
+	return {$: 'Normal', a: a};
+};
+var $elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
+var $elm$html$Html$Events$on = F2(
+	function (event, decoder) {
+		return A2(
+			$elm$virtual_dom$VirtualDom$on,
+			event,
+			$elm$virtual_dom$VirtualDom$Normal(decoder));
+	});
+var $elm$html$Html$Events$onClick = function (msg) {
+	return A2(
+		$elm$html$Html$Events$on,
+		'click',
+		$elm$json$Json$Decode$succeed(msg));
+};
+var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
+var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
+var $author$project$View$viewMarkdownPreview = function (note) {
+	return A2(
+		$elm$html$Html$div,
+		_List_Nil,
+		_List_fromArray(
+			[
+				A2($elm$html$Html$hr, _List_Nil, _List_Nil),
+				A2(
+				$elm$html$Html$div,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$id('preview')
+					]),
+				_List_fromArray(
+					[
+						A2(
+						$elm$html$Html$div,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$id('markdown-view')
+							]),
+						_List_Nil),
+						A2(
+						$elm$html$Html$button,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('button'),
+								$elm$html$Html$Attributes$class('is-info'),
+								$elm$html$Html$Events$onClick(
+								$author$project$View$NoteEdited(note))
+							]),
+						_List_fromArray(
+							[
+								$elm$html$Html$text('Edit')
+							]))
+					]))
+			]));
+};
+var $author$project$View$viewMarkdownPreviewDefault = A2(
+	$elm$html$Html$div,
+	_List_Nil,
+	_List_fromArray(
+		[
+			A2($elm$html$Html$hr, _List_Nil, _List_Nil),
+			A2(
+			$elm$html$Html$div,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$id('preview')
+				]),
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$div,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$id('markdown-view')
+						]),
+					_List_Nil)
+				]))
+		]));
+var $author$project$View$createEditButton = A2($author$project$FP$maybe, $author$project$View$viewMarkdownPreviewDefault, $author$project$View$viewMarkdownPreview);
+var $author$project$View$getNoteCount = function (remoteNoteData) {
+	if (remoteNoteData.$ === 'Success') {
+		var notes = remoteNoteData.a;
+		return $elm$core$String$fromInt(
+			$elm$core$List$length(notes));
+	} else {
+		return '-';
+	}
+};
+var $author$project$View$getQueryText = A2($author$project$FP$maybe, '', $elm$core$Basics$identity);
+var $elm$html$Html$h1 = _VirtualDom_node('h1');
+var $elm$html$Html$i = _VirtualDom_node('i');
+var $elm$html$Html$input = _VirtualDom_node('input');
+var $elm$html$Html$Events$alwaysStop = function (x) {
+	return _Utils_Tuple2(x, true);
+};
+var $elm$virtual_dom$VirtualDom$MayStopPropagation = function (a) {
+	return {$: 'MayStopPropagation', a: a};
+};
+var $elm$html$Html$Events$stopPropagationOn = F2(
+	function (event, decoder) {
+		return A2(
+			$elm$virtual_dom$VirtualDom$on,
+			event,
+			$elm$virtual_dom$VirtualDom$MayStopPropagation(decoder));
+	});
+var $elm$json$Json$Decode$at = F2(
+	function (fields, decoder) {
+		return A3($elm$core$List$foldr, $elm$json$Json$Decode$field, decoder, fields);
+	});
+var $elm$html$Html$Events$targetValue = A2(
+	$elm$json$Json$Decode$at,
+	_List_fromArray(
+		['target', 'value']),
+	$elm$json$Json$Decode$string);
+var $elm$html$Html$Events$onInput = function (tagger) {
+	return A2(
+		$elm$html$Html$Events$stopPropagationOn,
+		'input',
+		A2(
+			$elm$json$Json$Decode$map,
+			$elm$html$Html$Events$alwaysStop,
+			A2($elm$json$Json$Decode$map, tagger, $elm$html$Html$Events$targetValue)));
+};
+var $elm$html$Html$p = _VirtualDom_node('p');
+var $elm$html$Html$Attributes$placeholder = $elm$html$Html$Attributes$stringProperty('placeholder');
+var $elm$html$Html$section = _VirtualDom_node('section');
+var $elm$html$Html$span = _VirtualDom_node('span');
+var $elm$html$Html$Attributes$type_ = $elm$html$Html$Attributes$stringProperty('type');
+var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty('value');
+var $author$project$ElmCommon$addClasses = function (classes) {
+	return A2($elm$core$List$map, $elm$html$Html$Attributes$class, classes);
+};
+var $author$project$ElmCommon$addFailureAlert = function (textValue) {
+	return A2(
+		$elm$html$Html$div,
+		$author$project$ElmCommon$addClasses(
+			_List_fromArray(
+				['px-1', 'py-1', 'has-background-danger', 'has-text-white', 'autohide'])),
+		_List_fromArray(
+			[
+				$elm$html$Html$text(textValue)
+			]));
+};
+var $author$project$View$NoteSelected = function (a) {
+	return {$: 'NoteSelected', a: a};
+};
+var $elm$html$Html$a = _VirtualDom_node('a');
+var $elm$core$List$head = function (list) {
+	if (list.b) {
+		var x = list.a;
+		var xs = list.b;
+		return $elm$core$Maybe$Just(x);
+	} else {
+		return $elm$core$Maybe$Nothing;
+	}
+};
+var $author$project$View$onlyHeading = function (note) {
+	return A3(
+		$author$project$FP$maybe,
+		'-no title-',
+		$elm$core$Basics$identity,
+		$elm$core$List$head(
+			A2($elm$core$String$split, '\n', note)));
+};
+var $elm$core$String$replace = F3(
+	function (before, after, string) {
+		return A2(
+			$elm$core$String$join,
+			after,
+			A2($elm$core$String$split, before, string));
+	});
+var $author$project$View$removeHeading = A2($elm$core$String$replace, '# ', '');
+var $author$project$View$createNoteItem = function (_v0) {
+	var noteText = _v0.noteText;
+	var noteId = _v0.noteId;
+	var noteVersion = _v0.noteVersion;
+	return A2(
+		$elm$html$Html$a,
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$class('panel-block'),
+				$elm$html$Html$Events$onClick(
+				$author$project$View$NoteSelected(
+					{noteId: noteId, noteText: noteText, noteVersion: noteVersion}))
+			]),
+		_List_fromArray(
+			[
+				A2(
+				$elm$html$Html$span,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('panel-icon')
+					]),
+				_List_fromArray(
+					[
+						A2(
+						$elm$html$Html$i,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('fas'),
+								$elm$html$Html$Attributes$class('fa-book'),
+								A2($elm$html$Html$Attributes$attribute, 'aria-hidden', 'true')
+							]),
+						_List_Nil)
+					])),
+				$elm$html$Html$text(
+				$author$project$View$removeHeading(
+					$author$project$View$onlyHeading(noteText)))
+			]));
+};
+var $author$project$View$viewNotesList = function (remoteNotesData) {
+	var notesContent = function () {
+		switch (remoteNotesData.$) {
+			case 'NotAsked':
+				return _List_fromArray(
+					[
+						A2(
+						$elm$html$Html$div,
+						_List_Nil,
+						_List_fromArray(
+							[
+								$elm$html$Html$text('No Data')
+							]))
+					]);
+			case 'Loading':
+				return _List_fromArray(
+					[
+						A2(
+						$elm$html$Html$div,
+						_List_Nil,
+						_List_fromArray(
+							[
+								$elm$html$Html$text('Loading...')
+							]))
+					]);
+			case 'Failure':
+				var e = remoteNotesData.a;
+				return _List_fromArray(
+					[
+						$author$project$ElmCommon$addFailureAlert(
+						'oops! Could not get your data :(' + $author$project$View$fromHttpError(e))
+					]);
+			default:
+				var notes = remoteNotesData.a;
+				return A2($elm$core$List$map, $author$project$View$createNoteItem, notes);
+		}
+	}();
+	return A2(
+		$elm$html$Html$div,
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$id('notes-list')
+			]),
+		notesContent);
+};
 var $author$project$View$view = function (model) {
-	return A2($elm$html$Html$div, _List_Nil, _List_Nil);
+	return A2(
+		$elm$html$Html$div,
+		_List_Nil,
+		_List_fromArray(
+			[
+				A2(
+				$elm$html$Html$section,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('section')
+					]),
+				_List_fromArray(
+					[
+						A2(
+						$elm$html$Html$div,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('container')
+							]),
+						_List_fromArray(
+							[
+								A2(
+								$elm$html$Html$h1,
+								_List_fromArray(
+									[
+										$elm$html$Html$Attributes$class('title')
+									]),
+								_List_fromArray(
+									[
+										$elm$html$Html$text('Scrib')
+									])),
+								A2(
+								$elm$html$Html$p,
+								_List_fromArray(
+									[
+										$elm$html$Html$Attributes$class('subtitle')
+									]),
+								_List_fromArray(
+									[
+										$elm$html$Html$text('Making scribbling effortless')
+									])),
+								A2(
+								$elm$html$Html$div,
+								_List_Nil,
+								_List_fromArray(
+									[
+										A2(
+										$elm$html$Html$article,
+										_List_fromArray(
+											[
+												$elm$html$Html$Attributes$class('panel'),
+												$elm$html$Html$Attributes$class('is-primary')
+											]),
+										_List_fromArray(
+											[
+												A2(
+												$elm$html$Html$p,
+												_List_fromArray(
+													[
+														$elm$html$Html$Attributes$class('panel-heading')
+													]),
+												_List_fromArray(
+													[
+														$elm$html$Html$text('Saved Notes'),
+														$elm$html$Html$text(' '),
+														A2(
+														$elm$html$Html$span,
+														_List_fromArray(
+															[
+																$elm$html$Html$Attributes$class('tab'),
+																$elm$html$Html$Attributes$class('is-medium')
+															]),
+														_List_fromArray(
+															[
+																$elm$html$Html$text(
+																$author$project$View$getNoteCount(model.notes))
+															]))
+													])),
+												A2(
+												$elm$html$Html$p,
+												_List_fromArray(
+													[
+														$elm$html$Html$Attributes$class('panel-tabs')
+													]),
+												_List_fromArray(
+													[
+														A2(
+														$elm$html$Html$button,
+														_List_fromArray(
+															[
+																$elm$html$Html$Attributes$class('button'),
+																$elm$html$Html$Attributes$class('is-text'),
+																$elm$html$Html$Events$onClick($author$project$View$AddNote)
+															]),
+														_List_fromArray(
+															[
+																$elm$html$Html$text('Add Note')
+															])),
+														A2(
+														$elm$html$Html$button,
+														_List_fromArray(
+															[
+																$elm$html$Html$Attributes$class('button'),
+																$elm$html$Html$Attributes$class('is-text'),
+																$elm$html$Html$Events$onClick($author$project$View$NotesRefreshed)
+															]),
+														_List_fromArray(
+															[
+																$elm$html$Html$text('Refresh')
+															]))
+													])),
+												A2(
+												$elm$html$Html$div,
+												_List_fromArray(
+													[
+														$elm$html$Html$Attributes$class('panel-block')
+													]),
+												_List_fromArray(
+													[
+														A2(
+														$elm$html$Html$p,
+														_List_fromArray(
+															[
+																$elm$html$Html$Attributes$class('control has-icons-left')
+															]),
+														_List_fromArray(
+															[
+																A2(
+																$elm$html$Html$input,
+																_List_fromArray(
+																	[
+																		$elm$html$Html$Attributes$class('input'),
+																		$elm$html$Html$Attributes$class('is-primary'),
+																		$elm$html$Html$Attributes$placeholder('Search'),
+																		$elm$html$Html$Attributes$type_('text'),
+																		$elm$html$Html$Events$onInput($author$project$View$SearchEdited),
+																		$elm$html$Html$Attributes$value(
+																		$author$project$View$getQueryText(model.query))
+																	]),
+																_List_Nil),
+																A2(
+																$elm$html$Html$span,
+																_List_fromArray(
+																	[
+																		$elm$html$Html$Attributes$class('icon is-left')
+																	]),
+																_List_fromArray(
+																	[
+																		A2(
+																		$elm$html$Html$i,
+																		_List_fromArray(
+																			[
+																				A2($elm$html$Html$Attributes$attribute, 'aria-hidden', 'true'),
+																				$elm$html$Html$Attributes$class('fas'),
+																				$elm$html$Html$Attributes$class('fa-search')
+																			]),
+																		_List_Nil)
+																	]))
+															]))
+													])),
+												$author$project$View$viewNotesList(model.notes)
+											]))
+									]))
+							]))
+					])),
+				$author$project$View$createEditButton(model.selectedNote)
+			]));
 };
 var $author$project$View$main = $elm$browser$Browser$element(
 	{init: $author$project$View$init, subscriptions: $author$project$View$subscriptions, update: $author$project$View$update, view: $author$project$View$view});
