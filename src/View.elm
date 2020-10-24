@@ -144,7 +144,7 @@ update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
     (NoteSelected note)         -> ({model| selectedNote = Just note }, previewMarkdown note)
-    (NoteEdited note)           -> onlyModel model --- (model, scribMessage (encode SaveToLocalStorage note))
+    (NoteEdited note)           -> (model, saveSelectedNoteToLocalStorage note)
   --  NoteSavedToLocalStorage     -> (model, Browser.Navigation.load "save.html")
   --  NoteRemovedFromLocalStorage -> (model, Browser.Navigation.load "save.html")
   --  (JSNotificationError error) -> (model, scribMessage(encodeLogToConsole error))
@@ -181,6 +181,13 @@ previewMarkdown note =
   let markdownValue = P.JsMarkdownValue markdownViewId note
       markdownPreviewCommand = P.MarkdownPreview markdownValue
   in scribMessage <| P.encodeJsCommand markdownPreviewCommand SC.encodeFullNote
+
+saveSelectedNoteToLocalStorage : SC.NoteFull -> Cmd Msg
+saveSelectedNoteToLocalStorage note =
+  let storageArea             = viewSelectedNoteStorageArea
+      saveSelectedNoteValue   = P.JsStorageValue storageArea Save note
+      saveSelectedNoteCommand = P.WithStorage saveSelectedNoteValue
+  in scribMessage <| P.encodeJsCommand saveSelectedNoteCommand SC.encodeFullNote
 
 saveTopNotesToSessionStorage : List SC.NoteFull -> Cmd Msg
 saveTopNotesToSessionStorage notes =

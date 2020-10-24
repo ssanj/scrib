@@ -6562,6 +6562,18 @@ var $author$project$View$previewMarkdown = function (note) {
 	return $author$project$View$scribMessage(
 		A2($author$project$Ports$encodeJsCommand, markdownPreviewCommand, $author$project$Note$encodeFullNote));
 };
+var $author$project$StorageKeys$Local = {$: 'Local'};
+var $author$project$StorageKeys$viewSelectedNoteStorageArea = A2(
+	$author$project$StorageKeys$StorageArea,
+	$author$project$StorageKeys$Local,
+	$author$project$StorageKeys$StorageKey('scrib.edit'));
+var $author$project$View$saveSelectedNoteToLocalStorage = function (note) {
+	var storageArea = $author$project$StorageKeys$viewSelectedNoteStorageArea;
+	var saveSelectedNoteValue = A3($author$project$Ports$JsStorageValue, storageArea, $author$project$StorageKeys$Save, note);
+	var saveSelectedNoteCommand = $author$project$Ports$WithStorage(saveSelectedNoteValue);
+	return $author$project$View$scribMessage(
+		A2($author$project$Ports$encodeJsCommand, saveSelectedNoteCommand, $author$project$Note$encodeFullNote));
+};
 var $author$project$View$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
@@ -6576,7 +6588,9 @@ var $author$project$View$update = F2(
 					$author$project$View$previewMarkdown(note));
 			case 'NoteEdited':
 				var note = msg.a;
-				return $author$project$ElmCommon$onlyModel(model);
+				return _Utils_Tuple2(
+					model,
+					$author$project$View$saveSelectedNoteToLocalStorage(note));
 			case 'AddNote':
 				return $author$project$ElmCommon$onlyModel(model);
 			case 'TopNotesResponse':
