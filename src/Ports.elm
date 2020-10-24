@@ -1,13 +1,12 @@
 module Ports exposing
   (
-    --encodePort
-    --ViewPortType(..)
-  --, SavePortType(..)
-  --, PortType(..)
+    -- Data types
     PortTypeName
   , JsCommand(..)
   , JsCommandValue
   , JsStorageValue
+
+  -- Functions
   , encodeJsCommand
   )
 
@@ -26,7 +25,7 @@ type PortTypeName = PortTypeName String
   | Log console messages
 -}
 
--- Why do we need a key at all? Just log to the same place each time. Maybe "data" ?
+-- TODO: Why do we need a key at all? Just log to the same place each time. Maybe "data" ?
 type alias JsCommandValue a = { key: JsonKey, value: a }
 type alias JsStorageValue a = { storageArea: StorageArea, storageAction: StorageAction, key: JsonKey, value: a }
 
@@ -60,96 +59,18 @@ markdownPreviewCommand encoder { key, value } =
 
 toStorageCommand : Encoder a -> JsStorageValue a -> E.Value
 toStorageCommand encoder storageValue =
-  encodePortAndJsPayloadWithStorageAccess
+  encodePortWithStorageAccess
       (PortTypeName <| "save_top_notes_to_session_storage")
       storageValue
       encoder
 
-encodePortAndJsPayloadWithStorageAccess : PortTypeName -> JsStorageValue a -> Encoder a -> E.Value
-encodePortAndJsPayloadWithStorageAccess (PortTypeName portType) { storageArea, storageAction, key, value } encoder =
+encodePortWithStorageAccess : PortTypeName -> JsStorageValue a -> Encoder a -> E.Value
+encodePortWithStorageAccess (PortTypeName portType) { storageArea, storageAction, key, value } encoder =
   E.object
     [
       ("eventType", E.string portType)
     , ("storage", encodeStorageAreaAction storageArea storageAction key encoder value)
     ]
-
---type ViewPortType = PreviewViewNote SCRIB.NoteFull
---                  | SaveViewNoteToLocalStorage SCRIB.NoteFull
---                  | SaveTopNotesToSessionStorage (List SCRIB.NoteFull)
---                  | RemoveNoteFromLocalStorage
---                  | LogMessageToConsole String
-
---type SavePortType = SaveEditNoteToLocalStorage SCRIB.Note
---                  | PreviewSaveNote SCRIB.Note
-
---type PortType = ViewPort ViewPortType
---              | SavePort SavePortType
-
---encodePort : Encoder PortType
---encodePort portType =
---  case portType of
---    ViewPort vp -> encodeViewPortRequest vp
---    SavePort sp -> encodeSavePortRequest sp
-
---encodeViewPortRequest :  Encoder ViewPortType
---encodeViewPortRequest viewPort =
---  case viewPort of
---    (PreviewViewNote note)                   ->
---      encodePortAndPayload
---        (PortTypeName <| "preview_note")
---        noteKey
---        SCRIB.encodeFullNote
---        note
-
---    (SaveViewNoteToLocalStorage note)       ->
---      encodePortAndPayloadWithStorageAccess
---        (PortTypeName <| "save_note_to_local_storage")
---        viewSelectedNoteStorageArea
---        noteKey
---        SCRIB.encodeFullNote
---        note
-
---    (SaveTopNotesToSessionStorage notes) ->
---      encodePortAndPayloadWithStorageAccess
---        (PortTypeName <| "save_top_notes_to_session_storage")
---        viewTopNotesStorageArea
---        topNotesKey
---        SCRIB.encodeFullNotes
---        notes
-
---    RemoveNoteFromLocalStorage           ->
---      encodePortWithStorageAccess
---        (PortTypeName <| "remove_note_from_local_storage")
---        viewSelectedNoteStorageArea
---    (LogMessageToConsole message)        ->
---      encodePortAndPayload
---        (PortTypeName <| "log_message_to_console")
---        outputKey
---        E.string
---        message
-
---encodeSavePortRequest : Encoder SavePortType
---encodeSavePortRequest savePort =
---  case savePort of
---    (SaveEditNoteToLocalStorage note) -> encodePortAndPayload (PortTypeName <| "save_note_to_local_storage") noteKey SCRIB.encodeNote note
---    (PreviewSaveNote note)            -> encodePortAndPayload (PortTypeName <| "preview_note") noteKey SCRIB.encodeNote note
-
---encodePortWithStorageAccess : PortTypeName -> StorageArea ->  E.Value
---encodePortWithStorageAccess (PortTypeName portType) storageArea  =
---  E.object
---    [
---      ("eventType", E.string portType)
---    , ("storage", encodeStorageArea storageArea)
---    ]
-
---encodePortAndPayloadWithStorageAccess : PortTypeName -> StorageArea -> JsonKey -> Encoder a -> a -> E.Value
---encodePortAndPayloadWithStorageAccess (PortTypeName portType) storageArea key payloadEncoder payload =
---  E.object
---    [
---      ("eventType", E.string portType)
---    , ("storage", encodeStorageArea storageArea)
---    , encodeKeyAndPayload key payloadEncoder payload
---    ]
 
 encodePortAndPayload : PortTypeName -> JsonKey -> Encoder a -> a -> E.Value
 encodePortAndPayload (PortTypeName portType) key payloadEncoder payload =
