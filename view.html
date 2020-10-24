@@ -39,11 +39,11 @@
         node: document.getElementById('myapp')
       });
 
-      const markedOptions = {
-        "gfm": true,
-        "smartLists": true,
-        "xhtml": true
-      }
+      // const markedOptions = {
+      //   "gfm": true,
+      //   "smartLists": true,
+      //   "xhtml": true
+      // }
 
       function responseJson(eventType) {
         return {
@@ -70,26 +70,26 @@
         // }
       });
 
-      function previewMarkdown(noteEvent) {
-        const markdownView = document.getElementById('markdown-view');
-        if (typeof marked !== 'undefined' && markdownView) {
-          markdownView.innerHTML = marked(noteEvent.note.noteText, markedOptions);
-        } else {
-         console.log("error", "markdown renderer has not loaded.")
-        }
-      }
+      // function previewMarkdown(noteEvent) {
+      //   const markdownView = document.getElementById('markdown-view');
+      //   if (typeof marked !== 'undefined' && markdownView) {
+      //     markdownView.innerHTML = marked(noteEvent.note.noteText, markedOptions);
+      //   } else {
+      //    console.log("error", "markdown renderer has not loaded.")
+      //   }
+      // }
 
-      function saveMessageToLocalStorage(noteEvent) {
-        localStorage.setItem(appEditKey, JSON.stringify(noteEvent));
-        console.log("you saved: " + JSON.stringify(noteEvent));
-        app.ports.jsMessage.send(responseJson("message_saved"));
-      }
+      // function saveMessageToLocalStorage(noteEvent) {
+      //   localStorage.setItem(appEditKey, JSON.stringify(noteEvent));
+      //   console.log("you saved: " + JSON.stringify(noteEvent));
+      //   app.ports.jsMessage.send(responseJson("message_saved"));
+      // }
 
-      function saveToSessionStorage(noteEvent) {
-        const viewData = JSON.stringify(noteEvent.view_data);
-        sessionStorage.setItem(appViewKey, viewData);
-        console.log("you saved your view: " + viewData);
-      }
+      // function saveToSessionStorage(noteEvent) {
+      //   const viewData = JSON.stringify(noteEvent.view_data);
+      //   sessionStorage.setItem(appViewKey, viewData);
+      //   console.log("you saved your view: " + viewData);
+      // }
 
      function initLoad(appKey) {
       const storedData = sessionStorage.getItem(appKey);

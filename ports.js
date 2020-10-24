@@ -13,11 +13,34 @@ function portActions(action) {
   if (action.eventType === "log_action") {
     console.log("log: " + JSON.stringify(action.data));
   } else if (action.eventType === "storage_action") {
-    handleStorage(action)
+    handleStorage(action);
+  } else if (action.eventType === "markdown_action") {
+    handleMarkdown(action);
   } else {
     console.log("error, handled action:" + JSON.stringify(action));
   }
 }
+
+function handleMarkdown(action) {
+  const markdown       = action.markdown;
+  const elementId       = markdown.elementId;
+  const markdownContent = markdown.data.noteText;
+
+  const markedOptions = {
+    "gfm": true,
+    "smartLists": true,
+    "xhtml": true
+  }
+
+  const markdownView = document.getElementById(elementId);
+    if (typeof marked !== 'undefined' && markdownView) {
+      markdownView.innerHTML = marked(markdownContent, markedOptions);
+    } else {
+     console.log("markdown renderer has not loaded.");
+    }
+}
+
+
 
 //we need a way to figure out how to respond to JS
 function handleStorage(action) {

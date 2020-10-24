@@ -143,7 +143,7 @@ type Msg = NoteSelected SC.NoteFull
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    (NoteSelected note)         -> onlyModel model -- ({model| selectedNote = Just note }, scribMessage (encode PreviewMessage note))
+    (NoteSelected note)         -> ({model| selectedNote = Just note }, previewMarkdown note)
     (NoteEdited note)           -> onlyModel model --- (model, scribMessage (encode SaveToLocalStorage note))
   --  NoteSavedToLocalStorage     -> (model, Browser.Navigation.load "save.html")
   --  NoteRemovedFromLocalStorage -> (model, Browser.Navigation.load "save.html")
@@ -175,6 +175,12 @@ logMessage: String -> Cmd Msg
 logMessage message =
   let logCommand = P.LogConsole <| appMessage message
   in scribMessage <| P.encodeJsCommand logCommand E.string
+
+previewMarkdown : SC.NoteFull -> Cmd Msg
+previewMarkdown note =
+  let markdownValue = P.JsMarkdownValue markdownViewId note
+      markdownPreviewCommand = P.MarkdownPreview markdownValue
+  in scribMessage <| P.encodeJsCommand markdownPreviewCommand SC.encodeFullNote
 
 saveTopNotesToSessionStorage : List SC.NoteFull -> Cmd Msg
 saveTopNotesToSessionStorage notes =
@@ -291,7 +297,7 @@ viewMarkdownPreview note =
     [ hr []
       []
     , div [ id "preview" ]
-      [ div [ id "markdown-view" ]
+      [ div [ id markdownViewId ]
         []
       , button [ class "button", class "is-info", onClick (NoteEdited note) ]
         [ text "Edit" ]
@@ -304,11 +310,14 @@ viewMarkdownPreviewDefault =
     [ hr []
       []
     , div [ id "preview" ]
-      [ div [ id "markdown-view" ]
+      [ div [ id markdownViewId ]
         []
       ]
     ]
 
+
+markdownViewId : String
+markdownViewId = "markdown-view"
 -- PORTS
 
 port scribMessage : E.Value -> Cmd msg

@@ -5451,9 +5451,11 @@ var $author$project$Ports$PortTypeName = function (a) {
 };
 var $author$project$Ports$logMessagePort = $author$project$Ports$PortTypeName('log_action');
 var $author$project$Ports$logCommand = $author$project$Ports$encodePortWithLog($author$project$Ports$logMessagePort);
-var $author$project$Ports$encodePortAndPayload = F3(
-	function (_v0, payloadEncoder, payload) {
+var $author$project$Ports$encodePortWithMarkdownCommand = F3(
+	function (_v0, encoder, _v1) {
 		var portType = _v0.a;
+		var elementId = _v1.elementId;
+		var value = _v1.value;
 		return $elm$json$Json$Encode$object(
 			_List_fromArray(
 				[
@@ -5461,12 +5463,21 @@ var $author$project$Ports$encodePortAndPayload = F3(
 					'eventType',
 					$elm$json$Json$Encode$string(portType)),
 					_Utils_Tuple2(
-					'data',
-					payloadEncoder(payload))
+					'markdown',
+					$elm$json$Json$Encode$object(
+						_List_fromArray(
+							[
+								_Utils_Tuple2(
+								'elementId',
+								$elm$json$Json$Encode$string(elementId)),
+								_Utils_Tuple2(
+								'data',
+								encoder(value))
+							])))
 				]));
 	});
 var $author$project$Ports$markdownPreviewPort = $author$project$Ports$PortTypeName('markdown_action');
-var $author$project$Ports$markdownPreviewCommand = $author$project$Ports$encodePortAndPayload($author$project$Ports$markdownPreviewPort);
+var $author$project$Ports$markdownPreviewCommand = $author$project$Ports$encodePortWithMarkdownCommand($author$project$Ports$markdownPreviewPort);
 var $author$project$StorageKeys$encodeStorageAction = function (storageAction) {
 	if (storageAction.$ === 'Save') {
 		return $elm$json$Json$Encode$string('save');
@@ -6537,12 +6548,32 @@ var $author$project$View$handleTopNotesResponse = F2(
 				return $elm$core$Platform$Cmd$none;
 		}
 	});
+var $author$project$Ports$JsMarkdownValue = F2(
+	function (elementId, value) {
+		return {elementId: elementId, value: value};
+	});
+var $author$project$Ports$MarkdownPreview = function (a) {
+	return {$: 'MarkdownPreview', a: a};
+};
+var $author$project$View$markdownViewId = 'markdown-view';
+var $author$project$View$previewMarkdown = function (note) {
+	var markdownValue = A2($author$project$Ports$JsMarkdownValue, $author$project$View$markdownViewId, note);
+	var markdownPreviewCommand = $author$project$Ports$MarkdownPreview(markdownValue);
+	return $author$project$View$scribMessage(
+		A2($author$project$Ports$encodeJsCommand, markdownPreviewCommand, $author$project$Note$encodeFullNote));
+};
 var $author$project$View$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
 			case 'NoteSelected':
 				var note = msg.a;
-				return $author$project$ElmCommon$onlyModel(model);
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							selectedNote: $elm$core$Maybe$Just(note)
+						}),
+					$author$project$View$previewMarkdown(note));
 			case 'NoteEdited':
 				var note = msg.a;
 				return $author$project$ElmCommon$onlyModel(model);
@@ -6630,7 +6661,7 @@ var $author$project$View$viewMarkdownPreview = function (note) {
 						$elm$html$Html$div,
 						_List_fromArray(
 							[
-								$elm$html$Html$Attributes$id('markdown-view')
+								$elm$html$Html$Attributes$id($author$project$View$markdownViewId)
 							]),
 						_List_Nil),
 						A2(
@@ -6667,7 +6698,7 @@ var $author$project$View$viewMarkdownPreviewDefault = A2(
 					$elm$html$Html$div,
 					_List_fromArray(
 						[
-							$elm$html$Html$Attributes$id('markdown-view')
+							$elm$html$Html$Attributes$id($author$project$View$markdownViewId)
 						]),
 					_List_Nil)
 				]))
