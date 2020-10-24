@@ -95,7 +95,7 @@
       const storedData = sessionStorage.getItem(appKey);
       const notes      = storedData ? JSON.parse(storedData) : null;
       const apiKey     = localStorage.getItem(appApiKey);
-      return { "notes" : notes, "apiKey" :  apiKey };
+      return { "top_notes" : notes, "apiKey" :  apiKey };
     }
 
   </script>
