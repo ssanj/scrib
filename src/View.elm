@@ -18,7 +18,7 @@ import Browser.Navigation
 import Json.Decode  as D
 import Json.Encode  as E
 import Note         as SC
-import Ports        as PORTS
+import Ports        as P
 import Subs         as SUBS
 
 
@@ -165,19 +165,23 @@ update msg model =
 
 -- JS Commands
 
+appName : String
+appName = "scrib"
+
+appMessage : a -> P.JsAppMessage a
+appMessage = P.JsAppMessage appName
 
 logMessage: String -> Cmd Msg
-logMessage mesasge =
-  let logCommandValue = PORTS.JsCommandValue outputKey mesasge
-      logCommand = PORTS.LogConsole logCommandValue
-  in scribMessage <| PORTS.encodeJsCommand logCommand E.string
+logMessage message =
+  let logCommand = P.LogConsole <| appMessage message
+  in scribMessage <| P.encodeJsCommand logCommand E.string
 
 saveTopNotesToSessionStorage : List SC.NoteFull -> Cmd Msg
 saveTopNotesToSessionStorage notes =
   let storageArea         = viewTopNotesStorageArea
-      saveTopNotesValue   = PORTS.JsStorageValue storageArea Save topNotesKey notes
-      saveTopNotesCommand = PORTS.ToStorage saveTopNotesValue
-  in scribMessage <| PORTS.encodeJsCommand saveTopNotesCommand SC.encodeFullNotes
+      saveTopNotesValue   = P.JsStorageValue storageArea Save notes
+      saveTopNotesCommand = P.WithStorage saveTopNotesValue
+  in scribMessage <| P.encodeJsCommand saveTopNotesCommand SC.encodeFullNotes
 
 handleTopNotesResponse: SaveType -> RemoteNotesData -> Cmd Msg
 handleTopNotesResponse saveContent remoteData =

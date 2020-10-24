@@ -10,7 +10,6 @@ module StorageKeys exposing
     , apiKeyStorageArea
     , encodeKeyAndPayload
     , encodeStorageAreaAction
-    , encodeStorageArea
     , keyValue
     , JsonKey
     , StorageArea
@@ -65,28 +64,20 @@ encodeStorageType st =
     Local   -> E.string "local"
     Session -> E.string "session"
 
-encodeStorageArea : Encoder StorageArea
-encodeStorageArea (StorageArea st (StorageKey key)) =
-      E.object
-      [
-        ("storageType", encodeStorageType st)
-      , ("storageKey", E.string key)
-      ]
-
 encodeStorageAction : Encoder StorageAction
 encodeStorageAction storageAction =
   case storageAction of
     Save   ->  E.string "save"
     Delete ->  E.string "delete"
 
-encodeStorageAreaAction : StorageArea -> StorageAction -> JsonKey -> Encoder a -> a -> E.Value
-encodeStorageAreaAction (StorageArea st (StorageKey storageKey)) action payloadKey payloadEncoder payload =
+encodeStorageAreaAction : StorageArea -> StorageAction -> Encoder a -> a -> E.Value
+encodeStorageAreaAction (StorageArea st (StorageKey storageKey)) action payloadEncoder payload =
       E.object
       [
         ("storageType", encodeStorageType st)
       , ("storageKey", E.string storageKey)
       , ("storageAction", encodeStorageAction action)
-      , encodeKeyAndPayload payloadKey payloadEncoder payload
+      , ("data", payloadEncoder payload)
       ]
 
 

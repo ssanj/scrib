@@ -4,10 +4,11 @@ module Ports exposing
     PortTypeName
   , JsCommand(..)
   , JsStorageValue
+  , JsAppMessage
 
   -- Functions
   , encodeJsCommand
-  )
+   )
 
 import StorageKeys exposing (..)
 import ElmCommon exposing (Encoder)
@@ -17,6 +18,15 @@ import Note        as SCRIB
 
 type PortTypeName = PortTypeName String
 
+logMessagePort : PortTypeName
+logMessagePort = PortTypeName "log_action"
+
+markdownPreviewPort : PortTypeName
+markdownPreviewPort = PortTypeName "markdown_action"
+
+withStoragePort : PortTypeName
+withStoragePort = PortTypeName "storage_action"
+
 {-| Actions we can perform through JS
   | Preview something
   | Save something to some kind of storage somewhere
@@ -24,13 +34,12 @@ type PortTypeName = PortTypeName String
   | Log console messages
 -}
 
--- TODO: Why do we need a key at all? Just log to the same place each time. Maybe "data" ?
-type alias JsStorageValue a = { storageArea: StorageArea, storageAction: StorageAction, key: JsonKey, value: a }
+type alias JsStorageValue a = { storageArea: StorageArea, storageAction: StorageAction, value: a }
+type alias JsAppMessage a = { appName: String , value: a }
 
-type JsCommand a = LogConsole a
+type JsCommand a = LogConsole (JsAppMessage a)
                  | MarkdownPreview a
                  | WithStorage (JsStorageValue a)
-
 
 encodeJsCommand : JsCommand a -> Encoder a -> E.Value
 encodeJsCommand command encoder =
@@ -39,21 +48,34 @@ encodeJsCommand command encoder =
     (MarkdownPreview value) -> markdownPreviewCommand encoder value
     (WithStorage value)     -> withStorageCommand encoder value
 
-logCommand : Encoder a -> a -> E.Value
-logCommand = encodePortAndPayload (PortTypeName <| "log_message_to_console")
+logCommand : Encoder a -> JsAppMessage a -> E.Value
+logCommand = encodePortWithLog logMessagePort
 
 markdownPreviewCommand : Encoder a -> a -> E.Value
-markdownPreviewCommand = encodePortAndPayload (PortTypeName <| "preview_note")
+markdownPreviewCommand = encodePortAndPayload markdownPreviewPort
 
 withStorageCommand : Encoder a -> JsStorageValue a -> E.Value
-withStorageCommand = encodePortWithStorageAccess (PortTypeName <| "save_top_notes_to_session_storage")
+withStorageCommand = encodePortWithStorageAccess withStoragePort
 
 encodePortWithStorageAccess : PortTypeName -> Encoder a -> JsStorageValue a -> E.Value
-encodePortWithStorageAccess (PortTypeName portType) encoder { storageArea, storageAction, key, value }  =
+encodePortWithStorageAccess (PortTypeName portType) encoder { storageArea, storageAction, value }  =
   E.object
     [
       ("eventType", E.string portType)
-    , ("storage", encodeStorageAreaAction storageArea storageAction key encoder value)
+    , ("storage", encodeStorageAreaAction storageArea storageAction encoder value)
+    ]
+
+encodePortWithLog : PortTypeName -> Encoder a -> JsAppMessage a -> E.Value
+encodePortWithLog (PortTypeName portType) encoder { appName, value }  =
+  E.object
+    [
+      ("eventType", E.string portType)
+    , ("data",
+        E.object
+          [
+            (appName, encoder value)
+          ]
+      )
     ]
 
 encodePortAndPayload : PortTypeName -> Encoder a -> a -> E.Value

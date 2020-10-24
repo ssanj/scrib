@@ -6,6 +6,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.0/css/bulma.min.css">
     <link rel="stylesheet" href="md.css">
     <script src="scrib-view.js"></script>
+    <script src="ports.js"></script>
     <style>
       #notes-list {
         height: 20em;
@@ -50,22 +51,23 @@
         }
       }
 
-      app.ports.scribMessage.subscribe(function(noteEvent){
-        if (noteEvent.eventType === "save_message") {
-          saveMessageToLocalStorage(noteEvent);
-        } else if (noteEvent.eventType === "save_view_session") {
-          saveToSessionStorage(noteEvent);
-        } else if (noteEvent.eventType=== "preview_message") {
-          previewMarkdown(noteEvent)
-        } else if (noteEvent.eventType=== "remove_message") {
-          console.log("clearing local storage");
-          localStorage.removeItem(appEditKey);
-          app.ports.jsMessage.send(responseJson("message_removed"));
-        } else if (noteEvent.eventType=== "log_message_to_console") {
-          console.log("output: " + JSON.stringify(noteEvent.output));
-        } else {
-          console.log("error, unknown noteEvent:" + JSON.stringify(noteEvent));
-        }
+      app.ports.scribMessage.subscribe(function(action){
+        portActions(action)
+        // if (noteEvent.eventType === "save_message") {
+        //   saveMessageToLocalStorage(noteEvent);
+        // } else if (noteEvent.eventType === "save_view_session") {
+        //   saveToSessionStorage(noteEvent);
+        // } else if (noteEvent.eventType=== "preview_message") {
+        //   previewMarkdown(noteEvent)
+        // } else if (noteEvent.eventType=== "remove_message") {
+        //   console.log("clearing local storage");
+        //   localStorage.removeItem(appEditKey);
+        //   app.ports.jsMessage.send(responseJson("message_removed"));
+        // } else if (noteEvent.eventType=== "log_message_to_console") {
+        //   console.log("output: " + JSON.stringify(noteEvent.output));
+        // } else {
+        //   console.log("error, unknown noteEvent:" + JSON.stringify(noteEvent));
+        // }
       });
 
       function previewMarkdown(noteEvent) {
