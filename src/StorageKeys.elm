@@ -9,11 +9,13 @@ module StorageKeys exposing
     , savedNoteStorageArea
     , apiKeyStorageArea
     , encodeKeyAndPayload
+    , encodeStorageAreaAction
     , encodeStorageArea
     , keyValue
     , JsonKey
     , StorageArea
     , StorageType(..)
+    , StorageAction(..)
   )
 
 import ElmCommon exposing (Encoder)
@@ -40,6 +42,7 @@ keyValue (JsonKey value) = value
 
 type StorageKey = StorageKey String
 type StorageType = Local | Session
+type StorageAction = Save | Delete
 
 type StorageArea = StorageArea StorageType StorageKey
 
@@ -69,6 +72,23 @@ encodeStorageArea (StorageArea st (StorageKey key)) =
         ("storageType", encodeStorageType st)
       , ("storageKey", E.string key)
       ]
+
+encodeStorageAction : Encoder StorageAction
+encodeStorageAction storageAction =
+  case storageAction of
+    Save   ->  E.string "save"
+    Delete ->  E.string "delete"
+
+encodeStorageAreaAction : StorageArea -> StorageAction -> JsonKey -> Encoder a -> a -> E.Value
+encodeStorageAreaAction (StorageArea st (StorageKey storageKey)) action payloadKey payloadEncoder payload =
+      E.object
+      [
+        ("storageType", encodeStorageType st)
+      , ("storageKey", E.string storageKey)
+      , ("storageAction", encodeStorageAction action)
+      , encodeKeyAndPayload payloadKey payloadEncoder payload
+      ]
+
 
 encodeKeyAndPayload : JsonKey -> Encoder a -> a -> (String, E.Value)
 encodeKeyAndPayload (JsonKey key) payloadEncoder payload = (key, payloadEncoder payload)

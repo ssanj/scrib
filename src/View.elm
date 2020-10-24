@@ -4,10 +4,10 @@ import RemoteData      exposing (..)
 import Html            exposing (..)
 import Html.Attributes exposing (..)
 import ElmCommon       exposing (..)
+import StorageKeys     exposing (..)
 
 import Html.Events     exposing (onClick, onInput)
 import FP              exposing (maybe)
-import StorageKeys     exposing (topNotesKey)
 import ApiKey          exposing (ApiKey, ApiKeyWithPayload, apiKeyHeader, decodeApiKeyWithPayload)
 
 import Debug
@@ -72,7 +72,7 @@ handleInitSuccess { apiKey, payload } =
         if List.isEmpty notes
         then (
                { emptyModel | notes = Loading, apiKey = Just apiKey }
-             , Cmd.batch [getTopRemoteNotes apiKey, logMessage <| "No cached data, refreshing"]
+             , Cmd.batch [getTopRemoteNotes apiKey, logMessage "No cached data, refreshing"]
              )
         else onlyModel { emptyModel | notes = Success notes, apiKey = Just apiKey }
  in mc
@@ -163,11 +163,21 @@ update msg model =
 --    (oldModel, Browser.Navigation.load "config.html")
 
 
+-- JS Commands
+
+
 logMessage: String -> Cmd Msg
-logMessage = scribMessage << PORTS.encodePort << PORTS.ViewPort << PORTS.LogMessageToConsole
+logMessage mesasge =
+  let logCommandValue = PORTS.JsCommandValue outputKey mesasge
+      logCommand = PORTS.LogConsole logCommandValue
+  in scribMessage <| PORTS.encodeJsCommand logCommand E.string
 
 saveTopNotesToSessionStorage : List SC.NoteFull -> Cmd Msg
-saveTopNotesToSessionStorage = scribMessage << PORTS.encodePort << PORTS.ViewPort << PORTS.SaveTopNotesToSessionStorage
+saveTopNotesToSessionStorage notes =
+  let storageArea         = viewTopNotesStorageArea
+      saveTopNotesValue   = PORTS.JsStorageValue storageArea Save topNotesKey notes
+      saveTopNotesCommand = PORTS.ToStorage saveTopNotesValue
+  in scribMessage <| PORTS.encodeJsCommand saveTopNotesCommand SC.encodeFullNotes
 
 handleTopNotesResponse: SaveType -> RemoteNotesData -> Cmd Msg
 handleTopNotesResponse saveContent remoteData =
