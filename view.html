@@ -52,7 +52,7 @@
       }
 
       app.ports.scribMessage.subscribe(function(action){
-        portActions(action)
+        portActions(action);
         // if (noteEvent.eventType === "save_message") {
         //   saveMessageToLocalStorage(noteEvent);
         // } else if (noteEvent.eventType === "save_view_session") {
