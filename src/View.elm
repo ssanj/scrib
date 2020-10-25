@@ -19,7 +19,7 @@ import Json.Decode  as D
 import Json.Encode  as E
 import Note         as SC
 import Ports        as P
-import Subs         as SUBS
+import Subs         as S
 
 
 
@@ -131,9 +131,9 @@ type SaveType = SaveResponse | DontSaveResponse
 
 type Msg = NoteSelected SC.NoteFull
          | NoteEdited SC.NoteFull
-         --| NoteSavedToLocalStorage
+         | NoteSavedToLocalStorage
          --| NoteRemovedFromLocalStorage
-         --| JSNotificationError String
+         | JSNotificationError String
          | AddNote
          |  SearchEdited String
          | NotesRefreshed
@@ -145,9 +145,9 @@ update msg model =
   case msg of
     (NoteSelected note)         -> ({model| selectedNote = Just note }, previewMarkdown note)
     (NoteEdited note)           -> (model, saveSelectedNoteToLocalStorage note)
-  --  NoteSavedToLocalStorage     -> (model, Browser.Navigation.load "save.html")
+    NoteSavedToLocalStorage     -> (model, Browser.Navigation.load "save.html")
   --  NoteRemovedFromLocalStorage -> (model, Browser.Navigation.load "save.html")
-  --  (JSNotificationError error) -> (model, scribMessage(encodeLogToConsole error))
+    (JSNotificationError error) -> (model, logMessage error)
     AddNote                     -> onlyModel model -- (model, scribMessage encodeRemoveFromLocalStorage)
     (TopNotesResponse notes)    ->  ({ model | notes = notes}, handleTopNotesResponse SaveResponse notes)
   --  (SearchNotesResponse notes) -> ({ model | notes = notes}, handleTopNotesResponse DontSaveResponse notes)
@@ -337,8 +337,17 @@ port jsMessage : (E.Value -> msg) -> Sub msg
 -- SUBSCRIPTIONS
 
 subscriptions : Model -> Sub Msg
-subscriptions _ =  Sub.none --jsMessage << S.handleJSResponse subscriptionSuccess subscriptionFailure
+subscriptions _ = jsMessage (S.encodeJsResponse D.bool subscriptionSuccess subscriptionFailure)
 
+subscriptionSuccess : S.JsResponse Bool -> Msg
+subscriptionSuccess (S.JsResponse (P.ResponseKey key) result) =
+  case (key, result) of
+    ("NoteSavedToLocalStorage", True ) -> NoteSavedToLocalStorage
+    ("NoteSavedToLocalStorage", False) -> subscriptionFailure "Could not save note to local storage"
+    (otherKey,                      _) -> subscriptionFailure <| "Unhandle JS notification: " ++ otherKey
+
+subscriptionFailure : String -> Msg
+subscriptionFailure = JSNotificationError
 
 --subscriptionSuccess : S.SubType -> Msg
 --subscriptionSuccess (S.ViewSub response) =

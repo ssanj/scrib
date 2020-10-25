@@ -10,6 +10,8 @@ module Ports exposing
 
   -- Functions
   , encodeJsCommand
+  , responseKeyField
+  , dataKeyField
    )
 
 import StorageKeys exposing (..)
@@ -38,6 +40,15 @@ withStoragePort = PortTypeName "storage_action"
 -}
 
 type ResponseKey = ResponseKey String
+
+responseKeyField : String
+responseKeyField = "responseKey"
+
+eventTypeKeyField : String
+eventTypeKeyField = "eventType"
+
+dataKeyField : String
+dataKeyField = "data"
 
 type alias JsStorageValue a = { storageArea: StorageArea, storageAction: StorageAction, value: a }
 type alias JsAppMessage a = { appName: String , value: a }
@@ -101,10 +112,10 @@ encodePortWithMarkdownCommand portType encoder { elementId, value } =
     ]
 
 encodeEventTypeTuple : PortTypeName -> (String, E.Value)
-encodeEventTypeTuple (PortTypeName portType) = ("eventType", E.string portType)
+encodeEventTypeTuple (PortTypeName portType) = (eventTypeKeyField, E.string portType)
 
 encodeDataTuple : Encoder a -> a -> (String, E.Value)
-encodeDataTuple encoder value = ("data", encoder value)
+encodeDataTuple encoder value = (dataKeyField, encoder value)
 
 encodePortAndPayload : PortTypeName -> Encoder a -> a -> E.Value
 encodePortAndPayload portType payloadEncoder payload =

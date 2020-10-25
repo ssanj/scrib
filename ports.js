@@ -1,4 +1,4 @@
-function portActions(action) {
+function portActions(action, cb) {
   // if (action.eventType === "save_message") {
   //   saveMessageToLocalStorage(noteEvent);
   // } else if (noteEvent.eventType === "save_view_session") {
@@ -13,7 +13,7 @@ function portActions(action) {
   if (action.eventType === "log_action") {
     console.log("[" + JSON.stringify(action.log.appName) + "]: " + JSON.stringify(action.log.data));
   } else if (action.eventType === "storage_action") {
-    handleStorage(action);
+    handleStorage(action, cb);
   } else if (action.eventType === "markdown_action") {
     handleMarkdown(action);
   } else {
@@ -40,16 +40,24 @@ function handleMarkdown(action) {
     }
 }
 
-
-
-//we need a way to figure out how to respond to JS
-function handleStorage(action) {
+function handleStorage(action, cb) {
   const storage       = action.storage;
   const store         = findStorageType(storage.storageType)
   const storageAction = storage.storageAction;
+  const responseKey   = action.responseKey;
 
   if (storageAction === "save") {
     store.setItem(storage.storageKey, JSON.stringify(storage.data));
+
+    if (responseKey) {
+      cb({
+        "responseKey": responseKey,
+        "data": true
+      })
+    } else {
+      console.log("Did not find responseKey in action: " + JSON.stringify(action)); //if we had appKey we could call log.
+    }
+
     console.log("storage saved");
   } else if (storageAction === "delete") {
     store.removetem(storage.storageKey);
@@ -64,13 +72,6 @@ function handleStorage(action) {
     console.log("unknown storage action: " + JSON.stringify(action.storage));
   }
 }
-
-// function subscriptionAction(eventType, result) {
-//   {
-//     "eventType": eventType,
-//     "data": JSON.parse(result);
-//   }
-// }
 
 function findStorageType(storageType) {
   if (storageType === "session") {
