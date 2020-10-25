@@ -25,6 +25,9 @@ type JsResponse a = JsResponse P.ResponseKey a
 
 type ResponseJson = ResponseJson String E.Value
 
+--TODO: It's probably better not to Decode the payload at this point and leave it up to the
+-- code handling the subcription to decide how to decode the payload
+-- eg. a Delete where we have a T/F outcome vs a load where we need data.
 encodeJsResponse : D.Decoder a -> (JsResponse a -> msg) -> (String -> msg) -> E.Value -> msg
 encodeJsResponse payloadDecoder successCallback errorCallback jsonValue =
     let jsResponseWithValueDecoder = (D.andThen decodeJsResponse decodeResponseJson) -- D.Decoder (JsResponse E.Value)

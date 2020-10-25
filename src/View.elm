@@ -7,8 +7,8 @@ import ElmCommon       exposing (..)
 import StorageKeys     exposing (..)
 
 import Html.Events     exposing (onClick, onInput)
-import FP              exposing (maybe)
-import ApiKey          exposing (ApiKey, ApiKeyWithPayload, apiKeyHeader, decodeApiKeyWithPayload)
+import FP              exposing (maybe, const)
+import ApiKey          exposing (ApiKey, ApiKeyWithPayload, apiKeyHeader, decodeApiKeyWithPayload, performApiKey)
 
 import Debug
 import Browser.Navigation
@@ -50,9 +50,6 @@ type alias Model =
   }
 
 type alias RemoteNotesData = WebData (List SC.NoteFull)
-
---type JsResponseEvent = SavedToLocalStorage
---                     | RemovedFromLocalStorage
 
 emptyModel: Model
 emptyModel = Model Nothing NotAsked Nothing Nothing
@@ -132,7 +129,7 @@ type SaveType = SaveResponse | DontSaveResponse
 type Msg = NoteSelected SC.NoteFull
          | NoteEdited SC.NoteFull
          | NoteSavedToLocalStorage
-         --| NoteRemovedFromLocalStorage
+         | NoteRemovedFromLocalStorage
          | JSNotificationError String
          | AddNote
          |  SearchEdited String
@@ -146,27 +143,33 @@ update msg model =
     (NoteSelected note)         -> ({model| selectedNote = Just note }, previewMarkdown note)
     (NoteEdited note)           -> (model, saveSelectedNoteToLocalStorage note)
     NoteSavedToLocalStorage     -> (model, Browser.Navigation.load "save.html")
-  --  NoteRemovedFromLocalStorage -> (model, Browser.Navigation.load "save.html")
+    NoteRemovedFromLocalStorage -> (model, Browser.Navigation.load "save.html")
     (JSNotificationError error) -> (model, logMessage error)
-    AddNote                     -> onlyModel model -- (model, scribMessage encodeRemoveFromLocalStorage)
+    AddNote                     -> (model, removeSelectedNoteFromLocalStorage)
     (TopNotesResponse notes)    ->  ({ model | notes = notes}, handleTopNotesResponse SaveResponse notes)
   --  (SearchNotesResponse notes) -> ({ model | notes = notes}, handleTopNotesResponse DontSaveResponse notes)
-    NotesRefreshed              -> onlyModel model -- performOrGotoConfig model ({ model | notes = Loading, query = Nothing }, getTopRemoteNotes)
+    NotesRefreshed              -> performOrGotoConfig model ({ model | notes = Loading, query = Nothing }, getTopRemoteNotes)
     (SearchEdited query)        -> onlyModel model -- performOrGotoConfig model ({ model | query = Just query }, searchRemoteNotes query)
     --SearchPerformed             -> (model, searchRemoteNotes "")
 
---performOrGotoConfig : Model -> (Model, (ApiKey -> Cmd Msg)) -> (Model, Cmd Msg)
---performOrGotoConfig oldModel apiKeyCommand =
---  performApiKey
---    oldModel.apiKey
---    apiKeyCommand
---    (oldModel, Browser.Navigation.load "config.html")
+performOrGotoConfig : Model -> (Model, (ApiKey -> Cmd Msg)) -> (Model, Cmd Msg)
+performOrGotoConfig oldModel apiKeyCommand =
+    performApiKey
+    oldModel.apiKey
+    apiKeyCommand
+    (oldModel, Browser.Navigation.load "config.html")
 
 
 -- JS Commands
 
+topNotesSavedToSessionStorageResponseKey : P.ResponseKey
+topNotesSavedToSessionStorageResponseKey = P.ResponseKey "TopNotesSavedToSessionStorage"
+
 noteSavedToLocalStorageResponseKey : P.ResponseKey
 noteSavedToLocalStorageResponseKey = P.ResponseKey "NoteSavedToLocalStorage"
+
+noteRemovedFromLocalStorageResponseKey : P.ResponseKey
+noteRemovedFromLocalStorageResponseKey = P.ResponseKey "NoteRemovedFromLocalStorage"
 
 appName : String
 appName = "scrib"
@@ -193,11 +196,20 @@ saveSelectedNoteToLocalStorage note =
       saveSelectedNoteCommand = P.WithStorage saveSelectedNoteValue responseKey
   in scribMessage <| P.encodeJsCommand saveSelectedNoteCommand SC.encodeFullNote
 
+removeSelectedNoteFromLocalStorage : Cmd Msg
+removeSelectedNoteFromLocalStorage =
+  let storageArea               = viewSelectedNoteStorageArea
+      removeSelectedNoteValue  = P.JsStorageValue storageArea Delete ()
+      responseKey               = Just noteRemovedFromLocalStorageResponseKey
+      removeSelectedNoteCommand = P.WithStorage removeSelectedNoteValue responseKey
+  in scribMessage <| P.encodeJsCommand removeSelectedNoteCommand (const E.null)
+
 saveTopNotesToSessionStorage : List SC.NoteFull -> Cmd Msg
 saveTopNotesToSessionStorage notes =
   let storageArea         = viewTopNotesStorageArea
       saveTopNotesValue   = P.JsStorageValue storageArea Save notes
-      saveTopNotesCommand = P.WithStorage saveTopNotesValue Nothing
+      responseKey         = Just topNotesSavedToSessionStorageResponseKey
+      saveTopNotesCommand = P.WithStorage saveTopNotesValue responseKey
   in scribMessage <| P.encodeJsCommand saveTopNotesCommand SC.encodeFullNotes
 
 handleTopNotesResponse: SaveType -> RemoteNotesData -> Cmd Msg
@@ -342,12 +354,14 @@ subscriptions _ = jsMessage (S.encodeJsResponse D.bool subscriptionSuccess subsc
 subscriptionSuccess : S.JsResponse Bool -> Msg
 subscriptionSuccess (S.JsResponse (P.ResponseKey key) result) =
   case (key, result) of
-    ("NoteSavedToLocalStorage", True ) -> NoteSavedToLocalStorage
-    ("NoteSavedToLocalStorage", False) -> subscriptionFailure "Could not save note to local storage"
-    (otherKey,                      _) -> subscriptionFailure <| "Unhandle JS notification: " ++ otherKey
+    ("NoteSavedToLocalStorage", True )     -> NoteSavedToLocalStorage
+    ("NoteSavedToLocalStorage", False)     -> subscriptionFailure "Could not save note to local storage"
+    ("NoteRemovedFromLocalStorage", True ) -> NoteRemovedFromLocalStorage
+    ("NoteRemovedFromLocalStorage", False) -> subscriptionFailure "Could not remove note from local storage"
+    (otherKey,                      _)     -> subscriptionFailure <| "Unhandled JS notification: " ++ otherKey
 
 subscriptionFailure : String -> Msg
-subscriptionFailure = JSNotificationError
+subscriptionFailure m = JSNotificationError ("subscriptionFailure: " ++ m)
 
 --subscriptionSuccess : S.SubType -> Msg
 --subscriptionSuccess (S.ViewSub response) =

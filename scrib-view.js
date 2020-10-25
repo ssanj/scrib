@@ -6542,22 +6542,39 @@ var $author$project$View$jsMessage = _Platform_incomingPort('jsMessage', $elm$js
 var $author$project$View$JSNotificationError = function (a) {
 	return {$: 'JSNotificationError', a: a};
 };
-var $author$project$View$subscriptionFailure = $author$project$View$JSNotificationError;
+var $author$project$View$subscriptionFailure = function (m) {
+	return $author$project$View$JSNotificationError('subscriptionFailure: ' + m);
+};
+var $author$project$View$NoteRemovedFromLocalStorage = {$: 'NoteRemovedFromLocalStorage'};
 var $author$project$View$NoteSavedToLocalStorage = {$: 'NoteSavedToLocalStorage'};
 var $author$project$View$subscriptionSuccess = function (_v0) {
 	var key = _v0.a.a;
 	var result = _v0.b;
 	var _v1 = _Utils_Tuple2(key, result);
-	if (_v1.a === 'NoteSavedToLocalStorage') {
+	_v1$4:
+	while (true) {
 		if (_v1.b) {
-			return $author$project$View$NoteSavedToLocalStorage;
+			switch (_v1.a) {
+				case 'NoteSavedToLocalStorage':
+					return $author$project$View$NoteSavedToLocalStorage;
+				case 'NoteRemovedFromLocalStorage':
+					return $author$project$View$NoteRemovedFromLocalStorage;
+				default:
+					break _v1$4;
+			}
 		} else {
-			return $author$project$View$subscriptionFailure('Could not save note to local storage');
+			switch (_v1.a) {
+				case 'NoteSavedToLocalStorage':
+					return $author$project$View$subscriptionFailure('Could not save note to local storage');
+				case 'NoteRemovedFromLocalStorage':
+					return $author$project$View$subscriptionFailure('Could not remove note from local storage');
+				default:
+					break _v1$4;
+			}
 		}
-	} else {
-		var otherKey = _v1.a;
-		return $author$project$View$subscriptionFailure('Unhandle JS notification: ' + otherKey);
 	}
+	var otherKey = _v1.a;
+	return $author$project$View$subscriptionFailure('Unhandled JS notification: ' + otherKey);
 };
 var $author$project$View$subscriptions = function (_v0) {
 	return $author$project$View$jsMessage(
@@ -6619,6 +6636,7 @@ var $elm$json$Json$Encode$list = F2(
 				entries));
 	});
 var $author$project$Note$encodeFullNotes = $elm$json$Json$Encode$list($author$project$Note$encodeFullNote);
+var $author$project$View$topNotesSavedToSessionStorageResponseKey = $author$project$Ports$ResponseKey('TopNotesSavedToSessionStorage');
 var $author$project$StorageKeys$Session = {$: 'Session'};
 var $author$project$StorageKeys$StorageArea = F2(
 	function (a, b) {
@@ -6634,7 +6652,8 @@ var $author$project$StorageKeys$viewTopNotesStorageArea = A2(
 var $author$project$View$saveTopNotesToSessionStorage = function (notes) {
 	var storageArea = $author$project$StorageKeys$viewTopNotesStorageArea;
 	var saveTopNotesValue = A3($author$project$Ports$JsStorageValue, storageArea, $author$project$StorageKeys$Save, notes);
-	var saveTopNotesCommand = A2($author$project$Ports$WithStorage, saveTopNotesValue, $elm$core$Maybe$Nothing);
+	var responseKey = $elm$core$Maybe$Just($author$project$View$topNotesSavedToSessionStorageResponseKey);
+	var saveTopNotesCommand = A2($author$project$Ports$WithStorage, saveTopNotesValue, responseKey);
 	return $author$project$View$scribMessage(
 		A2($author$project$Ports$encodeJsCommand, saveTopNotesCommand, $author$project$Note$encodeFullNotes));
 };
@@ -6659,6 +6678,31 @@ var $author$project$View$handleTopNotesResponse = F2(
 				return $elm$core$Platform$Cmd$none;
 		}
 	});
+var $author$project$ApiKey$performApiKey = F3(
+	function (maybeApiKey, _v0, _v1) {
+		var model1 = _v0.a;
+		var apiKeyCmd = _v0.b;
+		var model2 = _v1.a;
+		var nonApiKeyCmd = _v1.b;
+		if (maybeApiKey.$ === 'Just') {
+			var apiKey = maybeApiKey.a;
+			return _Utils_Tuple2(
+				model1,
+				apiKeyCmd(apiKey));
+		} else {
+			return _Utils_Tuple2(model2, nonApiKeyCmd);
+		}
+	});
+var $author$project$View$performOrGotoConfig = F2(
+	function (oldModel, apiKeyCommand) {
+		return A3(
+			$author$project$ApiKey$performApiKey,
+			oldModel.apiKey,
+			apiKeyCommand,
+			_Utils_Tuple2(
+				oldModel,
+				$elm$browser$Browser$Navigation$load('config.html')));
+	});
 var $author$project$Ports$JsMarkdownValue = F2(
 	function (elementId, value) {
 		return {elementId: elementId, value: value};
@@ -6673,12 +6717,29 @@ var $author$project$View$previewMarkdown = function (note) {
 	return $author$project$View$scribMessage(
 		A2($author$project$Ports$encodeJsCommand, markdownPreviewCommand, $author$project$Note$encodeFullNote));
 };
-var $author$project$View$noteSavedToLocalStorageResponseKey = $author$project$Ports$ResponseKey('NoteSavedToLocalStorage');
+var $author$project$StorageKeys$Delete = {$: 'Delete'};
+var $author$project$FP$const = F2(
+	function (a, _v0) {
+		return a;
+	});
+var $author$project$View$noteRemovedFromLocalStorageResponseKey = $author$project$Ports$ResponseKey('NoteRemovedFromLocalStorage');
 var $author$project$StorageKeys$Local = {$: 'Local'};
 var $author$project$StorageKeys$viewSelectedNoteStorageArea = A2(
 	$author$project$StorageKeys$StorageArea,
 	$author$project$StorageKeys$Local,
 	$author$project$StorageKeys$StorageKey('scrib.edit'));
+var $author$project$View$removeSelectedNoteFromLocalStorage = function () {
+	var storageArea = $author$project$StorageKeys$viewSelectedNoteStorageArea;
+	var responseKey = $elm$core$Maybe$Just($author$project$View$noteRemovedFromLocalStorageResponseKey);
+	var removeSelectedNoteValue = A3($author$project$Ports$JsStorageValue, storageArea, $author$project$StorageKeys$Delete, _Utils_Tuple0);
+	var removeSelectedNoteCommand = A2($author$project$Ports$WithStorage, removeSelectedNoteValue, responseKey);
+	return $author$project$View$scribMessage(
+		A2(
+			$author$project$Ports$encodeJsCommand,
+			removeSelectedNoteCommand,
+			$author$project$FP$const($elm$json$Json$Encode$null)));
+}();
+var $author$project$View$noteSavedToLocalStorageResponseKey = $author$project$Ports$ResponseKey('NoteSavedToLocalStorage');
 var $author$project$View$saveSelectedNoteToLocalStorage = function (note) {
 	var storageArea = $author$project$StorageKeys$viewSelectedNoteStorageArea;
 	var saveSelectedNoteValue = A3($author$project$Ports$JsStorageValue, storageArea, $author$project$StorageKeys$Save, note);
@@ -6708,13 +6769,17 @@ var $author$project$View$update = F2(
 				return _Utils_Tuple2(
 					model,
 					$elm$browser$Browser$Navigation$load('save.html'));
+			case 'NoteRemovedFromLocalStorage':
+				return _Utils_Tuple2(
+					model,
+					$elm$browser$Browser$Navigation$load('save.html'));
 			case 'JSNotificationError':
 				var error = msg.a;
 				return _Utils_Tuple2(
 					model,
 					$author$project$View$logMessage(error));
 			case 'AddNote':
-				return $author$project$ElmCommon$onlyModel(model);
+				return _Utils_Tuple2(model, $author$project$View$removeSelectedNoteFromLocalStorage);
 			case 'TopNotesResponse':
 				var notes = msg.a;
 				return _Utils_Tuple2(
@@ -6723,7 +6788,14 @@ var $author$project$View$update = F2(
 						{notes: notes}),
 					A2($author$project$View$handleTopNotesResponse, $author$project$View$SaveResponse, notes));
 			case 'NotesRefreshed':
-				return $author$project$ElmCommon$onlyModel(model);
+				return A2(
+					$author$project$View$performOrGotoConfig,
+					model,
+					_Utils_Tuple2(
+						_Utils_update(
+							model,
+							{notes: $krisajenkins$remotedata$RemoteData$Loading, query: $elm$core$Maybe$Nothing}),
+						$author$project$View$getTopRemoteNotes));
 			default:
 				var query = msg.a;
 				return $author$project$ElmCommon$onlyModel(model);

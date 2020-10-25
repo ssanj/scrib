@@ -46,30 +46,49 @@ function handleStorage(action, cb) {
   const storageAction = storage.storageAction;
   const responseKey   = action.responseKey;
 
-  if (storageAction === "save") {
-    store.setItem(storage.storageKey, JSON.stringify(storage.data));
+  if (!responseKey) {
+    console.log("Did not find responseKey in action: " + JSON.stringify(action)); //if we had appKey we could call log.
+  } else {
 
-    if (responseKey) {
+    if (storageAction === "save") {
+      const result = safely(function(){
+        store.setItem(storage.storageKey, JSON.stringify(storage.data));
+      });
+
       cb({
         "responseKey": responseKey,
-        "data": true
+        "data": result
+      });
+    } else if (storageAction === "delete") {
+      const result = safely(function(){
+        store.removeItem(storage.storageKey);
       })
+
+      cb({
+        "responseKey": responseKey,
+        "data": result
+      });
+    } else if (storageAction === "load") {
+      store.getItem(storage.storageKey); //fix
+      console.log("storage loaded");
+    } else if (storageAction === "clear") {
+      store.clear();
+      console.log("storage cleared");
     } else {
-      console.log("Did not find responseKey in action: " + JSON.stringify(action)); //if we had appKey we could call log.
+      console.log("unknown storage action: " + JSON.stringify(action.storage));
     }
 
-    console.log("storage saved");
-  } else if (storageAction === "delete") {
-    store.removetem(storage.storageKey);
-    console.log("storage deleted");
-  } else if (storageAction === "load") {
-    store.getItem(storage.storageKey); //fix
-    console.log("storage loaded");
-  } else if (storageAction === "clear") {
-    store.clear();
-    console.log("storage cleared");
-  } else {
-    console.log("unknown storage action: " + JSON.stringify(action.storage));
+  }
+}
+
+function safely(f) {
+  try {
+    f();
+    return true;
+  }
+  catch(err) {
+    console.log("safely error: " + err);
+    return false; //it might be nice to return an error
   }
 }
 
