@@ -9,35 +9,32 @@ module Subs exposing
 import Json.Encode as E
 import Json.Decode as D
 
-import FP exposing (flip)
+fromStorage : String
+fromStorage = "storage_response"
 
-type SubName = SubName String
+type EventSource = FromStorage
+                 | Unknown
 
-fromStorageSub : SubName
-fromStorageSub = SubName "storage_response"
-
-type JsResponse = FromStorage SubName E.Value
+type JsResponse a = JsResponse EventSource a
 
 type ResponseJson = ResponseJson String E.Value
 
-encodeJsResponse : E.Value -> (JsResponse -> msg) -> (String -> msg) -> msg
-encodeJsResponse jsonValue successCallback errorCallback =
-  let responseJsonDecoder           = decodeResponseJson                  -- D.Decoder ResponseJson
-      decodeJsResponseResultDecoder = D.map decodeJsResponse responseJsonDecoder    -- D.Decoder (Result String JsResponse)
-      decodeResult                  = D.decodeValue decodeJsResponseResultDecoder jsonValue          -- Result Error (Result String JsResponse)
-      decodeResultWithStringError   = Result.mapError D.errorToString decodeResult -- Result String (Result String JsResponse)
-      result = Result.andThen identity decodeResultWithStringError
-  in case result of
-      Ok value -> successCallback value
-      Err er   -> errorCallback er
+encodeJsResponse : E.Value -> D.Decoder a -> (JsResponse a -> msg) -> (String -> msg) -> msg
+encodeJsResponse jsonValue payloadDecoder successCallback errorCallback =
+    let jsResponseWithValueDecoder = (D.andThen decodeJsResponse decodeResponseJson) -- D.Decoder (JsResponse E.Value)
+        decodeResult = D.decodeValue jsResponseWithValueDecoder jsonValue            -- Result Error (JsResponse E.Value)
+    in case decodeResult of
+        Ok (JsResponse es payload) ->
+          let payloadDecodeResult = D.decodeValue payloadDecoder payload
+          in case payloadDecodeResult of
+            Ok value -> successCallback <| JsResponse es value
+            Err err  -> errorCallback <| D.errorToString err
+        Err err      -> errorCallback <| D.errorToString err
 
-decodeJsResponse : ResponseJson -> Result String JsResponse
-decodeJsResponse (ResponseJson subName payload) =
-  let subNameResult = getSubName subName
-  in Result.map (decoderJsResponse payload) subNameResult
-
-decoderJsResponse : E.Value -> SubName -> JsResponse
-decoderJsResponse = flip FromStorage
+decodeJsResponse : ResponseJson -> D.Decoder (JsResponse E.Value)
+decodeJsResponse (ResponseJson eventSource payload) =
+  let eventSourceDecoder = getEventSource eventSource
+  in D.map (\es -> JsResponse es payload) eventSourceDecoder
 
 decodeResponseJson :D.Decoder ResponseJson
 decodeResponseJson =
@@ -48,11 +45,8 @@ decodeResponseJson =
       responseType
       payload
 
-responseFromSubName : SubName -> E.Value -> JsResponse
-responseFromSubName = FromStorage
-
-getSubName : String -> Result String SubName
-getSubName possibleSubName =
-  case possibleSubName of
-    "storage_response" -> Ok fromStorageSub
-    _ -> Err <| "Unknown event type: " ++ possibleSubName
+getEventSource : String -> D.Decoder EventSource
+getEventSource eventSource =
+  case eventSource of
+    "storage_response" -> D.succeed FromStorage
+    _ -> D.fail <| "Unknown event type: " ++ eventSource
