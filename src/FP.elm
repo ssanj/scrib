@@ -9,3 +9,5 @@ maybe onNothing onJust maybeVal =
 const : a -> b -> a
 const a _ = a
 
+flip : (a -> b -> c) -> b -> a -> c
+flip f b a = f a b
