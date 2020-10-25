@@ -77,10 +77,11 @@ encodePortWithLog portType encoder { appName, value }  =
   E.object
     [
       encodeEventTypeTuple portType
-    , ("data", -- should this be "log" and { "appName" : "..", "data", "message"} for consistency?
+    , ("log",
         E.object
           [
-            (appName, encoder value)
+            ("appName", E.string appName)
+          , encodeDataTuple encoder value
           ]
       )
     ]

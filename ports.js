@@ -11,7 +11,7 @@ function portActions(action) {
   //   app.ports.jsMessage.send(responseJson("message_removed"));
   // } else if (noteEvent.eventType=== "log_message_to_console") {
   if (action.eventType === "log_action") {
-    console.log("log: " + JSON.stringify(action.data));
+    console.log("[" + JSON.stringify(action.log.appName) + "]: " + JSON.stringify(action.log.data));
   } else if (action.eventType === "storage_action") {
     handleStorage(action);
   } else if (action.eventType === "markdown_action") {
