@@ -6403,7 +6403,6 @@ var $elm$http$Http$request = function (r) {
 			{allowCookiesFromOtherDomains: false, body: r.body, expect: r.expect, headers: r.headers, method: r.method, timeout: r.timeout, tracker: r.tracker, url: r.url}));
 };
 var $author$project$View$getTopRemoteNotes = function (apiKey) {
-	var _v0 = $author$project$ElmCommon$debug('calling slate');
 	return $elm$http$Http$request(
 		{
 			body: $elm$http$Http$emptyBody,
@@ -6580,6 +6579,7 @@ var $author$project$View$subscriptions = function (_v0) {
 	return $author$project$View$jsMessage(
 		A3($author$project$Subs$encodeJsResponse, $elm$json$Json$Decode$bool, $author$project$View$subscriptionSuccess, $author$project$View$subscriptionFailure));
 };
+var $author$project$View$DontSaveResponse = {$: 'DontSaveResponse'};
 var $author$project$View$SaveResponse = {$: 'SaveResponse'};
 var $author$project$View$fromHttpError = function (error) {
 	switch (error.$) {
@@ -6748,6 +6748,28 @@ var $author$project$View$saveSelectedNoteToLocalStorage = function (note) {
 	return $author$project$View$scribMessage(
 		A2($author$project$Ports$encodeJsCommand, saveSelectedNoteCommand, $author$project$Note$encodeFullNote));
 };
+var $author$project$View$SearchNotesResponse = function (a) {
+	return {$: 'SearchNotesResponse', a: a};
+};
+var $author$project$View$searchRemoteNotes = F2(
+	function (query, apiKey) {
+		return $elm$http$Http$request(
+			{
+				body: $elm$http$Http$emptyBody,
+				expect: A2(
+					$elm$http$Http$expectJson,
+					A2($elm$core$Basics$composeR, $krisajenkins$remotedata$RemoteData$fromResult, $author$project$View$SearchNotesResponse),
+					$author$project$Note$decodeFullNotes),
+				headers: _List_fromArray(
+					[
+						$author$project$ApiKey$apiKeyHeader(apiKey)
+					]),
+				method: 'GET',
+				timeout: $elm$core$Maybe$Nothing,
+				tracker: $elm$core$Maybe$Nothing,
+				url: '/search?q=' + query
+			});
+	});
 var $author$project$View$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
@@ -6787,6 +6809,13 @@ var $author$project$View$update = F2(
 						model,
 						{notes: notes}),
 					A2($author$project$View$handleTopNotesResponse, $author$project$View$SaveResponse, notes));
+			case 'SearchNotesResponse':
+				var notes = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{notes: notes}),
+					A2($author$project$View$handleTopNotesResponse, $author$project$View$DontSaveResponse, notes));
 			case 'NotesRefreshed':
 				return A2(
 					$author$project$View$performOrGotoConfig,
@@ -6798,7 +6827,16 @@ var $author$project$View$update = F2(
 						$author$project$View$getTopRemoteNotes));
 			default:
 				var query = msg.a;
-				return $author$project$ElmCommon$onlyModel(model);
+				return A2(
+					$author$project$View$performOrGotoConfig,
+					model,
+					_Utils_Tuple2(
+						_Utils_update(
+							model,
+							{
+								query: $elm$core$Maybe$Just(query)
+							}),
+						$author$project$View$searchRemoteNotes(query)));
 		}
 	});
 var $author$project$View$AddNote = {$: 'AddNote'};

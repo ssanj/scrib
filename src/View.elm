@@ -23,6 +23,41 @@ import Subs         as S
 
 
 
+-- MODEL
+
+
+type alias Model =
+  {
+    query: Maybe String
+  , notes: RemoteNotesData
+  , selectedNote: Maybe SC.NoteFull
+  , apiKey: Maybe ApiKey
+  }
+
+
+type alias LocalNotes = { apiKey: ApiKey, notes: List SC.NoteFull }
+
+type SaveType = SaveResponse | DontSaveResponse
+
+type alias RemoteNotesData = WebData (List SC.NoteFull)
+
+
+-- MSG
+
+
+type Msg = NoteSelected SC.NoteFull
+         | NoteEdited SC.NoteFull
+         | NoteSavedToLocalStorage
+         | NoteRemovedFromLocalStorage
+         | JSNotificationError String
+         | AddNote
+         | SearchEdited String
+         | NotesRefreshed
+         | TopNotesResponse RemoteNotesData
+         | SearchNotesResponse RemoteNotesData
+
+
+
 -- MAIN
 
 
@@ -36,23 +71,7 @@ main =
     }
 
 
--- MODEL
-
-
-type alias LocalNotes = { apiKey: ApiKey, notes: List SC.NoteFull }
-
-type alias Model =
-  {
-    query: Maybe String
-  , notes: RemoteNotesData
-  , selectedNote: Maybe SC.NoteFull
-  , apiKey: Maybe ApiKey
-  }
-
-type alias RemoteNotesData = WebData (List SC.NoteFull)
-
-emptyModel: Model
-emptyModel = Model Nothing NotAsked Nothing Nothing
+-- INIT
 
 
 init : E.Value -> (Model, Cmd Msg)
@@ -60,6 +79,94 @@ init topNotes =
     let _ = debug <| "called init with: " ++ (E.encode 2 topNotes)
         decodeResult = D.decodeValue decodeLocalNotes topNotes
     in handleDecodeResult decodeResult handleInitSuccess handleInitError
+
+
+-- UPDATE
+
+
+update : Msg -> Model -> (Model, Cmd Msg)
+update msg model =
+  case msg of
+    (NoteSelected note)         -> ({model| selectedNote = Just note }, previewMarkdown note)
+    (NoteEdited note)           -> (model, saveSelectedNoteToLocalStorage note)
+    NoteSavedToLocalStorage     -> (model, Browser.Navigation.load "save.html")
+    NoteRemovedFromLocalStorage -> (model, Browser.Navigation.load "save.html")
+    (JSNotificationError error) -> (model, logMessage error)
+    AddNote                     -> (model, removeSelectedNoteFromLocalStorage)
+    (TopNotesResponse notes)    ->  ({ model | notes = notes}, handleTopNotesResponse SaveResponse notes)
+    (SearchNotesResponse notes) -> ({ model | notes = notes}, handleTopNotesResponse DontSaveResponse notes)
+    NotesRefreshed              -> performOrGotoConfig model ({ model | notes = Loading, query = Nothing }, getTopRemoteNotes)
+    (SearchEdited query)        -> performOrGotoConfig model ({ model | query = Just query }, searchRemoteNotes query)
+
+
+-- VIEW
+
+
+view : Model -> Html Msg
+view model =
+  div []
+    [ section [ class "section" ]
+      [ div [ class "container" ]
+        [ h1 [ class "title" ]
+          [ text "Scrib" ]
+        , p [ class "subtitle" ]
+          [ text "Making scribbling effortless" ]
+        , div []
+          [ article [ class "panel", class "is-primary" ]
+            [ p [ class "panel-heading" ]
+              [ text "Saved Notes"
+              , text " "
+              , span [class "tab", class "is-medium"] [text <| getNoteCount model.notes]
+              ]
+            , p [ class "panel-tabs" ]
+              [ button [ class "button", class "is-text", onClick AddNote]
+                [ text "Add Note" ]
+              , button [ class "button", class "is-text", onClick NotesRefreshed ]
+                [ text "Refresh" ]
+              ]
+            , div [ class "panel-block" ]
+              [ p [ class "control has-icons-left" ]
+                [ input [ class "input", class "is-primary", placeholder "Search", type_ "text", onInput SearchEdited, value <| getQueryText model.query ]
+                  []
+                , span [ class "icon is-left" ]
+                  [ i [ attribute "aria-hidden" "true", class "fas", class "fa-search" ]
+                    []
+                  ]
+                ]
+              ]
+            , viewNotesList model.notes
+
+            ]
+          ]
+        ]
+      ]
+   , createEditButton model.selectedNote
+   ]
+
+
+-- PORTS
+
+
+port scribMessage : E.Value -> Cmd msg
+port jsMessage : (E.Value -> msg) -> Sub msg
+
+
+-- SUBSCRIPTIONS
+
+
+subscriptions : Model -> Sub Msg
+subscriptions _ = jsMessage (S.encodeJsResponse D.bool subscriptionSuccess subscriptionFailure)
+
+
+-- MODEL HELPERS
+
+
+emptyModel: Model
+emptyModel = Model Nothing NotAsked Nothing Nothing
+
+
+-- INIT HELPERS
+
 
 handleInitSuccess : ApiKeyWithPayload (List SC.NoteFull) -> (Model, Cmd Msg)
 handleInitSuccess { apiKey, payload } =
@@ -91,66 +198,40 @@ handleDecodeResult result success failure =
     (Ok value)  -> success value
     (Err error) -> failure error
 
+
+-- DECODERS
+
+
 decodeLocalNotes : D.Decoder (ApiKeyWithPayload (List SC.NoteFull))
 decodeLocalNotes = decodeApiKeyWithPayload topNotesKey SC.decodeFullNotes
 
 
--- UPDATE
+-- REMOTE API CALLS
 
 
 getTopRemoteNotes: ApiKey -> Cmd Msg
 getTopRemoteNotes apiKey =
-  let _ = debug <| "calling slate"
-  in
-      Http.request {
-       method    = "GET"
-      , headers  = [apiKeyHeader apiKey]
-      , url      = "/notes"
-      , body     = Http.emptyBody
-      , expect   = Http.expectJson (RemoteData.fromResult >> TopNotesResponse) SC.decodeFullNotes
-      , timeout  = Nothing
-      , tracker  = Nothing
-      }
+  Http.request {
+   method    = "GET"
+  , headers  = [apiKeyHeader apiKey]
+  , url      = "/notes"
+  , body     = Http.emptyBody
+  , expect   = Http.expectJson (RemoteData.fromResult >> TopNotesResponse) SC.decodeFullNotes
+  , timeout  = Nothing
+  , tracker  = Nothing
+  }
 
---searchRemoteNotes: String -> ApiKey -> Cmd Msg
---searchRemoteNotes query apiKey =
---  Http.request {
---   method    = "GET"
---  , headers  = [apiKeyHeader apiKey]
---  , url = "/search?q=" ++ query
---  , body     = Http.emptyBody
---  , expect = Http.expectJson (RemoteData.fromResult >> SearchNotesResponse) N.decodeNotes
---  , timeout  = Nothing
---  , tracker  = Nothing
---  }
-
-type SaveType = SaveResponse | DontSaveResponse
-
-type Msg = NoteSelected SC.NoteFull
-         | NoteEdited SC.NoteFull
-         | NoteSavedToLocalStorage
-         | NoteRemovedFromLocalStorage
-         | JSNotificationError String
-         | AddNote
-         |  SearchEdited String
-         | NotesRefreshed
-         | TopNotesResponse RemoteNotesData
-         --| SearchNotesResponse RemoteNotesData
-
-update : Msg -> Model -> (Model, Cmd Msg)
-update msg model =
-  case msg of
-    (NoteSelected note)         -> ({model| selectedNote = Just note }, previewMarkdown note)
-    (NoteEdited note)           -> (model, saveSelectedNoteToLocalStorage note)
-    NoteSavedToLocalStorage     -> (model, Browser.Navigation.load "save.html")
-    NoteRemovedFromLocalStorage -> (model, Browser.Navigation.load "save.html")
-    (JSNotificationError error) -> (model, logMessage error)
-    AddNote                     -> (model, removeSelectedNoteFromLocalStorage)
-    (TopNotesResponse notes)    ->  ({ model | notes = notes}, handleTopNotesResponse SaveResponse notes)
-  --  (SearchNotesResponse notes) -> ({ model | notes = notes}, handleTopNotesResponse DontSaveResponse notes)
-    NotesRefreshed              -> performOrGotoConfig model ({ model | notes = Loading, query = Nothing }, getTopRemoteNotes)
-    (SearchEdited query)        -> onlyModel model -- performOrGotoConfig model ({ model | query = Just query }, searchRemoteNotes query)
-    --SearchPerformed             -> (model, searchRemoteNotes "")
+searchRemoteNotes: String -> ApiKey -> Cmd Msg
+searchRemoteNotes query apiKey =
+  Http.request {
+   method    = "GET"
+  , headers  = [apiKeyHeader apiKey]
+  , url      = "/search?q=" ++ query
+  , body     = Http.emptyBody
+  , expect   = Http.expectJson (RemoteData.fromResult >> SearchNotesResponse) SC.decodeFullNotes
+  , timeout  = Nothing
+  , tracker  = Nothing
+  }
 
 performOrGotoConfig : Model -> (Model, (ApiKey -> Cmd Msg)) -> (Model, Cmd Msg)
 performOrGotoConfig oldModel apiKeyCommand =
@@ -160,7 +241,8 @@ performOrGotoConfig oldModel apiKeyCommand =
     (oldModel, Browser.Navigation.load "config.html")
 
 
--- JS Commands
+-- JS COMMANDS
+
 
 topNotesSavedToSessionStorageResponseKey : P.ResponseKey
 topNotesSavedToSessionStorageResponseKey = P.ResponseKey "TopNotesSavedToSessionStorage"
@@ -221,50 +303,6 @@ handleTopNotesResponse saveContent remoteData =
     (_, _)                        -> Cmd.none
 
 
--- VIEW
-
-
-view : Model -> Html Msg
-view model =
-  div []
-    [ section [ class "section" ]
-      [ div [ class "container" ]
-        [ h1 [ class "title" ]
-          [ text "Scrib" ]
-        , p [ class "subtitle" ]
-          [ text "Making scribbling effortless" ]
-        , div []
-          [ article [ class "panel", class "is-primary" ]
-            [ p [ class "panel-heading" ]
-              [ text "Saved Notes"
-              , text " "
-              , span [class "tab", class "is-medium"] [text <| getNoteCount model.notes]
-              ]
-            , p [ class "panel-tabs" ]
-              [ button [ class "button", class "is-text", onClick AddNote]
-                [ text "Add Note" ]
-              , button [ class "button", class "is-text", onClick NotesRefreshed ]
-                [ text "Refresh" ]
-              ]
-            , div [ class "panel-block" ]
-              [ p [ class "control has-icons-left" ]
-                [ input [ class "input", class "is-primary", placeholder "Search", type_ "text", onInput SearchEdited, value <| getQueryText model.query ]
-                  []
-                , span [ class "icon is-left" ]
-                  [ i [ attribute "aria-hidden" "true", class "fas", class "fa-search" ]
-                    []
-                  ]
-                ]
-              ]
-            , viewNotesList model.notes
-
-            ]
-          ]
-        ]
-      ]
-   , createEditButton model.selectedNote
-   ]
-
 getQueryText : Maybe String -> String
 getQueryText = maybe "" identity
 
@@ -273,6 +311,10 @@ getNoteCount remoteNoteData =
   case remoteNoteData of
     Success notes -> String.fromInt <| List.length notes
     _             -> "-"
+
+
+-- VIEW HELPERS
+
 
 viewNotesList: RemoteNotesData -> Html Msg
 viewNotesList remoteNotesData =
@@ -297,7 +339,6 @@ fromHttpError error =
 createEditButton: Maybe SC.NoteFull -> Html Msg
 createEditButton = maybe viewMarkdownPreviewDefault viewMarkdownPreview
 
----- Update this to only create a note with the text for the first line
 createNoteItem: SC.NoteFull -> Html Msg
 createNoteItem {noteText, noteId, noteVersion } =
   a [class "panel-block", onClick (NoteSelected { noteText = noteText, noteId = noteId, noteVersion = noteVersion })]
@@ -341,15 +382,9 @@ viewMarkdownPreviewDefault =
 
 markdownViewId : String
 markdownViewId = "markdown-view"
--- PORTS
 
-port scribMessage : E.Value -> Cmd msg
-port jsMessage : (E.Value -> msg) -> Sub msg
 
--- SUBSCRIPTIONS
-
-subscriptions : Model -> Sub Msg
-subscriptions _ = jsMessage (S.encodeJsResponse D.bool subscriptionSuccess subscriptionFailure)
+-- SUBSCRIPTION HELPERS
 
 subscriptionSuccess : S.JsResponse Bool -> Msg
 subscriptionSuccess (S.JsResponse (P.ResponseKey key) result) =
@@ -362,12 +397,3 @@ subscriptionSuccess (S.JsResponse (P.ResponseKey key) result) =
 
 subscriptionFailure : String -> Msg
 subscriptionFailure m = JSNotificationError ("subscriptionFailure: " ++ m)
-
---subscriptionSuccess : S.SubType -> Msg
---subscriptionSuccess (S.ViewSub response) =
---  case response of
---    S.NoteSavedToLocalStorage     -> NoteSavedToLocalStorage
---    S.NoteRemovedFromLocalStorage -> NoteRemovedFromLocalStorage
-
---subscriptionFailure : String -> Msg
---subscriptionFailure = JSNotificationError
