@@ -165,6 +165,9 @@ update msg model =
 
 -- JS Commands
 
+noteSavedToLocalStorageResponseKey : P.ResponseKey
+noteSavedToLocalStorageResponseKey = P.ResponseKey "NoteSavedToLocalStorage"
+
 appName : String
 appName = "scrib"
 
@@ -186,14 +189,15 @@ saveSelectedNoteToLocalStorage : SC.NoteFull -> Cmd Msg
 saveSelectedNoteToLocalStorage note =
   let storageArea             = viewSelectedNoteStorageArea
       saveSelectedNoteValue   = P.JsStorageValue storageArea Save note
-      saveSelectedNoteCommand = P.WithStorage saveSelectedNoteValue
+      responseKey             = Just noteSavedToLocalStorageResponseKey
+      saveSelectedNoteCommand = P.WithStorage saveSelectedNoteValue responseKey
   in scribMessage <| P.encodeJsCommand saveSelectedNoteCommand SC.encodeFullNote
 
 saveTopNotesToSessionStorage : List SC.NoteFull -> Cmd Msg
 saveTopNotesToSessionStorage notes =
   let storageArea         = viewTopNotesStorageArea
       saveTopNotesValue   = P.JsStorageValue storageArea Save notes
-      saveTopNotesCommand = P.WithStorage saveTopNotesValue
+      saveTopNotesCommand = P.WithStorage saveTopNotesValue Nothing
   in scribMessage <| P.encodeJsCommand saveTopNotesCommand SC.encodeFullNotes
 
 handleTopNotesResponse: SaveType -> RemoteNotesData -> Cmd Msg
