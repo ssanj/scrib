@@ -26,9 +26,7 @@ encodeJsResponse jsonValue payloadDecoder successCallback errorCallback =
     in case decodeResult of
         Ok (JsResponse es payload) ->
           let payloadDecodeResult = D.decodeValue payloadDecoder payload
-          in case payloadDecodeResult of
-            Ok value -> successCallback <| JsResponse es value
-            Err err  -> errorCallback <| D.errorToString err
+          in foldResult (errorCallback << D.errorToString) (successCallback << JsResponse es) payloadDecodeResult
         Err err      -> errorCallback <| D.errorToString err
 
 decodeJsResponse : ResponseJson -> D.Decoder (JsResponse E.Value)
@@ -50,3 +48,10 @@ getEventSource eventSource =
   case eventSource of
     "storage_response" -> D.succeed FromStorage
     _ -> D.fail <| "Unknown event type: " ++ eventSource
+
+
+foldResult : (a -> c) -> (b -> c) -> Result a b ->  c
+foldResult onError onSuccess result =
+  case result of
+    Ok value -> onSuccess value
+    Err err  -> onError err
