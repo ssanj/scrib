@@ -9,6 +9,7 @@ import StorageKeys     exposing (..)
 import Html.Events     exposing (onClick, onInput)
 import FP              exposing (maybe, const)
 import ApiKey          exposing (ApiKey, ApiKeyWithPayload, apiKeyHeader, decodeApiKeyWithPayload, performApiKey)
+import Markdown
 
 import Browser.Navigation
 import Browser
@@ -86,9 +87,9 @@ init topNotes =
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    (NoteSelected note)           -> ({model| selectedNote = Just note }, previewMarkdown note)
+    (NoteSelected note)           ->  onlyModel  { model| selectedNote = Just note }
     (NoteEdited note)             -> (model, saveSelectedNoteToLocalStorage note)
-    TopNotesSavedToSessionStorage -> onlyModel model -- we may want to do something with this info later
+    TopNotesSavedToSessionStorage -> onlyModel {model | selectedNote = Nothing }
     NoteSavedToLocalStorage       -> (model, Browser.Navigation.load "save.html")
     NoteRemovedFromLocalStorage   -> (model, Browser.Navigation.load "save.html")
     (JSNotificationError error)   -> (model, logMessage error)
@@ -140,7 +141,7 @@ view model =
           ]
         ]
       ]
-   , createEditButton model.selectedNote
+   , createMarkdownPreview model.selectedNote
    ]
 
 
@@ -262,12 +263,6 @@ logMessage message =
   let logCommand = P.LogConsole <| appMessage message
   in scribMessage <| P.encodeJsCommand logCommand E.string
 
-previewMarkdown : SC.NoteFull -> Cmd Msg
-previewMarkdown note =
-  let markdownValue = P.JsMarkdownValue markdownViewId note
-      markdownPreviewCommand = P.MarkdownPreview markdownValue
-  in scribMessage <| P.encodeJsCommand markdownPreviewCommand SC.encodeFullNote
-
 saveSelectedNoteToLocalStorage : SC.NoteFull -> Cmd Msg
 saveSelectedNoteToLocalStorage note =
   let storageArea             = viewSelectedNoteStorageArea
@@ -334,8 +329,8 @@ fromHttpError error =
     (Http.BadBody body)     -> "bad body: " ++ body
 
 
-createEditButton: Maybe SC.NoteFull -> Html Msg
-createEditButton = maybe viewMarkdownPreviewDefault viewMarkdownPreview
+createMarkdownPreview: Maybe SC.NoteFull -> Html Msg
+createMarkdownPreview = maybe viewMarkdownPreviewDefault viewMarkdownPreview
 
 createNoteItem: SC.NoteFull -> Html Msg
 createNoteItem {noteText, noteId, noteVersion } =
@@ -360,7 +355,7 @@ viewMarkdownPreview note =
       []
     , div [ id "preview" ]
       [ div [ id markdownViewId ]
-        []
+        [Markdown.toHtml [] (note.noteText)]
       , button [ class "button", class "is-info", onClick (NoteEdited note) ]
         [ text "Edit" ]
       ]
@@ -391,14 +386,6 @@ subscriptionSuccess (S.JsResponse (P.ResponseKey key) result) =
     "NoteRemovedFromLocalStorage"   -> NoteRemovedFromLocalStorage
     "TopNotesSavedToSessionStorage" -> TopNotesSavedToSessionStorage
     otherKey                      -> subscriptionFailure <| ("Unhandled JS notification: " ++ otherKey)
-
-
-  --case (key, result) of
-  --  ("NoteSavedToLocalStorage", True )     -> NoteSavedToLocalStorage
-  --  ("NoteSavedToLocalStorage", False)     -> subscriptionFailure "Could not save note to local storage"
-  --  ("NoteRemovedFromLocalStorage", True ) -> NoteRemovedFromLocalStorage
-  --  ("NoteRemovedFromLocalStorage", False) -> subscriptionFailure "Could not remove note from local storage"
-  --  (otherKey,                      _)     -> subscriptionFailure <| "Unhandled JS notification: " ++ otherKey
 
 subscriptionFailure : String -> Msg
 subscriptionFailure m = JSNotificationError ("subscriptionFailure: " ++ m)
