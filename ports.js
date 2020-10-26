@@ -51,45 +51,82 @@ function handleStorage(action, cb) {
   } else {
 
     if (storageAction === "save") {
-      const result = safely(function(){
+      const action = function(){
         store.setItem(storage.storageKey, JSON.stringify(storage.data));
-      });
+      };
 
-      cb({
-        "responseKey": responseKey,
-        "data": result
-      });
+      const resultTransformer = function(result) {
+        return null;
+      }
+
+      const result = execute(action, responseKey, resultTransformer);
+
+      cb(result);
+
     } else if (storageAction === "delete") {
-      const result = safely(function(){
-        store.removeItem(storage.storageKey);
-      })
 
-      cb({
-        "responseKey": responseKey,
-        "data": result
-      });
+      const action = function(){
+        store.removeItem(storage.storageKey);
+      };
+
+      const resultTransformer = function(result) {
+        return null;
+      }
+
+      const result = execute(action, responseKey, resultTransformer);
+
+      cb(result);
     } else if (storageAction === "load") {
-      store.getItem(storage.storageKey); //fix
-      console.log("storage loaded");
+      const action = function() {
+        store.getItem(storage.storageKey);
+      };
+
+      const resultTransformer = function(result) {
+        return result;
+      }
+
+      const result = execute(action, responseKey, resultTransformer);
+
+      cb(result);
     } else if (storageAction === "clear") {
-      store.clear();
-      console.log("storage cleared");
+
+      const action = function() {
+        store.clear();
+      }
+
+      const resultTransformer = function(result) {
+        return null;
+      }
+
+      const result = execute(action, responseKey, resultTransformer);
+
+      cb(result);
     } else {
-      console.log("unknown storage action: " + JSON.stringify(action.storage));
+      const result = errorPayload(responseKey, "unknown storage action: " + JSON.stringify(action.storage));
+
+      cb(result);
     }
 
   }
 }
 
-function safely(f) {
+function execute(f, responseKey, dataTransform) {
   try {
-    f();
-    return true;
+    return {
+      "responseKey": responseKey,
+      "data": dataTransform(f())
+    };
   }
   catch(err) {
-    console.log("safely error: " + err);
-    return false; //it might be nice to return an error
+    return errorPayload(responseKey, err.toString());
   }
+}
+
+function errorPayload(responseKey, errorString) {
+    return {
+      "responseKey": responseKey,
+      "error": errorString
+    };
 }
 
 function findStorageType(storageType) {

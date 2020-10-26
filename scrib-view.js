@@ -5319,10 +5319,6 @@ var $elm$core$Task$perform = F2(
 				A2($elm$core$Task$map, toMessage, task)));
 	});
 var $elm$browser$Browser$element = _Browser_element;
-var $elm$core$Debug$log = _Debug_log;
-var $author$project$ElmCommon$debug = function (message) {
-	return A2($elm$core$Debug$log, message, _Utils_Tuple0);
-};
 var $author$project$ApiKey$ApiKeyWithPayload = F2(
 	function (apiKey, payload) {
 		return {apiKey: apiKey, payload: payload};
@@ -5393,7 +5389,6 @@ var $author$project$View$handleDecodeResult = F3(
 		}
 	});
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
-var $author$project$ElmCommon$debugWith = $elm$core$Debug$log;
 var $author$project$View$Model = F4(
 	function (query, notes, selectedNote, apiKey) {
 		return {apiKey: apiKey, notes: notes, query: query, selectedNote: selectedNote};
@@ -5579,18 +5574,15 @@ var $author$project$View$logMessage = function (message) {
 		A2($author$project$Ports$encodeJsCommand, logCommand, $elm$json$Json$Encode$string));
 };
 var $author$project$View$handleInitError = function (err) {
-	return A2(
-		$author$project$ElmCommon$debugWith,
-		'failed!!',
-		_Utils_Tuple2(
-			$author$project$View$emptyModel,
-			$elm$core$Platform$Cmd$batch(
-				_List_fromArray(
-					[
-						$elm$browser$Browser$Navigation$load('config.html'),
-						$author$project$View$logMessage(
-						'Decode of init data failued due to: ' + $elm$json$Json$Decode$errorToString(err))
-					]))));
+	return _Utils_Tuple2(
+		$author$project$View$emptyModel,
+		$elm$core$Platform$Cmd$batch(
+			_List_fromArray(
+				[
+					$elm$browser$Browser$Navigation$load('config.html'),
+					$author$project$View$logMessage(
+					'Decode of init data failed due to: ' + $elm$json$Json$Decode$errorToString(err))
+				])));
 };
 var $krisajenkins$remotedata$RemoteData$Loading = {$: 'Loading'};
 var $krisajenkins$remotedata$RemoteData$Success = function (a) {
@@ -6454,13 +6446,10 @@ var $author$project$View$handleInitSuccess = function (_v0) {
 				apiKey: $elm$core$Maybe$Just(apiKey),
 				notes: $krisajenkins$remotedata$RemoteData$Success(notes)
 			}));
-	var _v1 = $author$project$ElmCommon$debug('handleInitSuccess!!');
 	return mc;
 };
 var $author$project$View$init = function (topNotes) {
 	var decodeResult = A2($elm$json$Json$Decode$decodeValue, $author$project$View$decodeLocalNotes, topNotes);
-	var _v0 = $author$project$ElmCommon$debug(
-		'called init with: ' + A2($elm$json$Json$Encode$encode, 2, topNotes));
 	return A3($author$project$View$handleDecodeResult, decodeResult, $author$project$View$handleInitSuccess, $author$project$View$handleInitError);
 };
 var $author$project$Subs$JsResponse = F2(
@@ -6543,6 +6532,7 @@ var $author$project$View$subscriptionFailure = function (m) {
 };
 var $author$project$View$NoteRemovedFromLocalStorage = {$: 'NoteRemovedFromLocalStorage'};
 var $author$project$View$NoteSavedToLocalStorage = {$: 'NoteSavedToLocalStorage'};
+var $author$project$View$TopNotesSavedToSessionStorage = {$: 'TopNotesSavedToSessionStorage'};
 var $author$project$View$subscriptionSuccess = function (_v0) {
 	var key = _v0.a.a;
 	var result = _v0.b;
@@ -6551,6 +6541,8 @@ var $author$project$View$subscriptionSuccess = function (_v0) {
 			return $author$project$View$NoteSavedToLocalStorage;
 		case 'NoteRemovedFromLocalStorage':
 			return $author$project$View$NoteRemovedFromLocalStorage;
+		case 'TopNotesSavedToSessionStorage':
+			return $author$project$View$TopNotesSavedToSessionStorage;
 		default:
 			var otherKey = key;
 			return $author$project$View$subscriptionFailure('Unhandled JS notification: ' + otherKey);
@@ -6768,6 +6760,8 @@ var $author$project$View$update = F2(
 				return _Utils_Tuple2(
 					model,
 					$author$project$View$saveSelectedNoteToLocalStorage(note));
+			case 'TopNotesSavedToSessionStorage':
+				return $author$project$ElmCommon$onlyModel(model);
 			case 'NoteSavedToLocalStorage':
 				return _Utils_Tuple2(
 					model,

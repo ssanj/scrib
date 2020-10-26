@@ -10,7 +10,6 @@ import Html.Events     exposing (onClick, onInput)
 import FP              exposing (maybe, const)
 import ApiKey          exposing (ApiKey, ApiKeyWithPayload, apiKeyHeader, decodeApiKeyWithPayload, performApiKey)
 
-import Debug
 import Browser.Navigation
 import Browser
 import Http
@@ -47,6 +46,7 @@ type alias RemoteNotesData = WebData (List SC.NoteFull)
 
 type Msg = NoteSelected SC.NoteFull
          | NoteEdited SC.NoteFull
+         | TopNotesSavedToSessionStorage
          | NoteSavedToLocalStorage
          | NoteRemovedFromLocalStorage
          | JSNotificationError String
@@ -76,8 +76,7 @@ main =
 
 init : E.Value -> (Model, Cmd Msg)
 init topNotes =
-    let _ = debug <| "called init with: " ++ (E.encode 2 topNotes)
-        decodeResult = D.decodeValue decodeLocalNotes topNotes
+    let decodeResult = D.decodeValue decodeLocalNotes topNotes
     in handleDecodeResult decodeResult handleInitSuccess handleInitError
 
 
@@ -87,16 +86,17 @@ init topNotes =
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    (NoteSelected note)         -> ({model| selectedNote = Just note }, previewMarkdown note)
-    (NoteEdited note)           -> (model, saveSelectedNoteToLocalStorage note)
-    NoteSavedToLocalStorage     -> (model, Browser.Navigation.load "save.html")
-    NoteRemovedFromLocalStorage -> (model, Browser.Navigation.load "save.html")
-    (JSNotificationError error) -> (model, logMessage error)
-    AddNote                     -> (model, removeSelectedNoteFromLocalStorage)
-    (TopNotesResponse notes)    ->  ({ model | notes = notes}, handleTopNotesResponse SaveResponse notes)
-    (SearchNotesResponse notes) -> ({ model | notes = notes}, handleTopNotesResponse DontSaveResponse notes)
-    NotesRefreshed              -> performOrGotoConfig model ({ model | notes = Loading, query = Nothing }, getTopRemoteNotes)
-    (SearchEdited query)        -> performOrGotoConfig model ({ model | query = Just query }, searchRemoteNotes query)
+    (NoteSelected note)           -> ({model| selectedNote = Just note }, previewMarkdown note)
+    (NoteEdited note)             -> (model, saveSelectedNoteToLocalStorage note)
+    TopNotesSavedToSessionStorage -> onlyModel model -- we may want to do something with this info later
+    NoteSavedToLocalStorage       -> (model, Browser.Navigation.load "save.html")
+    NoteRemovedFromLocalStorage   -> (model, Browser.Navigation.load "save.html")
+    (JSNotificationError error)   -> (model, logMessage error)
+    AddNote                       -> (model, removeSelectedNoteFromLocalStorage)
+    (TopNotesResponse notes)      ->  ({ model | notes = notes}, handleTopNotesResponse SaveResponse notes)
+    (SearchNotesResponse notes)   -> ({ model | notes = notes}, handleTopNotesResponse DontSaveResponse notes)
+    NotesRefreshed                -> performOrGotoConfig model ({ model | notes = Loading, query = Nothing }, getTopRemoteNotes)
+    (SearchEdited query)          -> performOrGotoConfig model ({ model | query = Just query }, searchRemoteNotes query)
 
 
 -- VIEW
@@ -170,8 +170,7 @@ emptyModel = Model Nothing NotAsked Nothing Nothing
 
 handleInitSuccess : ApiKeyWithPayload (List SC.NoteFull) -> (Model, Cmd Msg)
 handleInitSuccess { apiKey, payload } =
-  let _     = debug "handleInitSuccess!!"
-      notes = maybe [] identity payload
+  let notes = maybe [] identity payload
       mc    =
         if List.isEmpty notes
         then (
@@ -182,15 +181,14 @@ handleInitSuccess { apiKey, payload } =
  in mc
 
 handleInitError : D.Error -> (Model, Cmd Msg)
-handleInitError err = debugWith "failed!!"
-                        (
-                          emptyModel
-                        , Cmd.batch
-                          [
-                            Browser.Navigation.load "config.html"
-                          , logMessage ("Decode of init data failued due to: " ++ D.errorToString err)
-                          ]
-                        )
+handleInitError err = (
+                        emptyModel
+                      , Cmd.batch
+                        [
+                          Browser.Navigation.load "config.html"
+                        , logMessage ("Decode of init data failed due to: " ++ D.errorToString err)
+                        ]
+                      )
 
 handleDecodeResult : Result D.Error a -> (a -> b) -> (D.Error -> b) -> b
 handleDecodeResult result success failure =
@@ -389,9 +387,10 @@ markdownViewId = "markdown-view"
 subscriptionSuccess : S.JsResponse E.Value -> Msg
 subscriptionSuccess (S.JsResponse (P.ResponseKey key) result) =
   case (key) of
-    "NoteSavedToLocalStorage"     -> NoteSavedToLocalStorage
-    "NoteRemovedFromLocalStorage" -> NoteRemovedFromLocalStorage
-    otherKey                    -> subscriptionFailure <| ("Unhandled JS notification: " ++ otherKey)
+    "NoteSavedToLocalStorage"       -> NoteSavedToLocalStorage
+    "NoteRemovedFromLocalStorage"   -> NoteRemovedFromLocalStorage
+    "TopNotesSavedToSessionStorage" -> TopNotesSavedToSessionStorage
+    otherKey                      -> subscriptionFailure <| ("Unhandled JS notification: " ++ otherKey)
 
 
   --case (key, result) of
