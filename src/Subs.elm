@@ -19,38 +19,55 @@ type JsResponse a = JsResponse P.ResponseKey a
   Sample json sent from Javascript Subs:
       -- {
       --   "responseKey": "some key",
-      --   "data": A -- could be any Json value.
+      --   "data": A -- could be any Json value including `null`
+      --   "error": "some error" -- optional
       -- }
 -}
 
-type ResponseJson = ResponseJson String E.Value
+errorKeyField : String
+errorKeyField = "error"
 
---TODO: It's probably better not to Decode the payload at this point and leave it up to the
--- code handling the subcription to decide how to decode the payload
--- eg. a Delete where we have a T/F outcome vs a load where we need data.
-encodeJsResponse : D.Decoder a -> (JsResponse a -> msg) -> (String -> msg) -> E.Value -> msg
-encodeJsResponse payloadDecoder successCallback errorCallback jsonValue =
+type ResponseJson = SuccessResponse String E.Value
+                  | ErrorResponse String String
+
+encodeJsResponse : (JsResponse E.Value -> msg) -> (String -> msg) -> E.Value -> msg
+encodeJsResponse successCallback errorCallback jsonValue =
     let jsResponseWithValueDecoder = (D.andThen decodeJsResponse decodeResponseJson) -- D.Decoder (JsResponse E.Value)
         decodeResult = D.decodeValue jsResponseWithValueDecoder jsonValue            -- Result Error (JsResponse E.Value)
     in case decodeResult of
-        Ok (JsResponse responseKey payload) ->
-          let payloadDecodeResult = D.decodeValue payloadDecoder payload
-          in foldResult (errorCallback << D.errorToString) (successCallback << JsResponse responseKey) payloadDecodeResult
-        Err err      -> errorCallback <| D.errorToString err
+        Ok (JsResponse responseKey payload) -> successCallback <| JsResponse responseKey payload
+        Err err                             -> errorCallback <| D.errorToString err
 
 decodeJsResponse : ResponseJson -> D.Decoder (JsResponse E.Value)
-decodeJsResponse (ResponseJson responseKey payload) =
-  let responseKeyDecoder = D.map P.ResponseKey <| D.field P.responseKeyField D.string
-  in D.map ((flip JsResponse) payload) responseKeyDecoder
+decodeJsResponse responseJson =
+  case responseJson of
+    (SuccessResponse responseKey payload) ->
+      let responseKeyDecoder = D.map P.ResponseKey <| D.field P.responseKeyField D.string
+      in D.map ((flip JsResponse) payload) responseKeyDecoder
 
-decodeResponseJson :D.Decoder ResponseJson
-decodeResponseJson =
+    (ErrorResponse responseKey error)     -> D.fail error
+
+
+decodeResponseJson: D.Decoder ResponseJson
+decodeResponseJson = D.oneOf [decodeErrorResponse, decodeSuccessResponse]
+
+decodeSuccessResponse :D.Decoder ResponseJson
+decodeSuccessResponse =
   let responseType = D.field P.responseKeyField D.string
       payload      = D.field P.dataKeyField D.value
   in D.map2
-      ResponseJson
+      SuccessResponse
       responseType
       payload
+
+decodeErrorResponse :D.Decoder ResponseJson
+decodeErrorResponse =
+  let responseType = D.field P.responseKeyField D.string
+      error        = D.field errorKeyField D.string
+  in D.map2
+      ErrorResponse
+      responseType
+      error
 
 foldResult : (a -> c) -> (b -> c) -> Result a b ->  c
 foldResult onError onSuccess result =

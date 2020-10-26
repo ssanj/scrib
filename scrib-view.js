@@ -6463,74 +6463,71 @@ var $author$project$View$init = function (topNotes) {
 		'called init with: ' + A2($elm$json$Json$Encode$encode, 2, topNotes));
 	return A3($author$project$View$handleDecodeResult, decodeResult, $author$project$View$handleInitSuccess, $author$project$View$handleInitError);
 };
-var $elm$json$Json$Decode$bool = _Json_decodeBool;
 var $author$project$Subs$JsResponse = F2(
 	function (a, b) {
 		return {$: 'JsResponse', a: a, b: b};
 	});
 var $elm$json$Json$Decode$andThen = _Json_andThen;
-var $elm$core$Basics$composeL = F3(
-	function (g, f, x) {
-		return g(
-			f(x));
-	});
 var $author$project$Ports$ResponseKey = function (a) {
 	return {$: 'ResponseKey', a: a};
 };
+var $elm$json$Json$Decode$fail = _Json_fail;
 var $author$project$FP$flip = F3(
 	function (f, b, a) {
 		return A2(f, a, b);
 	});
 var $author$project$Ports$responseKeyField = 'responseKey';
-var $author$project$Subs$decodeJsResponse = function (_v0) {
-	var responseKey = _v0.a;
-	var payload = _v0.b;
-	var responseKeyDecoder = A2(
-		$elm$json$Json$Decode$map,
-		$author$project$Ports$ResponseKey,
-		A2($elm$json$Json$Decode$field, $author$project$Ports$responseKeyField, $elm$json$Json$Decode$string));
-	return A2(
-		$elm$json$Json$Decode$map,
-		$author$project$FP$flip($author$project$Subs$JsResponse)(payload),
-		responseKeyDecoder);
+var $author$project$Subs$decodeJsResponse = function (responseJson) {
+	if (responseJson.$ === 'SuccessResponse') {
+		var responseKey = responseJson.a;
+		var payload = responseJson.b;
+		var responseKeyDecoder = A2(
+			$elm$json$Json$Decode$map,
+			$author$project$Ports$ResponseKey,
+			A2($elm$json$Json$Decode$field, $author$project$Ports$responseKeyField, $elm$json$Json$Decode$string));
+		return A2(
+			$elm$json$Json$Decode$map,
+			$author$project$FP$flip($author$project$Subs$JsResponse)(payload),
+			responseKeyDecoder);
+	} else {
+		var responseKey = responseJson.a;
+		var error = responseJson.b;
+		return $elm$json$Json$Decode$fail(error);
+	}
 };
-var $author$project$Subs$ResponseJson = F2(
+var $author$project$Subs$ErrorResponse = F2(
 	function (a, b) {
-		return {$: 'ResponseJson', a: a, b: b};
+		return {$: 'ErrorResponse', a: a, b: b};
+	});
+var $author$project$Subs$errorKeyField = 'error';
+var $author$project$Subs$decodeErrorResponse = function () {
+	var responseType = A2($elm$json$Json$Decode$field, $author$project$Ports$responseKeyField, $elm$json$Json$Decode$string);
+	var error = A2($elm$json$Json$Decode$field, $author$project$Subs$errorKeyField, $elm$json$Json$Decode$string);
+	return A3($elm$json$Json$Decode$map2, $author$project$Subs$ErrorResponse, responseType, error);
+}();
+var $author$project$Subs$SuccessResponse = F2(
+	function (a, b) {
+		return {$: 'SuccessResponse', a: a, b: b};
 	});
 var $elm$json$Json$Decode$value = _Json_decodeValue;
-var $author$project$Subs$decodeResponseJson = function () {
+var $author$project$Subs$decodeSuccessResponse = function () {
 	var responseType = A2($elm$json$Json$Decode$field, $author$project$Ports$responseKeyField, $elm$json$Json$Decode$string);
 	var payload = A2($elm$json$Json$Decode$field, $author$project$Ports$dataKeyField, $elm$json$Json$Decode$value);
-	return A3($elm$json$Json$Decode$map2, $author$project$Subs$ResponseJson, responseType, payload);
+	return A3($elm$json$Json$Decode$map2, $author$project$Subs$SuccessResponse, responseType, payload);
 }();
-var $author$project$Subs$foldResult = F3(
-	function (onError, onSuccess, result) {
-		if (result.$ === 'Ok') {
-			var value = result.a;
-			return onSuccess(value);
-		} else {
-			var err = result.a;
-			return onError(err);
-		}
-	});
-var $author$project$Subs$encodeJsResponse = F4(
-	function (payloadDecoder, successCallback, errorCallback, jsonValue) {
+var $author$project$Subs$decodeResponseJson = $elm$json$Json$Decode$oneOf(
+	_List_fromArray(
+		[$author$project$Subs$decodeErrorResponse, $author$project$Subs$decodeSuccessResponse]));
+var $author$project$Subs$encodeJsResponse = F3(
+	function (successCallback, errorCallback, jsonValue) {
 		var jsResponseWithValueDecoder = A2($elm$json$Json$Decode$andThen, $author$project$Subs$decodeJsResponse, $author$project$Subs$decodeResponseJson);
 		var decodeResult = A2($elm$json$Json$Decode$decodeValue, jsResponseWithValueDecoder, jsonValue);
 		if (decodeResult.$ === 'Ok') {
 			var _v1 = decodeResult.a;
 			var responseKey = _v1.a;
 			var payload = _v1.b;
-			var payloadDecodeResult = A2($elm$json$Json$Decode$decodeValue, payloadDecoder, payload);
-			return A3(
-				$author$project$Subs$foldResult,
-				A2($elm$core$Basics$composeL, errorCallback, $elm$json$Json$Decode$errorToString),
-				A2(
-					$elm$core$Basics$composeL,
-					successCallback,
-					$author$project$Subs$JsResponse(responseKey)),
-				payloadDecodeResult);
+			return successCallback(
+				A2($author$project$Subs$JsResponse, responseKey, payload));
 		} else {
 			var err = decodeResult.a;
 			return errorCallback(
@@ -6549,35 +6546,19 @@ var $author$project$View$NoteSavedToLocalStorage = {$: 'NoteSavedToLocalStorage'
 var $author$project$View$subscriptionSuccess = function (_v0) {
 	var key = _v0.a.a;
 	var result = _v0.b;
-	var _v1 = _Utils_Tuple2(key, result);
-	_v1$4:
-	while (true) {
-		if (_v1.b) {
-			switch (_v1.a) {
-				case 'NoteSavedToLocalStorage':
-					return $author$project$View$NoteSavedToLocalStorage;
-				case 'NoteRemovedFromLocalStorage':
-					return $author$project$View$NoteRemovedFromLocalStorage;
-				default:
-					break _v1$4;
-			}
-		} else {
-			switch (_v1.a) {
-				case 'NoteSavedToLocalStorage':
-					return $author$project$View$subscriptionFailure('Could not save note to local storage');
-				case 'NoteRemovedFromLocalStorage':
-					return $author$project$View$subscriptionFailure('Could not remove note from local storage');
-				default:
-					break _v1$4;
-			}
-		}
+	switch (key) {
+		case 'NoteSavedToLocalStorage':
+			return $author$project$View$NoteSavedToLocalStorage;
+		case 'NoteRemovedFromLocalStorage':
+			return $author$project$View$NoteRemovedFromLocalStorage;
+		default:
+			var otherKey = key;
+			return $author$project$View$subscriptionFailure('Unhandled JS notification: ' + otherKey);
 	}
-	var otherKey = _v1.a;
-	return $author$project$View$subscriptionFailure('Unhandled JS notification: ' + otherKey);
 };
 var $author$project$View$subscriptions = function (_v0) {
 	return $author$project$View$jsMessage(
-		A3($author$project$Subs$encodeJsResponse, $elm$json$Json$Decode$bool, $author$project$View$subscriptionSuccess, $author$project$View$subscriptionFailure));
+		A2($author$project$Subs$encodeJsResponse, $author$project$View$subscriptionSuccess, $author$project$View$subscriptionFailure));
 };
 var $author$project$View$DontSaveResponse = {$: 'DontSaveResponse'};
 var $author$project$View$SaveResponse = {$: 'SaveResponse'};

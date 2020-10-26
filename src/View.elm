@@ -155,7 +155,7 @@ port jsMessage : (E.Value -> msg) -> Sub msg
 
 
 subscriptions : Model -> Sub Msg
-subscriptions _ = jsMessage (S.encodeJsResponse D.bool subscriptionSuccess subscriptionFailure)
+subscriptions _ = jsMessage (S.encodeJsResponse subscriptionSuccess subscriptionFailure)
 
 
 -- MODEL HELPERS
@@ -281,7 +281,7 @@ saveSelectedNoteToLocalStorage note =
 removeSelectedNoteFromLocalStorage : Cmd Msg
 removeSelectedNoteFromLocalStorage =
   let storageArea               = viewSelectedNoteStorageArea
-      removeSelectedNoteValue  = P.JsStorageValue storageArea Delete ()
+      removeSelectedNoteValue   = P.JsStorageValue storageArea Delete ()
       responseKey               = Just noteRemovedFromLocalStorageResponseKey
       removeSelectedNoteCommand = P.WithStorage removeSelectedNoteValue responseKey
   in scribMessage <| P.encodeJsCommand removeSelectedNoteCommand (const E.null)
@@ -386,14 +386,20 @@ markdownViewId = "markdown-view"
 
 -- SUBSCRIPTION HELPERS
 
-subscriptionSuccess : S.JsResponse Bool -> Msg
+subscriptionSuccess : S.JsResponse E.Value -> Msg
 subscriptionSuccess (S.JsResponse (P.ResponseKey key) result) =
-  case (key, result) of
-    ("NoteSavedToLocalStorage", True )     -> NoteSavedToLocalStorage
-    ("NoteSavedToLocalStorage", False)     -> subscriptionFailure "Could not save note to local storage"
-    ("NoteRemovedFromLocalStorage", True ) -> NoteRemovedFromLocalStorage
-    ("NoteRemovedFromLocalStorage", False) -> subscriptionFailure "Could not remove note from local storage"
-    (otherKey,                      _)     -> subscriptionFailure <| "Unhandled JS notification: " ++ otherKey
+  case (key) of
+    "NoteSavedToLocalStorage"     -> NoteSavedToLocalStorage
+    "NoteRemovedFromLocalStorage" -> NoteRemovedFromLocalStorage
+    otherKey                    -> subscriptionFailure <| ("Unhandled JS notification: " ++ otherKey)
+
+
+  --case (key, result) of
+  --  ("NoteSavedToLocalStorage", True )     -> NoteSavedToLocalStorage
+  --  ("NoteSavedToLocalStorage", False)     -> subscriptionFailure "Could not save note to local storage"
+  --  ("NoteRemovedFromLocalStorage", True ) -> NoteRemovedFromLocalStorage
+  --  ("NoteRemovedFromLocalStorage", False) -> subscriptionFailure "Could not remove note from local storage"
+  --  (otherKey,                      _)     -> subscriptionFailure <| "Unhandled JS notification: " ++ otherKey
 
 subscriptionFailure : String -> Msg
 subscriptionFailure m = JSNotificationError ("subscriptionFailure: " ++ m)

@@ -1,14 +1,42 @@
-# scrib.edit (from localStorage)
+# View
 
-## Written from View on Edit
+## Read cached notes on init from Session:
 
 ```json
 {
-  "eventType": "save_message",
-  "note": {
-    "noteText": "A completely  new note\n\nIn the age of versions!",
-    "noteId": 45,
-    "noteVersion": 1
+  "scrib.view": [
+                  {"noteText":"note1","noteId":1,"noteVersion":1}
+                ]
+}
+```
+
+## Write note to edit
+
+```json
+{
+  "eventType": "storage_action",
+  "storage" : {
+      "storageType": "local",
+      "storageKey": "scrib.edit",
+      "storageAction": "save",
+      "data": {
+        "noteText": "A completely  new note\n\nIn the age of versions!",
+        "noteId": 45,
+        "noteVersion": 1
+      }
+  },
+  "responseKey": "NoteSavedToLocalStorage"
+}
+```
+
+## Render selected note
+
+```json
+{
+  "eventType": "markdown_action",
+  "markdown_action" : {
+      "elementId": "markdown-view",
+      "data": "markdown text"
   }
 }
 ```
