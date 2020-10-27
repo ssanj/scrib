@@ -15,16 +15,20 @@ import Browser.Navigation
 import Browser
 import Http
 import Browser.Navigation
-import Json.Decode  as D
-import Json.Encode  as E
-import Note         as SC
-import Ports        as P
-import Subs         as S
-
+import List.Nonempty as N
+import Json.Decode   as D
+import Json.Encode   as E
+import Note          as SC
+import Ports         as P
+import Subs          as S
 
 
 -- MODEL
 
+type ErrorModalStatus = OpenIt (N.Nonempty ErrorMessage)
+                      | CloseIt
+
+type LastError = LastError ErrorModalStatus
 
 type alias Model =
   {
@@ -32,6 +36,7 @@ type alias Model =
   , notes: RemoteNotesData
   , selectedNote: Maybe SC.NoteFull
   , apiKey: Maybe ApiKey
+  , lastError: Maybe LastError
   }
 
 
@@ -56,6 +61,7 @@ type Msg = NoteSelected SC.NoteFull
          | NotesRefreshed
          | TopNotesResponse RemoteNotesData
          | SearchNotesResponse RemoteNotesData
+         | ErrorModalClosed
 
 
 
@@ -94,11 +100,11 @@ update msg model =
     NoteRemovedFromLocalStorage   -> (model, Browser.Navigation.load "save.html")
     (JSNotificationError error)   -> (model, logMessage error)
     AddNote                       -> (model, removeSelectedNoteFromLocalStorage)
-    (TopNotesResponse notes)      ->  ({ model | notes = notes}, handleTopNotesResponse SaveResponse notes)
-    (SearchNotesResponse notes)   -> ({ model | notes = notes}, handleTopNotesResponse DontSaveResponse notes)
+    (TopNotesResponse notes)      -> handleTopNotesResponse ({ model | notes = notes }) SaveResponse notes
+    (SearchNotesResponse notes)   -> handleTopNotesResponse ({ model | notes = notes }) DontSaveResponse notes
     NotesRefreshed                -> performOrGotoConfig model ({ model | notes = Loading, query = Nothing }, getTopRemoteNotes)
     (SearchEdited query)          -> performOrGotoConfig model ({ model | query = Just query }, searchRemoteNotes query)
-
+    ErrorModalClosed              -> onlyModel ({ model | lastError = Nothing })
 
 -- VIEW
 
@@ -141,6 +147,7 @@ view model =
           ]
         ]
       ]
+   , createErrorModal model.lastError
    , createMarkdownPreview model.selectedNote
    ]
 
@@ -163,7 +170,7 @@ subscriptions _ = jsMessage (S.encodeJsResponse subscriptionSuccess subscription
 
 
 emptyModel: Model
-emptyModel = Model Nothing NotAsked Nothing Nothing
+emptyModel = Model Nothing NotAsked Nothing Nothing Nothing
 
 
 -- INIT HELPERS
@@ -287,14 +294,21 @@ saveTopNotesToSessionStorage notes =
       saveTopNotesCommand = P.WithStorage saveTopNotesValue responseKey
   in scribMessage <| P.encodeJsCommand saveTopNotesCommand SC.encodeFullNotes
 
-handleTopNotesResponse: SaveType -> RemoteNotesData -> Cmd Msg
-handleTopNotesResponse saveContent remoteData =
+handleTopNotesResponse: Model -> SaveType -> RemoteNotesData -> (Model, Cmd Msg)
+handleTopNotesResponse model saveContent remoteData =
   case (saveContent, remoteData) of
-    (_, Failure e)                -> logMessage <| fromHttpError e -- log any errors
-    (SaveResponse, Success notes) -> saveTopNotesToSessionStorage notes
-    (DontSaveResponse, Success _) -> Cmd.none
-    (_, _)                        -> Cmd.none
+    (_, Failure e)                -> onlyModel <| addError model (ErrorMessage <| fromHttpError e)  -- logMessage <| fromHttpError e -- log any errors
+    (SaveResponse, Success notes) -> (model, saveTopNotesToSessionStorage notes)
+    (DontSaveResponse, Success _) -> onlyModel model
+    (_, _)                        -> onlyModel model
 
+
+addError : Model -> ErrorMessage -> Model
+addError model newError =
+  case model.lastError of
+    (Just (LastError (OpenIt errorMessages))) -> { model | lastError = Just (LastError (OpenIt (N.append errorMessages (N.fromElement newError)))) }
+    (Just (LastError CloseIt))                -> { model | lastError = Just (LastError (OpenIt <| N.fromElement newError)) }
+    Nothing                                   -> { model | lastError = Just (LastError (OpenIt <| N.fromElement newError)) }
 
 getQueryText : Maybe String -> String
 getQueryText = maybe "" identity
@@ -315,7 +329,7 @@ viewNotesList remoteNotesData =
         case remoteNotesData of
           NotAsked      -> [div [] [text "No Data"]]
           Loading       -> [div [] [text "Loading..."]]
-          Failure e     -> [addFailureAlert <| "oops! Could not get your data :(" ++ fromHttpError e]
+          Failure e     -> [] --[addFailureAlert <| "oops! Could not get your data :(" ++ fromHttpError e]
           Success notes -> List.map createNoteItem notes
   in div [ id "notes-list" ] notesContent
 
@@ -328,6 +342,13 @@ fromHttpError error =
     (Http.BadStatus status) -> "bad status: " ++ String.fromInt status
     (Http.BadBody body)     -> "bad body: " ++ body
 
+
+createErrorModal : Maybe LastError -> Html Msg
+createErrorModal maybeLastError =
+  case maybeLastError of
+    (Just (LastError (OpenIt errorMessages))) -> openErrorModal errorMessages ErrorModalClosed
+    (Just (LastError CloseIt))                -> div [] []
+    Nothing                       -> div [] []
 
 createMarkdownPreview: Maybe SC.NoteFull -> Html Msg
 createMarkdownPreview = maybe viewMarkdownPreviewDefault viewMarkdownPreview

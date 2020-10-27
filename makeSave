@@ -1,0 +1,4 @@
+#!/bin/bash
+
+elm make src/Save.elm --report=json --output=scrib-save.js 2>&1 | /Volumes/Work/projects/code/haskell/toy/voelm/.stack-work/install/x86_64-osx/5e6b4a35e365c9c0f0439a83960625a2f1136b0acdda4aa3b1131b9e422523b2/8.8.4/bin/voelm-exe
+

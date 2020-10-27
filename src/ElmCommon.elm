@@ -1,9 +1,15 @@
 module ElmCommon exposing (..)
 
-import Html exposing (Html, div, text, Attribute)
-import Html.Attributes exposing (class)
-import Json.Encode exposing (Value)
+import Html            exposing (Html, div, text, Attribute, article, p, strong, br, button)
+import Html.Attributes exposing (class, classList, id, attribute)
+import Html.Events     exposing (onClick)
+import Json.Encode     exposing (Value)
 import Debug
+
+import List.Nonempty as N
+import FP exposing (maybe, maybeToBool)
+
+type alias ErrorMessage = { errorMessage : String }
 
 type alias Encoder a = a -> Value
 
@@ -69,4 +75,30 @@ addFailureAlert textValue =
     )
     [
       text textValue
+    ]
+
+openErrorModal : N.Nonempty ErrorMessage -> a -> Html a
+openErrorModal errorMessages event =
+  div [ classList [ ("modal", True), ("is-active", True) ], id "error-modal" ]
+    [ div [ class "modal-background" ]
+        []
+    , div [ class "modal-content" ]
+        [ div [ class "box" ]
+            [ article [ class "media" ]
+                [ div [ class "media-content" ]
+                    [ div [ class "content" ]
+                          (N.toList <| N.map createErrorBlock errorMessages)
+                    ]
+                ]
+            ]
+        ]
+    , button [ id "error-modal-close", attribute "aria-label" "close", class "modal-close is-large", onClick event ]
+        []
+    ]
+
+createErrorBlock : ErrorMessage -> Html a
+createErrorBlock { errorMessage } =
+  p []
+    [
+      text errorMessage
     ]

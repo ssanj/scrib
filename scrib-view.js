@@ -5488,12 +5488,12 @@ var $author$project$View$handleDecodeResult = F3(
 		}
 	});
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
-var $author$project$View$Model = F4(
-	function (query, notes, selectedNote, apiKey) {
-		return {apiKey: apiKey, notes: notes, query: query, selectedNote: selectedNote};
+var $author$project$View$Model = F5(
+	function (query, notes, selectedNote, apiKey, lastError) {
+		return {apiKey: apiKey, lastError: lastError, notes: notes, query: query, selectedNote: selectedNote};
 	});
 var $krisajenkins$remotedata$RemoteData$NotAsked = {$: 'NotAsked'};
-var $author$project$View$emptyModel = A4($author$project$View$Model, $elm$core$Maybe$Nothing, $krisajenkins$remotedata$RemoteData$NotAsked, $elm$core$Maybe$Nothing, $elm$core$Maybe$Nothing);
+var $author$project$View$emptyModel = A5($author$project$View$Model, $elm$core$Maybe$Nothing, $krisajenkins$remotedata$RemoteData$NotAsked, $elm$core$Maybe$Nothing, $elm$core$Maybe$Nothing, $elm$core$Maybe$Nothing);
 var $elm$browser$Browser$Navigation$load = _Browser_load;
 var $author$project$Ports$LogConsole = function (a) {
 	return {$: 'LogConsole', a: a};
@@ -6653,6 +6653,74 @@ var $author$project$View$subscriptions = function (_v0) {
 };
 var $author$project$View$DontSaveResponse = {$: 'DontSaveResponse'};
 var $author$project$View$SaveResponse = {$: 'SaveResponse'};
+var $author$project$ElmCommon$ErrorMessage = function (errorMessage) {
+	return {errorMessage: errorMessage};
+};
+var $author$project$View$LastError = function (a) {
+	return {$: 'LastError', a: a};
+};
+var $author$project$View$OpenIt = function (a) {
+	return {$: 'OpenIt', a: a};
+};
+var $mgold$elm_nonempty_list$List$Nonempty$Nonempty = F2(
+	function (a, b) {
+		return {$: 'Nonempty', a: a, b: b};
+	});
+var $mgold$elm_nonempty_list$List$Nonempty$append = F2(
+	function (_v0, _v1) {
+		var x = _v0.a;
+		var xs = _v0.b;
+		var y = _v1.a;
+		var ys = _v1.b;
+		return A2(
+			$mgold$elm_nonempty_list$List$Nonempty$Nonempty,
+			x,
+			_Utils_ap(
+				xs,
+				A2($elm$core$List$cons, y, ys)));
+	});
+var $mgold$elm_nonempty_list$List$Nonempty$fromElement = function (x) {
+	return A2($mgold$elm_nonempty_list$List$Nonempty$Nonempty, x, _List_Nil);
+};
+var $author$project$View$addError = F2(
+	function (model, newError) {
+		var _v0 = model.lastError;
+		if (_v0.$ === 'Just') {
+			if (_v0.a.a.$ === 'OpenIt') {
+				var errorMessages = _v0.a.a.a;
+				return _Utils_update(
+					model,
+					{
+						lastError: $elm$core$Maybe$Just(
+							$author$project$View$LastError(
+								$author$project$View$OpenIt(
+									A2(
+										$mgold$elm_nonempty_list$List$Nonempty$append,
+										errorMessages,
+										$mgold$elm_nonempty_list$List$Nonempty$fromElement(newError)))))
+					});
+			} else {
+				var _v1 = _v0.a.a;
+				return _Utils_update(
+					model,
+					{
+						lastError: $elm$core$Maybe$Just(
+							$author$project$View$LastError(
+								$author$project$View$OpenIt(
+									$mgold$elm_nonempty_list$List$Nonempty$fromElement(newError))))
+					});
+			}
+		} else {
+			return _Utils_update(
+				model,
+				{
+					lastError: $elm$core$Maybe$Just(
+						$author$project$View$LastError(
+							$author$project$View$OpenIt(
+								$mgold$elm_nonempty_list$List$Nonempty$fromElement(newError))))
+				});
+		}
+	});
 var $author$project$View$fromHttpError = function (error) {
 	switch (error.$) {
 		case 'BadUrl':
@@ -6729,25 +6797,31 @@ var $author$project$View$saveTopNotesToSessionStorage = function (notes) {
 	return $author$project$View$scribMessage(
 		A2($author$project$Ports$encodeJsCommand, saveTopNotesCommand, $author$project$Note$encodeFullNotes));
 };
-var $author$project$View$handleTopNotesResponse = F2(
-	function (saveContent, remoteData) {
+var $author$project$View$handleTopNotesResponse = F3(
+	function (model, saveContent, remoteData) {
 		var _v0 = _Utils_Tuple2(saveContent, remoteData);
 		switch (_v0.b.$) {
 			case 'Failure':
 				var e = _v0.b.a;
-				return $author$project$View$logMessage(
-					$author$project$View$fromHttpError(e));
+				return $author$project$ElmCommon$onlyModel(
+					A2(
+						$author$project$View$addError,
+						model,
+						$author$project$ElmCommon$ErrorMessage(
+							$author$project$View$fromHttpError(e))));
 			case 'Success':
 				if (_v0.a.$ === 'SaveResponse') {
 					var _v1 = _v0.a;
 					var notes = _v0.b.a;
-					return $author$project$View$saveTopNotesToSessionStorage(notes);
+					return _Utils_Tuple2(
+						model,
+						$author$project$View$saveTopNotesToSessionStorage(notes));
 				} else {
 					var _v2 = _v0.a;
-					return $elm$core$Platform$Cmd$none;
+					return $author$project$ElmCommon$onlyModel(model);
 				}
 			default:
-				return $elm$core$Platform$Cmd$none;
+				return $author$project$ElmCommon$onlyModel(model);
 		}
 	});
 var $author$project$ApiKey$performApiKey = F3(
@@ -6866,18 +6940,22 @@ var $author$project$View$update = F2(
 				return _Utils_Tuple2(model, $author$project$View$removeSelectedNoteFromLocalStorage);
 			case 'TopNotesResponse':
 				var notes = msg.a;
-				return _Utils_Tuple2(
+				return A3(
+					$author$project$View$handleTopNotesResponse,
 					_Utils_update(
 						model,
 						{notes: notes}),
-					A2($author$project$View$handleTopNotesResponse, $author$project$View$SaveResponse, notes));
+					$author$project$View$SaveResponse,
+					notes);
 			case 'SearchNotesResponse':
 				var notes = msg.a;
-				return _Utils_Tuple2(
+				return A3(
+					$author$project$View$handleTopNotesResponse,
 					_Utils_update(
 						model,
 						{notes: notes}),
-					A2($author$project$View$handleTopNotesResponse, $author$project$View$DontSaveResponse, notes));
+					$author$project$View$DontSaveResponse,
+					notes);
 			case 'NotesRefreshed':
 				return A2(
 					$author$project$View$performOrGotoConfig,
@@ -6887,7 +6965,7 @@ var $author$project$View$update = F2(
 							model,
 							{notes: $krisajenkins$remotedata$RemoteData$Loading, query: $elm$core$Maybe$Nothing}),
 						$author$project$View$getTopRemoteNotes));
-			default:
+			case 'SearchEdited':
 				var query = msg.a;
 				return A2(
 					$author$project$View$performOrGotoConfig,
@@ -6899,6 +6977,11 @@ var $author$project$View$update = F2(
 								query: $elm$core$Maybe$Just(query)
 							}),
 						$author$project$View$searchRemoteNotes(query)));
+			default:
+				return $author$project$ElmCommon$onlyModel(
+					_Utils_update(
+						model,
+						{lastError: $elm$core$Maybe$Nothing}));
 		}
 	});
 var $author$project$View$AddNote = {$: 'AddNote'};
@@ -6924,13 +7007,56 @@ var $elm$html$Html$Attributes$stringProperty = F2(
 			$elm$json$Json$Encode$string(string));
 	});
 var $elm$html$Html$Attributes$class = $elm$html$Html$Attributes$stringProperty('className');
-var $author$project$View$NoteEdited = function (a) {
-	return {$: 'NoteEdited', a: a};
-};
+var $author$project$View$ErrorModalClosed = {$: 'ErrorModalClosed'};
 var $elm$html$Html$div = _VirtualDom_node('div');
-var $elm$html$Html$hr = _VirtualDom_node('hr');
+var $elm$core$List$filter = F2(
+	function (isGood, list) {
+		return A3(
+			$elm$core$List$foldr,
+			F2(
+				function (x, xs) {
+					return isGood(x) ? A2($elm$core$List$cons, x, xs) : xs;
+				}),
+			_List_Nil,
+			list);
+	});
+var $elm$core$Tuple$second = function (_v0) {
+	var y = _v0.b;
+	return y;
+};
+var $elm$html$Html$Attributes$classList = function (classes) {
+	return $elm$html$Html$Attributes$class(
+		A2(
+			$elm$core$String$join,
+			' ',
+			A2(
+				$elm$core$List$map,
+				$elm$core$Tuple$first,
+				A2($elm$core$List$filter, $elm$core$Tuple$second, classes))));
+};
+var $elm$html$Html$p = _VirtualDom_node('p');
+var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
+var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
+var $author$project$ElmCommon$createErrorBlock = function (_v0) {
+	var errorMessage = _v0.errorMessage;
+	return A2(
+		$elm$html$Html$p,
+		_List_Nil,
+		_List_fromArray(
+			[
+				$elm$html$Html$text(errorMessage)
+			]));
+};
 var $elm$html$Html$Attributes$id = $elm$html$Html$Attributes$stringProperty('id');
-var $author$project$View$markdownViewId = 'markdown-view';
+var $mgold$elm_nonempty_list$List$Nonempty$map = F2(
+	function (f, _v0) {
+		var x = _v0.a;
+		var xs = _v0.b;
+		return A2(
+			$mgold$elm_nonempty_list$List$Nonempty$Nonempty,
+			f(x),
+			A2($elm$core$List$map, f, xs));
+	});
 var $elm$virtual_dom$VirtualDom$Normal = function (a) {
 	return {$: 'Normal', a: a};
 };
@@ -6948,8 +7074,108 @@ var $elm$html$Html$Events$onClick = function (msg) {
 		'click',
 		$elm$json$Json$Decode$succeed(msg));
 };
-var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
-var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
+var $mgold$elm_nonempty_list$List$Nonempty$toList = function (_v0) {
+	var x = _v0.a;
+	var xs = _v0.b;
+	return A2($elm$core$List$cons, x, xs);
+};
+var $author$project$ElmCommon$openErrorModal = F2(
+	function (errorMessages, event) {
+		return A2(
+			$elm$html$Html$div,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$classList(
+					_List_fromArray(
+						[
+							_Utils_Tuple2('modal', true),
+							_Utils_Tuple2('is-active', true)
+						])),
+					$elm$html$Html$Attributes$id('error-modal')
+				]),
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$div,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('modal-background')
+						]),
+					_List_Nil),
+					A2(
+					$elm$html$Html$div,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('modal-content')
+						]),
+					_List_fromArray(
+						[
+							A2(
+							$elm$html$Html$div,
+							_List_fromArray(
+								[
+									$elm$html$Html$Attributes$class('box')
+								]),
+							_List_fromArray(
+								[
+									A2(
+									$elm$html$Html$article,
+									_List_fromArray(
+										[
+											$elm$html$Html$Attributes$class('media')
+										]),
+									_List_fromArray(
+										[
+											A2(
+											$elm$html$Html$div,
+											_List_fromArray(
+												[
+													$elm$html$Html$Attributes$class('media-content')
+												]),
+											_List_fromArray(
+												[
+													A2(
+													$elm$html$Html$div,
+													_List_fromArray(
+														[
+															$elm$html$Html$Attributes$class('content')
+														]),
+													$mgold$elm_nonempty_list$List$Nonempty$toList(
+														A2($mgold$elm_nonempty_list$List$Nonempty$map, $author$project$ElmCommon$createErrorBlock, errorMessages)))
+												]))
+										]))
+								]))
+						])),
+					A2(
+					$elm$html$Html$button,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$id('error-modal-close'),
+							A2($elm$html$Html$Attributes$attribute, 'aria-label', 'close'),
+							$elm$html$Html$Attributes$class('modal-close is-large'),
+							$elm$html$Html$Events$onClick(event)
+						]),
+					_List_Nil)
+				]));
+	});
+var $author$project$View$createErrorModal = function (maybeLastError) {
+	if (maybeLastError.$ === 'Just') {
+		if (maybeLastError.a.a.$ === 'OpenIt') {
+			var errorMessages = maybeLastError.a.a.a;
+			return A2($author$project$ElmCommon$openErrorModal, errorMessages, $author$project$View$ErrorModalClosed);
+		} else {
+			var _v1 = maybeLastError.a.a;
+			return A2($elm$html$Html$div, _List_Nil, _List_Nil);
+		}
+	} else {
+		return A2($elm$html$Html$div, _List_Nil, _List_Nil);
+	}
+};
+var $author$project$View$NoteEdited = function (a) {
+	return {$: 'NoteEdited', a: a};
+};
+var $elm$html$Html$hr = _VirtualDom_node('hr');
+var $author$project$View$markdownViewId = 'markdown-view';
 var $elm_explorations$markdown$Markdown$defaultOptions = {
 	defaultHighlighting: $elm$core$Maybe$Nothing,
 	githubFlavored: $elm$core$Maybe$Just(
@@ -7068,26 +7294,11 @@ var $elm$html$Html$Events$onInput = function (tagger) {
 			$elm$html$Html$Events$alwaysStop,
 			A2($elm$json$Json$Decode$map, tagger, $elm$html$Html$Events$targetValue)));
 };
-var $elm$html$Html$p = _VirtualDom_node('p');
 var $elm$html$Html$Attributes$placeholder = $elm$html$Html$Attributes$stringProperty('placeholder');
 var $elm$html$Html$section = _VirtualDom_node('section');
 var $elm$html$Html$span = _VirtualDom_node('span');
 var $elm$html$Html$Attributes$type_ = $elm$html$Html$Attributes$stringProperty('type');
 var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty('value');
-var $author$project$ElmCommon$addClasses = function (classes) {
-	return A2($elm$core$List$map, $elm$html$Html$Attributes$class, classes);
-};
-var $author$project$ElmCommon$addFailureAlert = function (textValue) {
-	return A2(
-		$elm$html$Html$div,
-		$author$project$ElmCommon$addClasses(
-			_List_fromArray(
-				['px-1', 'py-1', 'has-background-danger', 'has-text-white', 'autohide'])),
-		_List_fromArray(
-			[
-				$elm$html$Html$text(textValue)
-			]));
-};
 var $author$project$View$NoteSelected = function (a) {
 	return {$: 'NoteSelected', a: a};
 };
@@ -7182,11 +7393,7 @@ var $author$project$View$viewNotesList = function (remoteNotesData) {
 					]);
 			case 'Failure':
 				var e = remoteNotesData.a;
-				return _List_fromArray(
-					[
-						$author$project$ElmCommon$addFailureAlert(
-						'oops! Could not get your data :(' + $author$project$View$fromHttpError(e))
-					]);
+				return _List_Nil;
 			default:
 				var notes = remoteNotesData.a;
 				return A2($elm$core$List$map, $author$project$View$createNoteItem, notes);
@@ -7366,6 +7573,7 @@ var $author$project$View$view = function (model) {
 									]))
 							]))
 					])),
+				$author$project$View$createErrorModal(model.lastError),
 				$author$project$View$createMarkdownPreview(model.selectedNote)
 			]));
 };

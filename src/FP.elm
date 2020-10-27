@@ -11,3 +11,6 @@ const a _ = a
 
 flip : (a -> b -> c) -> b -> a -> c
 flip f b a = f a b
+
+maybeToBool : Maybe a -> Bool
+maybeToBool = maybe False (const True)
