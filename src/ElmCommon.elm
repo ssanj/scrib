@@ -11,6 +11,11 @@ import FP exposing (maybe, maybeToBool)
 
 type alias ErrorMessage = { errorMessage : String }
 
+type alias InformationMessage = { infoMessage : String }
+
+type alias SuccessMessage = { successMessage : String }
+
+
 type alias Encoder a = a -> Value
 
 debug : String -> ()
@@ -44,8 +49,23 @@ hideAlertSpace =
       text "placeholder"
     ]
 
-addSuccessAlert: String -> Html a
-addSuccessAlert textValue =
+
+addInlineInfoFlash: InformationMessage -> Html a
+addInlineInfoFlash { infoMessage } =
+  div
+    (
+      addClasses
+      [
+        "px-1"
+      , "py-1"
+      ]
+    )
+    [
+      text infoMessage
+    ]
+
+addInlineSuccessFlash: SuccessMessage -> Html a
+addInlineSuccessFlash {  successMessage } =
   div
     (
       addClasses
@@ -58,11 +78,11 @@ addSuccessAlert textValue =
       ]
     )
     [
-      text textValue
+      text successMessage
     ]
 
-addFailureAlert: String -> Html a
-addFailureAlert textValue =
+addInlineErrorFlash: ErrorMessage -> Html a
+addInlineErrorFlash { errorMessage } =
   div
     (
       addClasses [
@@ -74,7 +94,7 @@ addFailureAlert textValue =
       ]
     )
     [
-      text textValue
+      text errorMessage
     ]
 
 openErrorModal : N.Nonempty ErrorMessage -> a -> Html a

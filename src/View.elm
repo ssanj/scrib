@@ -25,22 +25,37 @@ import Subs          as S
 
 -- MODEL
 
-type ErrorModalStatus = OpenIt (N.Nonempty ErrorMessage)
+type ErrorModalStatus = OpenIt
                       | CloseIt
 
-type LastError = LastError ErrorModalStatus
+type AppErrors = AppErrors (N.Nonempty ErrorNotification)
+
+type ErrorDisplayType = Modal ErrorModalStatus
+                      | Inline
+
+type alias ErrorNotification =
+  {
+    errorDisplay : ErrorDisplayType
+  , errorMessage : ErrorMessage
+  }
+
+type alias ModalErrors = N.Nonempty ModalError
+
+type ModalError = ModalError ErrorMessage
+
+type InlineError = InlineError ErrorMessage
 
 type alias Model =
   {
-    query: Maybe String
-  , notes: RemoteNotesData
-  , selectedNote: Maybe SC.NoteFull
-  , apiKey: Maybe ApiKey
-  , lastError: Maybe LastError
+    query             : Maybe String
+  , notes             : RemoteNotesData
+  , selectedNote      : Maybe SC.NoteFull
+  , apiKey            : Maybe ApiKey
+  , appErrors         : Maybe AppErrors
+  , retrievedNotes    : List SC.NoteFull
+  , searchResultNotes : List SC.NoteFull
+  , infoMessage       : Maybe InformationMessage
   }
-
-
-type alias LocalNotes = { apiKey: ApiKey, notes: List SC.NoteFull }
 
 type SaveType = SaveResponse | DontSaveResponse
 
@@ -93,63 +108,72 @@ init topNotes =
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    (NoteSelected note)           ->  onlyModel  { model| selectedNote = Just note }
-    (NoteEdited note)             -> (model, saveSelectedNoteToLocalStorage note)
-    TopNotesSavedToSessionStorage -> onlyModel {model | selectedNote = Nothing }
-    NoteSavedToLocalStorage       -> (model, Browser.Navigation.load "save.html")
-    NoteRemovedFromLocalStorage   -> (model, Browser.Navigation.load "save.html")
-    (JSNotificationError error)   -> (model, logMessage error)
-    AddNote                       -> (model, removeSelectedNoteFromLocalStorage)
-    (TopNotesResponse notes)      -> handleTopNotesResponse ({ model | notes = notes }) SaveResponse notes
-    (SearchNotesResponse notes)   -> handleTopNotesResponse ({ model | notes = notes }) DontSaveResponse notes
-    NotesRefreshed                -> performOrGotoConfig model ({ model | notes = Loading, query = Nothing }, getTopRemoteNotes)
-    (SearchEdited query)          -> performOrGotoConfig model ({ model | query = Just query }, searchRemoteNotes query)
-    ErrorModalClosed              -> onlyModel ({ model | lastError = Nothing })
+    (NoteSelected note)                   ->  onlyModel  { model| selectedNote = Just note }
+    (NoteEdited note)                     -> (model, saveSelectedNoteToLocalStorage note)
+    TopNotesSavedToSessionStorage         -> onlyModel {model | selectedNote = Nothing }
+    NoteSavedToLocalStorage               -> (model, Browser.Navigation.load "save.html")
+    NoteRemovedFromLocalStorage           -> (model, Browser.Navigation.load "save.html")
+    (JSNotificationError error)           -> (model, logMessage error)
+    AddNote                               -> (model, removeSelectedNoteFromLocalStorage)
+    (TopNotesResponse slateCallResult)    -> handleTopNotesResponse model slateCallResult
+    (SearchNotesResponse slateCallResult) -> handleSearchResponse model slateCallResult
+    NotesRefreshed                        -> performOrGotoConfig model ({ model | notes = Loading, query = Nothing }, getTopRemoteNotes)
+    (SearchEdited query)                  -> performOrGotoConfig model ({ model | query = Just query }, searchRemoteNotes query)
+    ErrorModalClosed                      -> onlyModel <| handleErrorModalClosed model
+
+handleErrorModalClosed : Model -> Model
+handleErrorModalClosed model =
+  case model.appErrors of
+    (Just appErrors) ->
+      { model | appErrors = removeModalErrors appErrors }
+    Nothing          -> model
 
 -- VIEW
 
-
 view : Model -> Html Msg
 view model =
-  div []
-    [ section [ class "section" ]
-      [ div [ class "container" ]
-        [ h1 [ class "title" ]
-          [ text "Scrib" ]
-        , p [ class "subtitle" ]
-          [ text "Making scribbling effortless" ]
-        , div []
-          [ article [ class "panel", class "is-primary" ]
-            [ p [ class "panel-heading" ]
-              [ text "Saved Notes"
-              , text " "
-              , span [class "tab", class "is-medium"] [text <| getNoteCount model.notes]
-              ]
-            , p [ class "panel-tabs" ]
-              [ button [ class "button", class "is-text", onClick AddNote]
-                [ text "Add Note" ]
-              , button [ class "button", class "is-text", onClick NotesRefreshed ]
-                [ text "Refresh" ]
-              ]
-            , div [ class "panel-block" ]
-              [ p [ class "control has-icons-left" ]
-                [ input [ class "input", class "is-primary", placeholder "Search", type_ "text", onInput SearchEdited, value <| getQueryText model.query ]
-                  []
-                , span [ class "icon is-left" ]
-                  [ i [ attribute "aria-hidden" "true", class "fas", class "fa-search" ]
+  let (maybeInlineErrors, maybeModalErrros) = getErrors model.appErrors
+  in
+    div []
+      [ section [ class "section" ]
+        [ div [ class "container" ]
+          [ h1 [ class "title" ]
+            [ text "Scrib" ]
+          , p [ class "subtitle" ]
+            [ text "Making scribbling effortless" ]
+          , div []
+            [ article [ class "panel", class "is-primary" ]
+              [ p [ class "panel-heading" ]
+                [ text "Saved Notes"
+                , text " "
+                , span [class "tab", class "is-medium"] [text <| getNoteCount model.notes]
+                ]
+              , p [ class "panel-tabs" ]
+                [ button [ class "button", class "is-text", onClick AddNote]
+                  [ text "Add Note" ]
+                , button [ class "button", class "is-text", onClick NotesRefreshed ]
+                  [ text "Refresh" ]
+                ]
+              , div [ class "panel-block" ]
+                [ p [ class "control has-icons-left" ]
+                  [ input [ class "input", class "is-primary", placeholder "Search", type_ "text", onInput SearchEdited, value <| getQueryText model.query ]
                     []
+                  , span [ class "icon is-left" ]
+                    [ i [ attribute "aria-hidden" "true", class "fas", class "fa-search" ]
+                      []
+                    ]
                   ]
                 ]
+              , viewInlineErrorsIfAny maybeInlineErrors
+              , viewInformationIfAny (model.infoMessage)
+              , viewNotesList model.retrievedNotes
               ]
-            , viewNotesList model.notes
-
             ]
           ]
         ]
-      ]
-   , createErrorModal model.lastError
-   , createMarkdownPreview model.selectedNote
-   ]
+     , viewModalErrorsIfAny maybeModalErrros
+     , createMarkdownPreview model.selectedNote
+     ]
 
 
 -- PORTS
@@ -170,7 +194,90 @@ subscriptions _ = jsMessage (S.encodeJsResponse subscriptionSuccess subscription
 
 
 emptyModel: Model
-emptyModel = Model Nothing NotAsked Nothing Nothing Nothing
+emptyModel =
+  {
+    query             = Nothing
+  , notes             = NotAsked
+  , selectedNote      = Nothing
+  , apiKey            = Nothing
+  , appErrors         = Nothing
+  , retrievedNotes    = []
+  , searchResultNotes = []
+  , infoMessage       = Nothing
+  }
+
+
+getInlineError : AppErrors -> Maybe InlineError
+getInlineError (AppErrors notifications) =
+  List.head <| collect isInlineError (N.toList notifications)
+  --List.head <| List.filterMap isInlineError <|  N.toList notifications
+
+getModalErrors : AppErrors -> Maybe ModalErrors
+getModalErrors (AppErrors notifications) =
+  N.fromList <| collect isModalError (N.toList notifications)
+  --N.fromList <| List.filterMap isModalError <| N.toList notifications
+
+collect : (a -> Maybe b) -> List a -> List b
+collect predicate elements =
+  let mapped = List.map predicate elements
+  in List.concatMap maybeToList mapped
+
+maybeToList : Maybe a -> List a
+maybeToList = maybe [] List.singleton
+
+-- We need collect here, filter + map
+isModalError : ErrorNotification -> Maybe ModalError
+isModalError errorNotification =
+  case errorNotification.errorDisplay of
+    (Modal _) ->  Just <| ModalError errorNotification.errorMessage
+    Inline    -> Nothing
+
+isInlineError  : ErrorNotification -> Maybe InlineError
+isInlineError errorNotification =
+  case errorNotification.errorDisplay of
+    (Modal _) -> Nothing
+    Inline    -> Just <| InlineError errorNotification.errorMessage
+
+addModalError : Model -> ErrorMessage -> Model
+addModalError model newErrorMessage =
+  case model.appErrors of
+    (Just appErrors) -> { model | appErrors = Just <| addModalErrorToAppErrors appErrors newErrorMessage }
+    Nothing          -> { model | appErrors = Just (AppErrors <| N.fromElement(ErrorNotification (Modal OpenIt) newErrorMessage)) }
+
+addInlineError : Model -> ErrorMessage -> Model
+addInlineError model newError =
+  case model.appErrors of
+    -- We currently only support one inline error. This could change in the future
+    (Just appErrors) -> { model | appErrors =   Just <| addInlineErrorToAppErrros appErrors newError }
+    Nothing -> { model | appErrors = Just <| createAppErrorFromInlineError newError }
+
+
+addModalErrorToAppErrors : AppErrors -> ErrorMessage -> AppErrors
+addModalErrorToAppErrors (AppErrors notifications) newErrorMessage =
+  AppErrors <| N.cons (ErrorNotification (Modal OpenIt) newErrorMessage) notifications
+
+addInlineErrorToAppErrros : AppErrors -> ErrorMessage -> AppErrors
+addInlineErrorToAppErrros  appErrors newErrorMessage =
+  AppErrors <| N.fromElement (ErrorNotification Inline newErrorMessage)
+
+createAppErrorFromInlineError : ErrorMessage -> AppErrors
+createAppErrorFromInlineError  newErrorMessage =
+  AppErrors <| N.fromElement (ErrorNotification Inline newErrorMessage)
+
+removeModalErrors : AppErrors -> Maybe AppErrors
+removeModalErrors (AppErrors errors) =
+  let result = List.filter removeModals (N.toList errors)
+  in
+    case result of
+      []      -> Nothing
+      (x::xs) -> Just <| AppErrors (N.Nonempty x xs)
+
+
+removeModals : ErrorNotification -> Bool
+removeModals { errorDisplay } =
+  case errorDisplay of
+    (Modal _) -> False
+    Inline    -> True
 
 
 -- INIT HELPERS
@@ -182,12 +289,19 @@ handleInitSuccess { apiKey, payload } =
       mc    =
         if List.isEmpty notes
         then (
-               { emptyModel | notes = Loading, apiKey = Just apiKey }
-             , Cmd.batch [getTopRemoteNotes apiKey, logMessage "No cached data, refreshing"]
+               { emptyModel |
+                    notes       = Loading
+                  , apiKey      = Just apiKey
+                  , infoMessage = Just <| InformationMessage "No cached data, refreshing"
+               }
+             , getTopRemoteNotes apiKey
              )
-        else onlyModel { emptyModel | notes = Success notes, apiKey = Just apiKey }
+        else onlyModel { emptyModel | retrievedNotes = notes, apiKey = Just apiKey }
  in mc
 
+-- TODO: Maybe we give the user the option of choosing to go to the config page
+-- via an OK button or similar
+-- We also want to completely get rid of logMessage
 handleInitError : D.Error -> (Model, Cmd Msg)
 handleInitError err = (
                         emptyModel
@@ -247,68 +361,46 @@ performOrGotoConfig oldModel apiKeyCommand =
     (oldModel, Browser.Navigation.load "config.html")
 
 
--- JS COMMANDS
+-- UPDATE HELPERS
 
 
-topNotesSavedToSessionStorageResponseKey : P.ResponseKey
-topNotesSavedToSessionStorageResponseKey = P.ResponseKey "TopNotesSavedToSessionStorage"
+handleTopNotesResponse: Model -> RemoteNotesData -> (Model, Cmd Msg)
+handleTopNotesResponse model remoteData =
+  case remoteData of
+    (Failure e)          -> onlyModel <| addModalError model (ErrorMessage <| fromHttpError e)
+    (Success notes) as r -> ({ model | retrievedNotes = notes, notes = r }, saveTopNotesToSessionStorage notes)
+    NotAsked             -> onlyModel { model | infoMessage = Just <| InformationMessage "No Data" }
+    Loading              -> onlyModel { model | infoMessage = Just <| InformationMessage "Loading..." }
 
-noteSavedToLocalStorageResponseKey : P.ResponseKey
-noteSavedToLocalStorageResponseKey = P.ResponseKey "NoteSavedToLocalStorage"
-
-noteRemovedFromLocalStorageResponseKey : P.ResponseKey
-noteRemovedFromLocalStorageResponseKey = P.ResponseKey "NoteRemovedFromLocalStorage"
-
-appName : String
-appName = "scrib"
-
-appMessage : a -> P.JsAppMessage a
-appMessage = P.JsAppMessage appName
-
-logMessage: String -> Cmd Msg
-logMessage message =
-  let logCommand = P.LogConsole <| appMessage message
-  in scribMessage <| P.encodeJsCommand logCommand E.string
-
-saveSelectedNoteToLocalStorage : SC.NoteFull -> Cmd Msg
-saveSelectedNoteToLocalStorage note =
-  let storageArea             = viewSelectedNoteStorageArea
-      saveSelectedNoteValue   = P.JsStorageValue storageArea Save note
-      responseKey             = Just noteSavedToLocalStorageResponseKey
-      saveSelectedNoteCommand = P.WithStorage saveSelectedNoteValue responseKey
-  in scribMessage <| P.encodeJsCommand saveSelectedNoteCommand SC.encodeFullNote
-
-removeSelectedNoteFromLocalStorage : Cmd Msg
-removeSelectedNoteFromLocalStorage =
-  let storageArea               = viewSelectedNoteStorageArea
-      removeSelectedNoteValue   = P.JsStorageValue storageArea Delete ()
-      responseKey               = Just noteRemovedFromLocalStorageResponseKey
-      removeSelectedNoteCommand = P.WithStorage removeSelectedNoteValue responseKey
-  in scribMessage <| P.encodeJsCommand removeSelectedNoteCommand (const E.null)
-
-saveTopNotesToSessionStorage : List SC.NoteFull -> Cmd Msg
-saveTopNotesToSessionStorage notes =
-  let storageArea         = viewTopNotesStorageArea
-      saveTopNotesValue   = P.JsStorageValue storageArea Save notes
-      responseKey         = Just topNotesSavedToSessionStorageResponseKey
-      saveTopNotesCommand = P.WithStorage saveTopNotesValue responseKey
-  in scribMessage <| P.encodeJsCommand saveTopNotesCommand SC.encodeFullNotes
-
-handleTopNotesResponse: Model -> SaveType -> RemoteNotesData -> (Model, Cmd Msg)
-handleTopNotesResponse model saveContent remoteData =
-  case (saveContent, remoteData) of
-    (_, Failure e)                -> onlyModel <| addError model (ErrorMessage <| fromHttpError e)  -- logMessage <| fromHttpError e -- log any errors
-    (SaveResponse, Success notes) -> (model, saveTopNotesToSessionStorage notes)
-    (DontSaveResponse, Success _) -> onlyModel model
-    (_, _)                        -> onlyModel model
+handleSearchResponse: Model -> RemoteNotesData -> (Model, Cmd Msg)
+handleSearchResponse model remoteData =
+  case remoteData of
+    (Failure e)          -> onlyModel <| addInlineError model (ErrorMessage <| fromHttpError e)
+    (Success notes) as r -> onlyModel { model | searchResultNotes = notes, notes = r }
+    NotAsked             -> onlyModel { model | infoMessage = Just <| InformationMessage "No Data" }
+    Loading              -> onlyModel { model | infoMessage = Just <| InformationMessage "Loading..." }
 
 
-addError : Model -> ErrorMessage -> Model
-addError model newError =
-  case model.lastError of
-    (Just (LastError (OpenIt errorMessages))) -> { model | lastError = Just (LastError (OpenIt (N.append errorMessages (N.fromElement newError)))) }
-    (Just (LastError CloseIt))                -> { model | lastError = Just (LastError (OpenIt <| N.fromElement newError)) }
-    Nothing                                   -> { model | lastError = Just (LastError (OpenIt <| N.fromElement newError)) }
+-- VIEW HELPERS
+
+
+viewModalErrorsIfAny : Maybe ModalErrors -> Html Msg
+viewModalErrorsIfAny = maybe emptyDiv viewModalErrors
+
+viewInlineErrorsIfAny : Maybe InlineError -> Html Msg
+viewInlineErrorsIfAny = maybe emptyDiv viewInlineError
+
+viewInformationIfAny : Maybe InformationMessage -> Html Msg
+viewInformationIfAny = maybe emptyDiv viewInformationMessage
+
+getErrors : Maybe AppErrors -> (Maybe InlineError, Maybe ModalErrors)
+getErrors maybeAppErrors =
+  case maybeAppErrors of
+    (Just appErrors) ->
+      let maybeInlineError = getInlineError appErrors
+          maybeModalErrors = getModalErrors appErrors
+      in (maybeInlineError, maybeModalErrors)
+    Nothing -> (Nothing, Nothing)
 
 getQueryText : Maybe String -> String
 getQueryText = maybe "" identity
@@ -319,19 +411,41 @@ getNoteCount remoteNoteData =
     Success notes -> String.fromInt <| List.length notes
     _             -> "-"
 
+viewInlineError: InlineError -> Html Msg
+viewInlineError  (InlineError errorMessage) = addInlineErrorFlash errorMessage
 
--- VIEW HELPERS
+viewModalErrors : ModalErrors -> Html Msg
+viewModalErrors errorMessages =
+  openErrorModal (N.map (\(ModalError error) -> error) errorMessages) ErrorModalClosed
 
+emptyDiv : Html a
+emptyDiv = div [] []
 
-viewNotesList: RemoteNotesData -> Html Msg
-viewNotesList remoteNotesData =
-  let notesContent =
+viewNotesList: List SC.NoteFull -> Html Msg
+viewNotesList notes = div [ id "notes-list" ] (List.map createNoteItem notes)
+
+getInformationFromRemoteNotesData : RemoteNotesData -> Maybe InformationMessage
+getInformationFromRemoteNotesData remoteNotesData =
+  let maybeInfoContent =
+        case remoteNotesData of
+          NotAsked    -> Just <| InformationMessage "No Data"
+          Loading     -> Just <| InformationMessage "Loading..."
+          (Failure _) -> Nothing
+          (Success _) -> Nothing
+  in maybeInfoContent
+
+viewInformationMessage : InformationMessage -> Html a
+viewInformationMessage = addInlineInfoFlash
+
+viewRemoteCallStatus: RemoteNotesData -> Html Msg
+viewRemoteCallStatus remoteNotesData =
+  let infoContent =
         case remoteNotesData of
           NotAsked      -> [div [] [text "No Data"]]
           Loading       -> [div [] [text "Loading..."]]
-          Failure e     -> [] --[addFailureAlert <| "oops! Could not get your data :(" ++ fromHttpError e]
-          Success notes -> List.map createNoteItem notes
-  in div [ id "notes-list" ] notesContent
+          Failure e     -> []
+          Success notes -> []
+  in div [ id "remote-call-status" ] infoContent
 
 fromHttpError: Http.Error -> String
 fromHttpError error =
@@ -342,13 +456,6 @@ fromHttpError error =
     (Http.BadStatus status) -> "bad status: " ++ String.fromInt status
     (Http.BadBody body)     -> "bad body: " ++ body
 
-
-createErrorModal : Maybe LastError -> Html Msg
-createErrorModal maybeLastError =
-  case maybeLastError of
-    (Just (LastError (OpenIt errorMessages))) -> openErrorModal errorMessages ErrorModalClosed
-    (Just (LastError CloseIt))                -> div [] []
-    Nothing                       -> div [] []
 
 createMarkdownPreview: Maybe SC.NoteFull -> Html Msg
 createMarkdownPreview = maybe viewMarkdownPreviewDefault viewMarkdownPreview
@@ -396,6 +503,54 @@ viewMarkdownPreviewDefault =
 
 markdownViewId : String
 markdownViewId = "markdown-view"
+
+
+-- JS COMMANDS
+
+
+topNotesSavedToSessionStorageResponseKey : P.ResponseKey
+topNotesSavedToSessionStorageResponseKey = P.ResponseKey "TopNotesSavedToSessionStorage"
+
+noteSavedToLocalStorageResponseKey : P.ResponseKey
+noteSavedToLocalStorageResponseKey = P.ResponseKey "NoteSavedToLocalStorage"
+
+noteRemovedFromLocalStorageResponseKey : P.ResponseKey
+noteRemovedFromLocalStorageResponseKey = P.ResponseKey "NoteRemovedFromLocalStorage"
+
+appName : String
+appName = "scrib"
+
+appMessage : a -> P.JsAppMessage a
+appMessage = P.JsAppMessage appName
+
+logMessage: String -> Cmd Msg
+logMessage message =
+  let logCommand = P.LogConsole <| appMessage message
+  in scribMessage <| P.encodeJsCommand logCommand E.string
+
+saveSelectedNoteToLocalStorage : SC.NoteFull -> Cmd Msg
+saveSelectedNoteToLocalStorage note =
+  let storageArea             = viewSelectedNoteStorageArea
+      saveSelectedNoteValue   = P.JsStorageValue storageArea Save note
+      responseKey             = Just noteSavedToLocalStorageResponseKey
+      saveSelectedNoteCommand = P.WithStorage saveSelectedNoteValue responseKey
+  in scribMessage <| P.encodeJsCommand saveSelectedNoteCommand SC.encodeFullNote
+
+removeSelectedNoteFromLocalStorage : Cmd Msg
+removeSelectedNoteFromLocalStorage =
+  let storageArea               = viewSelectedNoteStorageArea
+      removeSelectedNoteValue   = P.JsStorageValue storageArea Delete ()
+      responseKey               = Just noteRemovedFromLocalStorageResponseKey
+      removeSelectedNoteCommand = P.WithStorage removeSelectedNoteValue responseKey
+  in scribMessage <| P.encodeJsCommand removeSelectedNoteCommand (const E.null)
+
+saveTopNotesToSessionStorage : List SC.NoteFull -> Cmd Msg
+saveTopNotesToSessionStorage notes =
+  let storageArea         = viewTopNotesStorageArea
+      saveTopNotesValue   = P.JsStorageValue storageArea Save notes
+      responseKey         = Just topNotesSavedToSessionStorageResponseKey
+      saveTopNotesCommand = P.WithStorage saveTopNotesValue responseKey
+  in scribMessage <| P.encodeJsCommand saveTopNotesCommand SC.encodeFullNotes
 
 
 -- SUBSCRIPTION HELPERS
