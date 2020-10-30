@@ -45,6 +45,9 @@ type ModalError = ModalError ErrorMessage
 
 type InlineError = InlineError ErrorMessage
 
+type NotesDataSource = TopNotes
+                     | SearchResultNotes
+
 type alias Model =
   {
     query             : Maybe String
@@ -55,6 +58,7 @@ type alias Model =
   , retrievedNotes    : List SC.NoteFull
   , searchResultNotes : List SC.NoteFull
   , infoMessage       : Maybe InformationMessage
+  , whichNotes        : NotesDataSource
   }
 
 type SaveType = SaveResponse | DontSaveResponse
@@ -121,26 +125,13 @@ update msg model =
     (SearchEdited query)                  -> handleSearchQuery model query
     ErrorModalClosed                      -> onlyModel <| handleErrorModalClosed model
 
-handleErrorModalClosed : Model -> Model
-handleErrorModalClosed model =
-  case model.appErrors of
-    (Just appErrors) ->
-      { model | appErrors = removeModalErrors appErrors }
-    Nothing          -> model
-
-handleSearchQuery : Model -> String -> (Model, Cmd Msg)
-handleSearchQuery model query =
-  let trimmedQuery = String.trim query
-  in
-    case trimmedQuery of
-      ""            -> onlyModel { model | query = Nothing }
-      nonEmptyQuery -> performOrGotoConfig model ({ model | query = Just nonEmptyQuery }, searchRemoteNotes nonEmptyQuery)
 
 -- VIEW
 
 view : Model -> Html Msg
 view model =
   let (maybeInlineErrors, maybeModalErrros) = getErrors model.appErrors
+      notesList                             = choseWhichNotes model
   in
     div []
       [ section [ class "section" ]
@@ -154,7 +145,7 @@ view model =
               [ p [ class "panel-heading" ]
                 [ text "Saved Notes"
                 , text " "
-                , span [class "tab", class "is-medium"] [text <| getNoteCount model.retrievedNotes]
+                , span [class "tab", class "is-medium"] [text <| getNoteCount notesList]
                 ]
               , p [ class "panel-tabs" ]
                 [ button [ class "button", class "is-text", onClick AddNote]
@@ -174,7 +165,7 @@ view model =
                 ]
               , viewInlineErrorsIfAny maybeInlineErrors
               , viewInformationIfAny (model.infoMessage)
-              , viewNotesList model.retrievedNotes
+              , viewNotesList notesList
               ]
             ]
           ]
@@ -183,6 +174,12 @@ view model =
      , createMarkdownPreview model.selectedNote
      ]
 
+
+choseWhichNotes : Model -> List SC.NoteFull
+choseWhichNotes { retrievedNotes,  searchResultNotes, whichNotes } =
+  case whichNotes of
+    TopNotes          -> retrievedNotes
+    SearchResultNotes -> searchResultNotes
 
 -- PORTS
 
@@ -212,6 +209,7 @@ emptyModel =
   , retrievedNotes    = []
   , searchResultNotes = []
   , infoMessage       = Nothing
+  , whichNotes        = TopNotes
   }
 
 
@@ -286,6 +284,21 @@ removeModals { errorDisplay } =
   case errorDisplay of
     (Modal _) -> False
     Inline    -> True
+
+handleErrorModalClosed : Model -> Model
+handleErrorModalClosed model =
+  case model.appErrors of
+    (Just appErrors) ->
+      { model | appErrors = removeModalErrors appErrors }
+    Nothing          -> model
+
+handleSearchQuery : Model -> String -> (Model, Cmd Msg)
+handleSearchQuery model query =
+  let trimmedQuery = String.trim query
+  in
+    case trimmedQuery of
+      ""            -> onlyModel { model | query = Nothing, whichNotes = TopNotes }
+      nonEmptyQuery -> performOrGotoConfig model ({ model | query = Just nonEmptyQuery }, searchRemoteNotes nonEmptyQuery)
 
 
 -- INIT HELPERS
@@ -376,7 +389,7 @@ handleTopNotesResponse: Model -> RemoteNotesData -> (Model, Cmd Msg)
 handleTopNotesResponse model remoteData =
   case remoteData of
     (Failure e)          -> onlyModel <| addModalError model (ErrorMessage <| fromHttpError e)
-    (Success notes) as r -> ({ model | retrievedNotes = notes, notes = r }, saveTopNotesToSessionStorage notes)
+    (Success notes) as r -> ({ model | retrievedNotes = notes, notes = r, whichNotes = TopNotes }, saveTopNotesToSessionStorage notes)
     NotAsked             -> onlyModel { model | infoMessage = Just <| InformationMessage "No Data" }
     Loading              -> onlyModel { model | infoMessage = Just <| InformationMessage "Loading..." }
 
@@ -384,7 +397,7 @@ handleSearchResponse: Model -> RemoteNotesData -> (Model, Cmd Msg)
 handleSearchResponse model remoteData =
   case remoteData of
     (Failure e)          -> onlyModel <| addInlineError model (ErrorMessage <| fromHttpError e)
-    (Success notes) as r -> onlyModel { model | searchResultNotes = notes, notes = r, retrievedNotes = notes }
+    (Success notes) as r -> onlyModel { model | searchResultNotes = notes, notes = r, whichNotes = SearchResultNotes }
     NotAsked             -> onlyModel { model | infoMessage = Just <| InformationMessage "No Data" }
     Loading              -> onlyModel { model | infoMessage = Just <| InformationMessage "Loading..." }
 

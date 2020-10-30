@@ -5489,7 +5489,8 @@ var $author$project$View$handleDecodeResult = F3(
 	});
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $krisajenkins$remotedata$RemoteData$NotAsked = {$: 'NotAsked'};
-var $author$project$View$emptyModel = {apiKey: $elm$core$Maybe$Nothing, appErrors: $elm$core$Maybe$Nothing, infoMessage: $elm$core$Maybe$Nothing, notes: $krisajenkins$remotedata$RemoteData$NotAsked, query: $elm$core$Maybe$Nothing, retrievedNotes: _List_Nil, searchResultNotes: _List_Nil, selectedNote: $elm$core$Maybe$Nothing};
+var $author$project$View$TopNotes = {$: 'TopNotes'};
+var $author$project$View$emptyModel = {apiKey: $elm$core$Maybe$Nothing, appErrors: $elm$core$Maybe$Nothing, infoMessage: $elm$core$Maybe$Nothing, notes: $krisajenkins$remotedata$RemoteData$NotAsked, query: $elm$core$Maybe$Nothing, retrievedNotes: _List_Nil, searchResultNotes: _List_Nil, selectedNote: $elm$core$Maybe$Nothing, whichNotes: $author$project$View$TopNotes};
 var $elm$browser$Browser$Navigation$load = _Browser_load;
 var $author$project$Ports$LogConsole = function (a) {
 	return {$: 'LogConsole', a: a};
@@ -6762,7 +6763,7 @@ var $author$project$View$handleSearchQuery = F2(
 			return $author$project$ElmCommon$onlyModel(
 				_Utils_update(
 					model,
-					{query: $elm$core$Maybe$Nothing}));
+					{query: $elm$core$Maybe$Nothing, whichNotes: $author$project$View$TopNotes}));
 		} else {
 			var nonEmptyQuery = trimmedQuery;
 			return A2(
@@ -6780,6 +6781,7 @@ var $author$project$View$handleSearchQuery = F2(
 var $author$project$ElmCommon$ErrorMessage = function (errorMessage) {
 	return {errorMessage: errorMessage};
 };
+var $author$project$View$SearchResultNotes = {$: 'SearchResultNotes'};
 var $author$project$View$ErrorNotification = F2(
 	function (errorDisplay, errorMessage) {
 		return {errorDisplay: errorDisplay, errorMessage: errorMessage};
@@ -6853,7 +6855,7 @@ var $author$project$View$handleSearchResponse = F2(
 				return $author$project$ElmCommon$onlyModel(
 					_Utils_update(
 						model,
-						{notes: r, retrievedNotes: notes, searchResultNotes: notes}));
+						{notes: r, searchResultNotes: notes, whichNotes: $author$project$View$SearchResultNotes}));
 			case 'NotAsked':
 				return $author$project$ElmCommon$onlyModel(
 					_Utils_update(
@@ -6998,7 +7000,7 @@ var $author$project$View$handleTopNotesResponse = F2(
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{notes: r, retrievedNotes: notes}),
+						{notes: r, retrievedNotes: notes, whichNotes: $author$project$View$TopNotes}),
 					$author$project$View$saveTopNotesToSessionStorage(notes));
 			case 'NotAsked':
 				return $author$project$ElmCommon$onlyModel(
@@ -7123,6 +7125,16 @@ var $elm$virtual_dom$VirtualDom$attribute = F2(
 	});
 var $elm$html$Html$Attributes$attribute = $elm$virtual_dom$VirtualDom$attribute;
 var $elm$html$Html$button = _VirtualDom_node('button');
+var $author$project$View$choseWhichNotes = function (_v0) {
+	var retrievedNotes = _v0.retrievedNotes;
+	var searchResultNotes = _v0.searchResultNotes;
+	var whichNotes = _v0.whichNotes;
+	if (whichNotes.$ === 'TopNotes') {
+		return retrievedNotes;
+	} else {
+		return searchResultNotes;
+	}
+};
 var $elm$html$Html$Attributes$stringProperty = F2(
 	function (key, string) {
 		return A2(
@@ -7618,6 +7630,7 @@ var $author$project$View$viewNotesList = function (notes) {
 		A2($elm$core$List$map, $author$project$View$createNoteItem, notes));
 };
 var $author$project$View$view = function (model) {
+	var notesList = $author$project$View$choseWhichNotes(model);
 	var _v0 = $author$project$View$getErrors(model.appErrors);
 	var maybeInlineErrors = _v0.a;
 	var maybeModalErrros = _v0.b;
@@ -7696,7 +7709,7 @@ var $author$project$View$view = function (model) {
 														_List_fromArray(
 															[
 																$elm$html$Html$text(
-																$author$project$View$getNoteCount(model.retrievedNotes))
+																$author$project$View$getNoteCount(notesList))
 															]))
 													])),
 												A2(
@@ -7783,7 +7796,7 @@ var $author$project$View$view = function (model) {
 													])),
 												$author$project$View$viewInlineErrorsIfAny(maybeInlineErrors),
 												$author$project$View$viewInformationIfAny(model.infoMessage),
-												$author$project$View$viewNotesList(model.retrievedNotes)
+												$author$project$View$viewNotesList(notesList)
 											]))
 									]))
 							]))
