@@ -13,7 +13,7 @@
         overflow: auto;
       }
 
-      .autohide {
+/*      .autohide {
         visibility: visible;
         animation: autohide 3s;
         animation-fill-mode: forwards;
@@ -22,7 +22,7 @@
       @keyframes autohide {
         from {visibilty: visible;}
         to {visibility: hidden}
-      }
+      }*/
     </style>
 
   </head>
@@ -39,12 +39,6 @@
         node: document.getElementById('myapp')
       });
 
-      // const markedOptions = {
-      //   "gfm": true,
-      //   "smartLists": true,
-      //   "xhtml": true
-      // }
-
       function responseJson(eventType) {
         return {
           "eventType": eventType
@@ -53,43 +47,7 @@
 
       app.ports.scribMessage.subscribe(function(action){
         portActions(action, app.ports.jsMessage.send);
-        // if (noteEvent.eventType === "save_message") {
-        //   saveMessageToLocalStorage(noteEvent);
-        // } else if (noteEvent.eventType === "save_view_session") {
-        //   saveToSessionStorage(noteEvent);
-        // } else if (noteEvent.eventType=== "preview_message") {
-        //   previewMarkdown(noteEvent)
-        // } else if (noteEvent.eventType=== "remove_message") {
-        //   console.log("clearing local storage");
-        //   localStorage.removeItem(appEditKey);
-        //   app.ports.jsMessage.send(responseJson("message_removed"));
-        // } else if (noteEvent.eventType=== "log_message_to_console") {
-        //   console.log("output: " + JSON.stringify(noteEvent.output));
-        // } else {
-        //   console.log("error, unknown noteEvent:" + JSON.stringify(noteEvent));
-        // }
       });
-
-      // function previewMarkdown(noteEvent) {
-      //   const markdownView = document.getElementById('markdown-view');
-      //   if (typeof marked !== 'undefined' && markdownView) {
-      //     markdownView.innerHTML = marked(noteEvent.note.noteText, markedOptions);
-      //   } else {
-      //    console.log("error", "markdown renderer has not loaded.")
-      //   }
-      // }
-
-      // function saveMessageToLocalStorage(noteEvent) {
-      //   localStorage.setItem(appEditKey, JSON.stringify(noteEvent));
-      //   console.log("you saved: " + JSON.stringify(noteEvent));
-      //   app.ports.jsMessage.send(responseJson("message_saved"));
-      // }
-
-      // function saveToSessionStorage(noteEvent) {
-      //   const viewData = JSON.stringify(noteEvent.view_data);
-      //   sessionStorage.setItem(appViewKey, viewData);
-      //   console.log("you saved your view: " + viewData);
-      // }
 
      function initLoad(appKey) {
       const storedData = sessionStorage.getItem(appKey);
@@ -99,6 +57,5 @@
     }
 
   </script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/1.1.1/marked.min.js" integrity="sha512-KCyhJjC9VsBYne93226gCA0Lb+VlrngllQqeCmX+HxBBHTC4HX2FYgEc6jT0oXYrLgvfglK49ktTTc0KVC1+gQ==" crossorigin="anonymous"></script>
   </body>
 </html>

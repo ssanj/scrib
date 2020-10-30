@@ -5683,7 +5683,25 @@ var $author$project$View$handleInitError = function (err) {
 var $author$project$ElmCommon$InformationMessage = function (infoMessage) {
 	return {infoMessage: infoMessage};
 };
+var $author$project$View$InlineInfoTimedOut = {$: 'InlineInfoTimedOut'};
 var $krisajenkins$remotedata$RemoteData$Loading = {$: 'Loading'};
+var $author$project$View$Seconds = function (seconds) {
+	return {seconds: seconds};
+};
+var $author$project$FP$const = F2(
+	function (a, _v0) {
+		return a;
+	});
+var $elm$core$Process$sleep = _Process_sleep;
+var $author$project$View$addTimeoutForInlineMessage = F2(
+	function (_v0, msg) {
+		var seconds = _v0.seconds;
+		var sleepTask = $elm$core$Process$sleep(seconds * 1000);
+		return A2(
+			$elm$core$Task$perform,
+			$author$project$FP$const(msg),
+			sleepTask);
+	});
 var $author$project$View$TopNotesResponse = function (a) {
 	return {$: 'TopNotesResponse', a: a};
 };
@@ -6535,7 +6553,15 @@ var $author$project$View$handleInitSuccess = function (_v0) {
 					$author$project$ElmCommon$InformationMessage('No cached data, refreshing')),
 				notes: $krisajenkins$remotedata$RemoteData$Loading
 			}),
-		$author$project$View$getTopRemoteNotes(apiKey)) : $author$project$ElmCommon$onlyModel(
+		$elm$core$Platform$Cmd$batch(
+			_List_fromArray(
+				[
+					$author$project$View$getTopRemoteNotes(apiKey),
+					A2(
+					$author$project$View$addTimeoutForInlineMessage,
+					$author$project$View$Seconds(3),
+					$author$project$View$InlineInfoTimedOut)
+				]))) : $author$project$ElmCommon$onlyModel(
 		_Utils_update(
 			$author$project$View$emptyModel,
 			{
@@ -6655,6 +6681,11 @@ var $mgold$elm_nonempty_list$List$Nonempty$Nonempty = F2(
 	function (a, b) {
 		return {$: 'Nonempty', a: a, b: b};
 	});
+var $elm$core$Basics$composeL = F3(
+	function (g, f, x) {
+		return g(
+			f(x));
+	});
 var $elm$core$List$filter = F2(
 	function (isGood, list) {
 		return A3(
@@ -6666,14 +6697,15 @@ var $elm$core$List$filter = F2(
 			_List_Nil,
 			list);
 	});
-var $author$project$View$removeModals = function (_v0) {
+var $author$project$View$isModalError = function (_v0) {
 	var errorDisplay = _v0.errorDisplay;
 	if (errorDisplay.$ === 'Modal') {
-		return false;
-	} else {
 		return true;
+	} else {
+		return false;
 	}
 };
+var $elm$core$Basics$not = _Basics_not;
 var $mgold$elm_nonempty_list$List$Nonempty$toList = function (_v0) {
 	var x = _v0.a;
 	var xs = _v0.b;
@@ -6683,7 +6715,7 @@ var $author$project$View$removeModalErrors = function (_v0) {
 	var errors = _v0.a;
 	var result = A2(
 		$elm$core$List$filter,
-		$author$project$View$removeModals,
+		A2($elm$core$Basics$composeL, $elm$core$Basics$not, $author$project$View$isModalError),
 		$mgold$elm_nonempty_list$List$Nonempty$toList(errors));
 	if (!result.b) {
 		return $elm$core$Maybe$Nothing;
@@ -6704,6 +6736,47 @@ var $author$project$View$handleErrorModalClosed = function (model) {
 			{
 				appErrors: $author$project$View$removeModalErrors(appErrors)
 			});
+	} else {
+		return model;
+	}
+};
+var $author$project$View$isInlineError = A2($elm$core$Basics$composeL, $elm$core$Basics$not, $author$project$View$isModalError);
+var $author$project$View$removeInlineErrors = function (_v0) {
+	var errors = _v0.a;
+	var result = A2(
+		$elm$core$List$filter,
+		A2($elm$core$Basics$composeL, $elm$core$Basics$not, $author$project$View$isInlineError),
+		$mgold$elm_nonempty_list$List$Nonempty$toList(errors));
+	if (!result.b) {
+		return $elm$core$Maybe$Nothing;
+	} else {
+		var x = result.a;
+		var xs = result.b;
+		return $elm$core$Maybe$Just(
+			$author$project$View$AppErrors(
+				A2($mgold$elm_nonempty_list$List$Nonempty$Nonempty, x, xs)));
+	}
+};
+var $author$project$View$handleInlineErrorTimeout = function (model) {
+	var _v0 = model.appErrors;
+	if (_v0.$ === 'Just') {
+		var appErrors = _v0.a;
+		return _Utils_update(
+			model,
+			{
+				appErrors: $author$project$View$removeInlineErrors(appErrors)
+			});
+	} else {
+		return model;
+	}
+};
+var $author$project$View$handleInlineInfoTimeout = function (model) {
+	var _v0 = model.infoMessage;
+	if (_v0.$ === 'Just') {
+		var infoMessage = _v0.a;
+		return _Utils_update(
+			model,
+			{infoMessage: $elm$core$Maybe$Nothing});
 	} else {
 		return model;
 	}
@@ -6781,6 +6854,7 @@ var $author$project$View$handleSearchQuery = F2(
 var $author$project$ElmCommon$ErrorMessage = function (errorMessage) {
 	return {errorMessage: errorMessage};
 };
+var $author$project$View$InlineErrorTimedOut = {$: 'InlineErrorTimedOut'};
 var $author$project$View$SearchResultNotes = {$: 'SearchResultNotes'};
 var $author$project$View$ErrorNotification = F2(
 	function (errorDisplay, errorMessage) {
@@ -6843,12 +6917,16 @@ var $author$project$View$handleSearchResponse = F2(
 		switch (remoteData.$) {
 			case 'Failure':
 				var e = remoteData.a;
-				return $author$project$ElmCommon$onlyModel(
+				return _Utils_Tuple2(
 					A2(
 						$author$project$View$addInlineError,
 						model,
 						$author$project$ElmCommon$ErrorMessage(
-							$author$project$View$fromHttpError(e))));
+							$author$project$View$fromHttpError(e))),
+					A2(
+						$author$project$View$addTimeoutForInlineMessage,
+						$author$project$View$Seconds(3),
+						$author$project$View$InlineErrorTimedOut));
 			case 'Success':
 				var r = remoteData;
 				var notes = r.a;
@@ -6857,21 +6935,29 @@ var $author$project$View$handleSearchResponse = F2(
 						model,
 						{notes: r, searchResultNotes: notes, whichNotes: $author$project$View$SearchResultNotes}));
 			case 'NotAsked':
-				return $author$project$ElmCommon$onlyModel(
+				return _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{
 							infoMessage: $elm$core$Maybe$Just(
 								$author$project$ElmCommon$InformationMessage('No Data'))
-						}));
+						}),
+					A2(
+						$author$project$View$addTimeoutForInlineMessage,
+						$author$project$View$Seconds(3),
+						$author$project$View$InlineInfoTimedOut));
 			default:
-				return $author$project$ElmCommon$onlyModel(
+				return _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{
 							infoMessage: $elm$core$Maybe$Just(
 								$author$project$ElmCommon$InformationMessage('Loading...'))
-						}));
+						}),
+					A2(
+						$author$project$View$addTimeoutForInlineMessage,
+						$author$project$View$Seconds(3),
+						$author$project$View$InlineInfoTimedOut));
 		}
 	});
 var $author$project$View$Modal = function (a) {
@@ -7003,28 +7089,32 @@ var $author$project$View$handleTopNotesResponse = F2(
 						{notes: r, retrievedNotes: notes, whichNotes: $author$project$View$TopNotes}),
 					$author$project$View$saveTopNotesToSessionStorage(notes));
 			case 'NotAsked':
-				return $author$project$ElmCommon$onlyModel(
+				return _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{
 							infoMessage: $elm$core$Maybe$Just(
 								$author$project$ElmCommon$InformationMessage('No Data'))
-						}));
+						}),
+					A2(
+						$author$project$View$addTimeoutForInlineMessage,
+						$author$project$View$Seconds(3),
+						$author$project$View$InlineInfoTimedOut));
 			default:
-				return $author$project$ElmCommon$onlyModel(
+				return _Utils_Tuple2(
 					_Utils_update(
 						model,
 						{
 							infoMessage: $elm$core$Maybe$Just(
 								$author$project$ElmCommon$InformationMessage('Loading...'))
-						}));
+						}),
+					A2(
+						$author$project$View$addTimeoutForInlineMessage,
+						$author$project$View$Seconds(3),
+						$author$project$View$InlineInfoTimedOut));
 		}
 	});
 var $author$project$StorageKeys$Delete = {$: 'Delete'};
-var $author$project$FP$const = F2(
-	function (a, _v0) {
-		return a;
-	});
 var $author$project$View$noteRemovedFromLocalStorageResponseKey = $author$project$Ports$ResponseKey('NoteRemovedFromLocalStorage');
 var $author$project$StorageKeys$Local = {$: 'Local'};
 var $author$project$StorageKeys$viewSelectedNoteStorageArea = A2(
@@ -7105,9 +7195,15 @@ var $author$project$View$update = F2(
 			case 'SearchEdited':
 				var query = msg.a;
 				return A2($author$project$View$handleSearchQuery, model, query);
-			default:
+			case 'ErrorModalClosed':
 				return $author$project$ElmCommon$onlyModel(
 					$author$project$View$handleErrorModalClosed(model));
+			case 'InlineErrorTimedOut':
+				return $author$project$ElmCommon$onlyModel(
+					$author$project$View$handleInlineErrorTimeout(model));
+			default:
+				return $author$project$ElmCommon$onlyModel(
+					$author$project$View$handleInlineInfoTimeout(model));
 		}
 	});
 var $author$project$View$AddNote = {$: 'AddNote'};
@@ -7269,6 +7365,18 @@ var $author$project$View$collect = F2(
 		var mapped = A2($elm$core$List$map, predicate, elements);
 		return A2($elm$core$List$concatMap, $author$project$View$maybeToList, mapped);
 	});
+var $author$project$View$InlineError = function (a) {
+	return {$: 'InlineError', a: a};
+};
+var $author$project$View$findInlineError = function (errorNotification) {
+	var _v0 = errorNotification.errorDisplay;
+	if (_v0.$ === 'Modal') {
+		return $elm$core$Maybe$Nothing;
+	} else {
+		return $elm$core$Maybe$Just(
+			$author$project$View$InlineError(errorNotification.errorMessage));
+	}
+};
 var $elm$core$List$head = function (list) {
 	if (list.b) {
 		var x = list.a;
@@ -7278,25 +7386,25 @@ var $elm$core$List$head = function (list) {
 		return $elm$core$Maybe$Nothing;
 	}
 };
-var $author$project$View$InlineError = function (a) {
-	return {$: 'InlineError', a: a};
-};
-var $author$project$View$isInlineError = function (errorNotification) {
-	var _v0 = errorNotification.errorDisplay;
-	if (_v0.$ === 'Modal') {
-		return $elm$core$Maybe$Nothing;
-	} else {
-		return $elm$core$Maybe$Just(
-			$author$project$View$InlineError(errorNotification.errorMessage));
-	}
-};
 var $author$project$View$getInlineError = function (_v0) {
 	var notifications = _v0.a;
 	return $elm$core$List$head(
 		A2(
 			$author$project$View$collect,
-			$author$project$View$isInlineError,
+			$author$project$View$findInlineError,
 			$mgold$elm_nonempty_list$List$Nonempty$toList(notifications)));
+};
+var $author$project$View$ModalError = function (a) {
+	return {$: 'ModalError', a: a};
+};
+var $author$project$View$findModalError = function (errorNotification) {
+	var _v0 = errorNotification.errorDisplay;
+	if (_v0.$ === 'Modal') {
+		return $elm$core$Maybe$Just(
+			$author$project$View$ModalError(errorNotification.errorMessage));
+	} else {
+		return $elm$core$Maybe$Nothing;
+	}
 };
 var $mgold$elm_nonempty_list$List$Nonempty$fromList = function (ys) {
 	if (ys.b) {
@@ -7308,24 +7416,12 @@ var $mgold$elm_nonempty_list$List$Nonempty$fromList = function (ys) {
 		return $elm$core$Maybe$Nothing;
 	}
 };
-var $author$project$View$ModalError = function (a) {
-	return {$: 'ModalError', a: a};
-};
-var $author$project$View$isModalError = function (errorNotification) {
-	var _v0 = errorNotification.errorDisplay;
-	if (_v0.$ === 'Modal') {
-		return $elm$core$Maybe$Just(
-			$author$project$View$ModalError(errorNotification.errorMessage));
-	} else {
-		return $elm$core$Maybe$Nothing;
-	}
-};
 var $author$project$View$getModalErrors = function (_v0) {
 	var notifications = _v0.a;
 	return $mgold$elm_nonempty_list$List$Nonempty$fromList(
 		A2(
 			$author$project$View$collect,
-			$author$project$View$isModalError,
+			$author$project$View$findModalError,
 			$mgold$elm_nonempty_list$List$Nonempty$toList(notifications)));
 };
 var $author$project$View$getErrors = function (maybeAppErrors) {
@@ -7338,11 +7434,6 @@ var $author$project$View$getErrors = function (maybeAppErrors) {
 		return _Utils_Tuple2($elm$core$Maybe$Nothing, $elm$core$Maybe$Nothing);
 	}
 };
-var $elm$core$Basics$composeL = F3(
-	function (g, f, x) {
-		return g(
-			f(x));
-	});
 var $mgold$elm_nonempty_list$List$Nonempty$length = function (_v0) {
 	var x = _v0.a;
 	var xs = _v0.b;
@@ -7364,6 +7455,12 @@ var $author$project$View$getQueryText = A2($author$project$FP$maybe, '', $elm$co
 var $elm$html$Html$h1 = _VirtualDom_node('h1');
 var $elm$html$Html$i = _VirtualDom_node('i');
 var $elm$html$Html$input = _VirtualDom_node('input');
+var $author$project$View$noteSelection = function (_v0) {
+	var retrievedNotes = _v0.retrievedNotes;
+	var searchResultNotes = _v0.searchResultNotes;
+	var whichNotes = _v0.whichNotes;
+	return {retrievedNotes: retrievedNotes, searchResultNotes: searchResultNotes, whichNotes: whichNotes};
+};
 var $elm$html$Html$Events$alwaysStop = function (x) {
 	return _Utils_Tuple2(x, true);
 };
@@ -7411,7 +7508,7 @@ var $author$project$ElmCommon$addInlineInfoFlash = function (_v0) {
 		$elm$html$Html$div,
 		$author$project$ElmCommon$addClasses(
 			_List_fromArray(
-				['px-1', 'py-1'])),
+				['px-1', 'py-1', 'has-background-info', 'has-text-white'])),
 		_List_fromArray(
 			[
 				$elm$html$Html$text(infoMessage)
@@ -7425,7 +7522,7 @@ var $author$project$ElmCommon$addInlineErrorFlash = function (_v0) {
 		$elm$html$Html$div,
 		$author$project$ElmCommon$addClasses(
 			_List_fromArray(
-				['px-1', 'py-1', 'has-background-danger', 'has-text-white', 'autohide'])),
+				['px-1', 'py-1', 'has-background-danger', 'has-text-white'])),
 		_List_fromArray(
 			[
 				$elm$html$Html$text(errorMessage)
@@ -7630,7 +7727,8 @@ var $author$project$View$viewNotesList = function (notes) {
 		A2($elm$core$List$map, $author$project$View$createNoteItem, notes));
 };
 var $author$project$View$view = function (model) {
-	var notesList = $author$project$View$choseWhichNotes(model);
+	var notesList = $author$project$View$choseWhichNotes(
+		$author$project$View$noteSelection(model));
 	var _v0 = $author$project$View$getErrors(model.appErrors);
 	var maybeInlineErrors = _v0.a;
 	var maybeModalErrros = _v0.b;

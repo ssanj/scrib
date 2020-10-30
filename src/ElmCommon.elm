@@ -24,16 +24,16 @@ debug message = Debug.log message ()
 debugWith : String -> a -> a
 debugWith = Debug.log
 
-onlyModel: a -> (a, Cmd msg)
+onlyModel : a -> (a, Cmd msg)
 onlyModel model = (model, Cmd.none)
 
-plainDiv: List (Html msg) -> Html msg
+plainDiv : List (Html msg) -> Html msg
 plainDiv = div []
 
-addClasses: List String -> List (Attribute a)
+addClasses : List String -> List (Attribute a)
 addClasses classes = List.map class classes
 
-hideAlertSpace: Html a
+hideAlertSpace : Html a
 hideAlertSpace =
   div
     (
@@ -49,8 +49,8 @@ hideAlertSpace =
       text "placeholder"
     ]
 
-
-addInlineInfoFlash: InformationMessage -> Html a
+--TODO: Combines these into one function that is called separately
+addInlineInfoFlash : InformationMessage -> Html a
 addInlineInfoFlash { infoMessage } =
   div
     (
@@ -58,13 +58,15 @@ addInlineInfoFlash { infoMessage } =
       [
         "px-1"
       , "py-1"
+      , "has-background-info"
+      , "has-text-white"
       ]
     )
     [
       text infoMessage
     ]
 
-addInlineSuccessFlash: SuccessMessage -> Html a
+addInlineSuccessFlash : SuccessMessage -> Html a
 addInlineSuccessFlash {  successMessage } =
   div
     (
@@ -74,14 +76,13 @@ addInlineSuccessFlash {  successMessage } =
       , "py-1"
       , "has-background-primary"
       , "has-text-white"
-      , "autohide"
       ]
     )
     [
       text successMessage
     ]
 
-addInlineErrorFlash: ErrorMessage -> Html a
+addInlineErrorFlash : ErrorMessage -> Html a
 addInlineErrorFlash { errorMessage } =
   div
     (
@@ -90,7 +91,6 @@ addInlineErrorFlash { errorMessage } =
       , "py-1"
       , "has-background-danger"
       , "has-text-white"
-      , "autohide"
       ]
     )
     [

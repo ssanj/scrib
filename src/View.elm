@@ -14,14 +14,16 @@ import Markdown
 import Browser.Navigation
 import Browser
 import Http
+import Task
+import Process
 import Browser.Navigation
+
 import List.Nonempty as N
 import Json.Decode   as D
 import Json.Encode   as E
 import Note          as SC
 import Ports         as P
 import Subs          as S
-
 
 -- MODEL
 
@@ -38,6 +40,10 @@ type alias ErrorNotification =
     errorDisplay : ErrorDisplayType
   , errorMessage : ErrorMessage
   }
+
+type alias Seconds = { seconds : Int }
+
+type alias NoteSelection = { retrievedNotes : List SC.NoteFull,  searchResultNotes : List SC.NoteFull, whichNotes : NotesDataSource}
 
 type alias ModalErrors = N.Nonempty ModalError
 
@@ -81,6 +87,8 @@ type Msg = NoteSelected SC.NoteFull
          | TopNotesResponse RemoteNotesData
          | SearchNotesResponse RemoteNotesData
          | ErrorModalClosed
+         | InlineErrorTimedOut
+         | InlineInfoTimedOut
 
 
 
@@ -124,6 +132,8 @@ update msg model =
     NotesRefreshed                        -> performOrGotoConfig model ({ model | notes = Loading, query = Nothing }, getTopRemoteNotes)
     (SearchEdited query)                  -> handleSearchQuery model query
     ErrorModalClosed                      -> onlyModel <| handleErrorModalClosed model
+    InlineErrorTimedOut                   -> onlyModel <| handleInlineErrorTimeout model
+    InlineInfoTimedOut                    -> onlyModel <| handleInlineInfoTimeout model
 
 
 -- VIEW
@@ -131,7 +141,7 @@ update msg model =
 view : Model -> Html Msg
 view model =
   let (maybeInlineErrors, maybeModalErrros) = getErrors model.appErrors
-      notesList                             = choseWhichNotes model
+      notesList                             = choseWhichNotes (noteSelection model)
   in
     div []
       [ section [ class "section" ]
@@ -175,12 +185,6 @@ view model =
      ]
 
 
-choseWhichNotes : Model -> List SC.NoteFull
-choseWhichNotes { retrievedNotes,  searchResultNotes, whichNotes } =
-  case whichNotes of
-    TopNotes          -> retrievedNotes
-    SearchResultNotes -> searchResultNotes
-
 -- PORTS
 
 
@@ -213,15 +217,14 @@ emptyModel =
   }
 
 
+-- TODO: Move error handling code into a another module?
 getInlineError : AppErrors -> Maybe InlineError
 getInlineError (AppErrors notifications) =
-  List.head <| collect isInlineError (N.toList notifications)
-  --List.head <| List.filterMap isInlineError <|  N.toList notifications
+  List.head <| collect findInlineError (N.toList notifications)
 
 getModalErrors : AppErrors -> Maybe ModalErrors
 getModalErrors (AppErrors notifications) =
-  N.fromList <| collect isModalError (N.toList notifications)
-  --N.fromList <| List.filterMap isModalError <| N.toList notifications
+  N.fromList <| collect findModalError (N.toList notifications)
 
 collect : (a -> Maybe b) -> List a -> List b
 collect predicate elements =
@@ -232,14 +235,14 @@ maybeToList : Maybe a -> List a
 maybeToList = maybe [] List.singleton
 
 -- We need collect here, filter + map
-isModalError : ErrorNotification -> Maybe ModalError
-isModalError errorNotification =
+findModalError : ErrorNotification -> Maybe ModalError
+findModalError errorNotification =
   case errorNotification.errorDisplay of
     (Modal _) ->  Just <| ModalError errorNotification.errorMessage
     Inline    -> Nothing
 
-isInlineError  : ErrorNotification -> Maybe InlineError
-isInlineError errorNotification =
+findInlineError  : ErrorNotification -> Maybe InlineError
+findInlineError errorNotification =
   case errorNotification.errorDisplay of
     (Modal _) -> Nothing
     Inline    -> Just <| InlineError errorNotification.errorMessage
@@ -270,20 +273,30 @@ createAppErrorFromInlineError : ErrorMessage -> AppErrors
 createAppErrorFromInlineError  newErrorMessage =
   AppErrors <| N.fromElement (ErrorNotification Inline newErrorMessage)
 
-removeModalErrors : AppErrors -> Maybe AppErrors
-removeModalErrors (AppErrors errors) =
-  let result = List.filter removeModals (N.toList errors)
+removeInlineErrors : AppErrors -> Maybe AppErrors
+removeInlineErrors (AppErrors errors) =
+  let result = List.filter (not << isInlineError) (N.toList errors)
   in
     case result of
       []      -> Nothing
       (x::xs) -> Just <| AppErrors (N.Nonempty x xs)
 
+removeModalErrors : AppErrors -> Maybe AppErrors
+removeModalErrors (AppErrors errors) =
+  let result = List.filter (not << isModalError) (N.toList errors)
+  in
+    case result of
+      []      -> Nothing
+      (x::xs) -> Just <| AppErrors (N.Nonempty x xs)
 
-removeModals : ErrorNotification -> Bool
-removeModals { errorDisplay } =
+isInlineError : ErrorNotification -> Bool
+isInlineError = not << isModalError
+
+isModalError : ErrorNotification -> Bool
+isModalError { errorDisplay } =
   case errorDisplay of
-    (Modal _) -> False
-    Inline    -> True
+    (Modal _) -> True
+    Inline    -> False
 
 handleErrorModalClosed : Model -> Model
 handleErrorModalClosed model =
@@ -292,6 +305,19 @@ handleErrorModalClosed model =
       { model | appErrors = removeModalErrors appErrors }
     Nothing          -> model
 
+handleInlineErrorTimeout : Model -> Model
+handleInlineErrorTimeout model =
+  case model.appErrors of
+    (Just appErrors) ->
+      { model | appErrors = removeInlineErrors appErrors }
+    Nothing          -> model
+
+handleInlineInfoTimeout : Model -> Model
+handleInlineInfoTimeout model =
+  case model.infoMessage of
+    (Just infoMessage) -> { model | infoMessage = Nothing }
+    Nothing            -> model
+
 handleSearchQuery : Model -> String -> (Model, Cmd Msg)
 handleSearchQuery model query =
   let trimmedQuery = String.trim query
@@ -299,6 +325,20 @@ handleSearchQuery model query =
     case trimmedQuery of
       ""            -> onlyModel { model | query = Nothing, whichNotes = TopNotes }
       nonEmptyQuery -> performOrGotoConfig model ({ model | query = Just nonEmptyQuery }, searchRemoteNotes nonEmptyQuery)
+
+noteSelection  : Model -> NoteSelection
+noteSelection { retrievedNotes,  searchResultNotes, whichNotes } =
+  {
+    retrievedNotes    = retrievedNotes
+  , searchResultNotes = searchResultNotes
+  , whichNotes        = whichNotes
+  }
+
+choseWhichNotes : NoteSelection -> List SC.NoteFull
+choseWhichNotes { retrievedNotes,  searchResultNotes, whichNotes } =
+  case whichNotes of
+    TopNotes          -> retrievedNotes
+    SearchResultNotes -> searchResultNotes
 
 
 -- INIT HELPERS
@@ -315,7 +355,11 @@ handleInitSuccess { apiKey, payload } =
                   , apiKey      = Just apiKey
                   , infoMessage = Just <| InformationMessage "No cached data, refreshing"
                }
-             , getTopRemoteNotes apiKey
+             , Cmd.batch
+                [
+                  getTopRemoteNotes apiKey
+                , addTimeoutForInlineMessage (Seconds 3) InlineInfoTimedOut
+                ]
              )
         else onlyModel { emptyModel | retrievedNotes = notes, apiKey = Just apiKey }
  in mc
@@ -384,23 +428,29 @@ performOrGotoConfig oldModel apiKeyCommand =
 
 -- UPDATE HELPERS
 
-
+-- TODO: Combine ErrorMessage with addModalError so you can't forget
 handleTopNotesResponse: Model -> RemoteNotesData -> (Model, Cmd Msg)
 handleTopNotesResponse model remoteData =
   case remoteData of
     (Failure e)          -> onlyModel <| addModalError model (ErrorMessage <| fromHttpError e)
     (Success notes) as r -> ({ model | retrievedNotes = notes, notes = r, whichNotes = TopNotes }, saveTopNotesToSessionStorage notes)
-    NotAsked             -> onlyModel { model | infoMessage = Just <| InformationMessage "No Data" }
-    Loading              -> onlyModel { model | infoMessage = Just <| InformationMessage "Loading..." }
+    NotAsked             -> ({ model | infoMessage = Just <| InformationMessage "No Data" }, addTimeoutForInlineMessage (Seconds 3) InlineInfoTimedOut)
+    Loading              -> ({ model | infoMessage = Just <| InformationMessage "Loading..." }, addTimeoutForInlineMessage (Seconds 3) InlineInfoTimedOut)
 
+
+-- TODO: Combine infoMessage with addTimeoutForInlineMessage so you can't forget
 handleSearchResponse: Model -> RemoteNotesData -> (Model, Cmd Msg)
 handleSearchResponse model remoteData =
   case remoteData of
-    (Failure e)          -> onlyModel <| addInlineError model (ErrorMessage <| fromHttpError e)
+    (Failure e)          -> (addInlineError model (ErrorMessage <| fromHttpError e), addTimeoutForInlineMessage (Seconds 3) InlineErrorTimedOut)
     (Success notes) as r -> onlyModel { model | searchResultNotes = notes, notes = r, whichNotes = SearchResultNotes }
-    NotAsked             -> onlyModel { model | infoMessage = Just <| InformationMessage "No Data" }
-    Loading              -> onlyModel { model | infoMessage = Just <| InformationMessage "Loading..." }
+    NotAsked             -> ({ model | infoMessage = Just <| InformationMessage "No Data" }, addTimeoutForInlineMessage (Seconds 3) InlineInfoTimedOut)
+    Loading              -> ({ model | infoMessage = Just <| InformationMessage "Loading..." }, addTimeoutForInlineMessage (Seconds 3) InlineInfoTimedOut)
 
+addTimeoutForInlineMessage : Seconds -> msg -> Cmd msg
+addTimeoutForInlineMessage { seconds } msg =
+  let sleepTask = Process.sleep (toFloat <| seconds * 1000)
+  in Task.perform (const msg) sleepTask
 
 -- VIEW HELPERS
 
