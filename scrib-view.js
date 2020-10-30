@@ -6707,6 +6707,76 @@ var $author$project$View$handleErrorModalClosed = function (model) {
 		return model;
 	}
 };
+var $author$project$ApiKey$performApiKey = F3(
+	function (maybeApiKey, _v0, _v1) {
+		var model1 = _v0.a;
+		var apiKeyCmd = _v0.b;
+		var model2 = _v1.a;
+		var nonApiKeyCmd = _v1.b;
+		if (maybeApiKey.$ === 'Just') {
+			var apiKey = maybeApiKey.a;
+			return _Utils_Tuple2(
+				model1,
+				apiKeyCmd(apiKey));
+		} else {
+			return _Utils_Tuple2(model2, nonApiKeyCmd);
+		}
+	});
+var $author$project$View$performOrGotoConfig = F2(
+	function (oldModel, apiKeyCommand) {
+		return A3(
+			$author$project$ApiKey$performApiKey,
+			oldModel.apiKey,
+			apiKeyCommand,
+			_Utils_Tuple2(
+				oldModel,
+				$elm$browser$Browser$Navigation$load('config.html')));
+	});
+var $author$project$View$SearchNotesResponse = function (a) {
+	return {$: 'SearchNotesResponse', a: a};
+};
+var $author$project$View$searchRemoteNotes = F2(
+	function (query, apiKey) {
+		return $elm$http$Http$request(
+			{
+				body: $elm$http$Http$emptyBody,
+				expect: A2(
+					$elm$http$Http$expectJson,
+					A2($elm$core$Basics$composeR, $krisajenkins$remotedata$RemoteData$fromResult, $author$project$View$SearchNotesResponse),
+					$author$project$Note$decodeFullNotes),
+				headers: _List_fromArray(
+					[
+						$author$project$ApiKey$apiKeyHeader(apiKey)
+					]),
+				method: 'GET',
+				timeout: $elm$core$Maybe$Nothing,
+				tracker: $elm$core$Maybe$Nothing,
+				url: '/search?q=' + query
+			});
+	});
+var $elm$core$String$trim = _String_trim;
+var $author$project$View$handleSearchQuery = F2(
+	function (model, query) {
+		var trimmedQuery = $elm$core$String$trim(query);
+		if (trimmedQuery === '') {
+			return $author$project$ElmCommon$onlyModel(
+				_Utils_update(
+					model,
+					{query: $elm$core$Maybe$Nothing}));
+		} else {
+			var nonEmptyQuery = trimmedQuery;
+			return A2(
+				$author$project$View$performOrGotoConfig,
+				model,
+				_Utils_Tuple2(
+					_Utils_update(
+						model,
+						{
+							query: $elm$core$Maybe$Just(nonEmptyQuery)
+						}),
+					$author$project$View$searchRemoteNotes(nonEmptyQuery)));
+		}
+	});
 var $author$project$ElmCommon$ErrorMessage = function (errorMessage) {
 	return {errorMessage: errorMessage};
 };
@@ -6948,31 +7018,6 @@ var $author$project$View$handleTopNotesResponse = F2(
 						}));
 		}
 	});
-var $author$project$ApiKey$performApiKey = F3(
-	function (maybeApiKey, _v0, _v1) {
-		var model1 = _v0.a;
-		var apiKeyCmd = _v0.b;
-		var model2 = _v1.a;
-		var nonApiKeyCmd = _v1.b;
-		if (maybeApiKey.$ === 'Just') {
-			var apiKey = maybeApiKey.a;
-			return _Utils_Tuple2(
-				model1,
-				apiKeyCmd(apiKey));
-		} else {
-			return _Utils_Tuple2(model2, nonApiKeyCmd);
-		}
-	});
-var $author$project$View$performOrGotoConfig = F2(
-	function (oldModel, apiKeyCommand) {
-		return A3(
-			$author$project$ApiKey$performApiKey,
-			oldModel.apiKey,
-			apiKeyCommand,
-			_Utils_Tuple2(
-				oldModel,
-				$elm$browser$Browser$Navigation$load('config.html')));
-	});
 var $author$project$StorageKeys$Delete = {$: 'Delete'};
 var $author$project$FP$const = F2(
 	function (a, _v0) {
@@ -7004,28 +7049,6 @@ var $author$project$View$saveSelectedNoteToLocalStorage = function (note) {
 	return $author$project$View$scribMessage(
 		A2($author$project$Ports$encodeJsCommand, saveSelectedNoteCommand, $author$project$Note$encodeFullNote));
 };
-var $author$project$View$SearchNotesResponse = function (a) {
-	return {$: 'SearchNotesResponse', a: a};
-};
-var $author$project$View$searchRemoteNotes = F2(
-	function (query, apiKey) {
-		return $elm$http$Http$request(
-			{
-				body: $elm$http$Http$emptyBody,
-				expect: A2(
-					$elm$http$Http$expectJson,
-					A2($elm$core$Basics$composeR, $krisajenkins$remotedata$RemoteData$fromResult, $author$project$View$SearchNotesResponse),
-					$author$project$Note$decodeFullNotes),
-				headers: _List_fromArray(
-					[
-						$author$project$ApiKey$apiKeyHeader(apiKey)
-					]),
-				method: 'GET',
-				timeout: $elm$core$Maybe$Nothing,
-				tracker: $elm$core$Maybe$Nothing,
-				url: '/search?q=' + query
-			});
-	});
 var $author$project$View$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
@@ -7079,16 +7102,7 @@ var $author$project$View$update = F2(
 						$author$project$View$getTopRemoteNotes));
 			case 'SearchEdited':
 				var query = msg.a;
-				return A2(
-					$author$project$View$performOrGotoConfig,
-					model,
-					_Utils_Tuple2(
-						_Utils_update(
-							model,
-							{
-								query: $elm$core$Maybe$Just(query)
-							}),
-						$author$project$View$searchRemoteNotes(query)));
+				return A2($author$project$View$handleSearchQuery, model, query);
 			default:
 				return $author$project$ElmCommon$onlyModel(
 					$author$project$View$handleErrorModalClosed(model));

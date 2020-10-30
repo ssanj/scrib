@@ -118,7 +118,7 @@ update msg model =
     (TopNotesResponse slateCallResult)    -> handleTopNotesResponse model slateCallResult
     (SearchNotesResponse slateCallResult) -> handleSearchResponse model slateCallResult
     NotesRefreshed                        -> performOrGotoConfig model ({ model | notes = Loading, query = Nothing }, getTopRemoteNotes)
-    (SearchEdited query)                  -> performOrGotoConfig model ({ model | query = Just query }, searchRemoteNotes query)
+    (SearchEdited query)                  -> handleSearchQuery model query
     ErrorModalClosed                      -> onlyModel <| handleErrorModalClosed model
 
 handleErrorModalClosed : Model -> Model
@@ -127,6 +127,14 @@ handleErrorModalClosed model =
     (Just appErrors) ->
       { model | appErrors = removeModalErrors appErrors }
     Nothing          -> model
+
+handleSearchQuery : Model -> String -> (Model, Cmd Msg)
+handleSearchQuery model query =
+  let trimmedQuery = String.trim query
+  in
+    case trimmedQuery of
+      ""            -> onlyModel { model | query = Nothing }
+      nonEmptyQuery -> performOrGotoConfig model ({ model | query = Just nonEmptyQuery }, searchRemoteNotes nonEmptyQuery)
 
 -- VIEW
 
