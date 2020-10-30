@@ -376,7 +376,7 @@ handleSearchResponse: Model -> RemoteNotesData -> (Model, Cmd Msg)
 handleSearchResponse model remoteData =
   case remoteData of
     (Failure e)          -> onlyModel <| addInlineError model (ErrorMessage <| fromHttpError e)
-    (Success notes) as r -> onlyModel { model | searchResultNotes = notes, notes = r }
+    (Success notes) as r -> onlyModel { model | searchResultNotes = notes, notes = r, retrievedNotes = notes }
     NotAsked             -> onlyModel { model | infoMessage = Just <| InformationMessage "No Data" }
     Loading              -> onlyModel { model | infoMessage = Just <| InformationMessage "Loading..." }
 

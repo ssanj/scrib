@@ -6783,7 +6783,7 @@ var $author$project$View$handleSearchResponse = F2(
 				return $author$project$ElmCommon$onlyModel(
 					_Utils_update(
 						model,
-						{notes: r, searchResultNotes: notes}));
+						{notes: r, retrievedNotes: notes, searchResultNotes: notes}));
 			case 'NotAsked':
 				return $author$project$ElmCommon$onlyModel(
 					_Utils_update(
