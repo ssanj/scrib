@@ -7312,15 +7312,28 @@ var $author$project$View$getErrors = function (maybeAppErrors) {
 		return _Utils_Tuple2($elm$core$Maybe$Nothing, $elm$core$Maybe$Nothing);
 	}
 };
-var $author$project$View$getNoteCount = function (remoteNoteData) {
-	if (remoteNoteData.$ === 'Success') {
-		var notes = remoteNoteData.a;
-		return $elm$core$String$fromInt(
-			$elm$core$List$length(notes));
-	} else {
-		return '-';
-	}
+var $elm$core$Basics$composeL = F3(
+	function (g, f, x) {
+		return g(
+			f(x));
+	});
+var $mgold$elm_nonempty_list$List$Nonempty$length = function (_v0) {
+	var x = _v0.a;
+	var xs = _v0.b;
+	return $elm$core$List$length(xs) + 1;
 };
+var $author$project$View$listFold = F3(
+	function (onEmpty, onFull, elements) {
+		return A3(
+			$author$project$FP$maybe,
+			onEmpty,
+			onFull,
+			$mgold$elm_nonempty_list$List$Nonempty$fromList(elements));
+	});
+var $author$project$View$getNoteCount = A2(
+	$author$project$View$listFold,
+	'-',
+	A2($elm$core$Basics$composeL, $elm$core$String$fromInt, $mgold$elm_nonempty_list$List$Nonempty$length));
 var $author$project$View$getQueryText = A2($author$project$FP$maybe, '', $elm$core$Basics$identity);
 var $elm$html$Html$h1 = _VirtualDom_node('h1');
 var $elm$html$Html$i = _VirtualDom_node('i');
@@ -7669,7 +7682,7 @@ var $author$project$View$view = function (model) {
 														_List_fromArray(
 															[
 																$elm$html$Html$text(
-																$author$project$View$getNoteCount(model.notes))
+																$author$project$View$getNoteCount(model.retrievedNotes))
 															]))
 													])),
 												A2(

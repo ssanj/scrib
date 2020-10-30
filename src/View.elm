@@ -146,7 +146,7 @@ view model =
               [ p [ class "panel-heading" ]
                 [ text "Saved Notes"
                 , text " "
-                , span [class "tab", class "is-medium"] [text <| getNoteCount model.notes]
+                , span [class "tab", class "is-medium"] [text <| getNoteCount model.retrievedNotes]
                 ]
               , p [ class "panel-tabs" ]
                 [ button [ class "button", class "is-text", onClick AddNote]
@@ -405,11 +405,12 @@ getErrors maybeAppErrors =
 getQueryText : Maybe String -> String
 getQueryText = maybe "" identity
 
-getNoteCount: RemoteNotesData -> String
-getNoteCount remoteNoteData =
-  case remoteNoteData of
-    Success notes -> String.fromInt <| List.length notes
-    _             -> "-"
+getNoteCount: List SC.NoteFull -> String
+getNoteCount = listFold "-" (String.fromInt << N.length)
+
+listFold: b -> (N.Nonempty a -> b) -> List a -> b
+listFold onEmpty onFull elements =
+  maybe onEmpty onFull <| N.fromList elements
 
 viewInlineError: InlineError -> Html Msg
 viewInlineError  (InlineError errorMessage) = addInlineErrorFlash errorMessage
