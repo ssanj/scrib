@@ -7,7 +7,7 @@ import ElmCommon       exposing (..)
 import StorageKeys     exposing (..)
 
 import Html.Events     exposing (onClick, onInput)
-import FP              exposing (maybe, const)
+import FP              exposing (maybe, const, collect, maybeToList, find)
 import ApiKey          exposing (ApiKey, ApiKeyWithPayload, apiKeyHeader, decodeApiKeyWithPayload, performApiKey)
 import Markdown
 
@@ -226,13 +226,6 @@ getModalErrors : AppErrors -> Maybe ModalErrors
 getModalErrors (AppErrors notifications) =
   N.fromList <| collect findModalError (N.toList notifications)
 
-collect : (a -> Maybe b) -> List a -> List b
-collect predicate elements =
-  let mapped = List.map predicate elements
-  in List.concatMap maybeToList mapped
-
-maybeToList : Maybe a -> List a
-maybeToList = maybe [] List.singleton
 
 -- We need collect here, filter + map
 findModalError : ErrorNotification -> Maybe ModalError

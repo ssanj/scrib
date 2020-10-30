@@ -7359,11 +7359,11 @@ var $elm$core$List$singleton = function (value) {
 	return _List_fromArray(
 		[value]);
 };
-var $author$project$View$maybeToList = A2($author$project$FP$maybe, _List_Nil, $elm$core$List$singleton);
-var $author$project$View$collect = F2(
+var $author$project$FP$maybeToList = A2($author$project$FP$maybe, _List_Nil, $elm$core$List$singleton);
+var $author$project$FP$collect = F2(
 	function (predicate, elements) {
 		var mapped = A2($elm$core$List$map, predicate, elements);
-		return A2($elm$core$List$concatMap, $author$project$View$maybeToList, mapped);
+		return A2($elm$core$List$concatMap, $author$project$FP$maybeToList, mapped);
 	});
 var $author$project$View$InlineError = function (a) {
 	return {$: 'InlineError', a: a};
@@ -7390,7 +7390,7 @@ var $author$project$View$getInlineError = function (_v0) {
 	var notifications = _v0.a;
 	return $elm$core$List$head(
 		A2(
-			$author$project$View$collect,
+			$author$project$FP$collect,
 			$author$project$View$findInlineError,
 			$mgold$elm_nonempty_list$List$Nonempty$toList(notifications)));
 };
@@ -7420,7 +7420,7 @@ var $author$project$View$getModalErrors = function (_v0) {
 	var notifications = _v0.a;
 	return $mgold$elm_nonempty_list$List$Nonempty$fromList(
 		A2(
-			$author$project$View$collect,
+			$author$project$FP$collect,
 			$author$project$View$findModalError,
 			$mgold$elm_nonempty_list$List$Nonempty$toList(notifications)));
 };
