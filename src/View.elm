@@ -193,6 +193,15 @@ emptyModel =
   , whichNotes        = TopNotes
   }
 
+inlineInfoTimeout : Seconds
+inlineInfoTimeout = Seconds 5
+
+inlineInfoSuccessTimeout : Seconds
+inlineInfoSuccessTimeout = Seconds 1
+
+inlineErrorTimeout : Seconds
+inlineErrorTimeout = Seconds 3
+
 appErrorsGetter : Model -> Maybe AppErrors
 appErrorsGetter model = model.appErrors
 
@@ -316,27 +325,35 @@ performOrGotoConfig oldModel apiKeyCommand =
 
 -- UPDATE HELPERS
 
--- TODO: Combine ErrorMessage with addModalError so you can't forget
 handleTopNotesResponse: Model -> RemoteNotesData -> (Model, Cmd Msg)
 handleTopNotesResponse model remoteData =
   case remoteData of
     (Failure e)          -> onlyModel <| addModalError appErrorsGetter appErrorsSetter model (ErrorMessage <| fromHttpError e)
-    (Success notes) as r -> ({ model | retrievedNotes = notes, notes = r, whichNotes = TopNotes }, saveTopNotesToSessionStorage notes)
+    (Success notes) as r ->
+      let newModel = { model | retrievedNotes = notes, notes = r, whichNotes = TopNotes }
+      in (newModel, Cmd.batch [handleInlineInfoSuccess, saveTopNotesToSessionStorage notes])
     NotAsked             -> handleInlineInfo model <| InformationMessage "No Data"
     Loading              -> handleInlineInfo model <| InformationMessage "Loading..."
 
--- TODO: Combine infoMessage with addTimeoutForInlineMessage so you can't forget
 handleSearchResponse: Model -> RemoteNotesData -> (Model, Cmd Msg)
 handleSearchResponse model remoteData =
   case remoteData of
-    (Failure e)          -> addInlineError appErrorsGetter appErrorsSetter model (ErrorMessage <| fromHttpError e) (Seconds 3) InlineErrorTimedOut
-    (Success notes) as r -> onlyModel { model | searchResultNotes = notes, notes = r, whichNotes = SearchResultNotes }
+    (Failure e)          -> addInlineError appErrorsGetter appErrorsSetter model (ErrorMessage <| fromHttpError e) inlineErrorTimeout InlineErrorTimedOut
+    (Success notes) as r ->
+      let newModel = { model | searchResultNotes = notes, notes = r, whichNotes = SearchResultNotes }
+      in (newModel, handleInlineInfoSuccess)
     NotAsked             -> handleInlineInfo model <| InformationMessage "No Data"
     Loading              -> handleInlineInfo model <| InformationMessage "Loading..."
 
 handleInlineInfo : Model -> InformationMessage -> (Model, Cmd Msg)
 handleInlineInfo model message =
-  addInlineInfo informationMessageSetter model message (Seconds 3) InlineInfoTimedOut
+  addInlineInfo informationMessageSetter model message inlineInfoTimeout InlineInfoTimedOut
+
+-- If the event that the info message that you put up for (eg. Loading...) has completed
+-- expedite completion to the next second. Adding a one second delay ensures the messages
+-- don't jitter if they complete too quickly.
+handleInlineInfoSuccess : Cmd Msg
+handleInlineInfoSuccess = addTimeoutForInlineMessage inlineInfoSuccessTimeout InlineInfoTimedOut
 
 handleInlineInfoTimeout : Model -> (Model, Cmd Msg)
 handleInlineInfoTimeout model = onlyModel <| onInlineInfoTimeout informationMessageGetter informationMessageSetter model

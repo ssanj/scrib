@@ -6512,9 +6512,6 @@ var $author$project$View$getTopRemoteNotes = function (apiKey) {
 		});
 };
 var $author$project$View$InlineInfoTimedOut = {$: 'InlineInfoTimedOut'};
-var $author$project$ElmCommon$Seconds = function (seconds) {
-	return {seconds: seconds};
-};
 var $author$project$FP$const = F2(
 	function (a, _v0) {
 		return a;
@@ -6545,15 +6542,13 @@ var $author$project$View$informationMessageSetter = F2(
 			model,
 			{infoMessage: infoMessage});
 	});
+var $author$project$ElmCommon$Seconds = function (seconds) {
+	return {seconds: seconds};
+};
+var $author$project$View$inlineInfoTimeout = $author$project$ElmCommon$Seconds(5);
 var $author$project$View$handleInlineInfo = F2(
 	function (model, message) {
-		return A5(
-			$author$project$Notifications$addInlineInfo,
-			$author$project$View$informationMessageSetter,
-			model,
-			message,
-			$author$project$ElmCommon$Seconds(3),
-			$author$project$View$InlineInfoTimedOut);
+		return A5($author$project$Notifications$addInlineInfo, $author$project$View$informationMessageSetter, model, message, $author$project$View$inlineInfoTimeout, $author$project$View$InlineInfoTimedOut);
 	});
 var $elm$core$List$isEmpty = function (xs) {
 	if (!xs.b) {
@@ -7073,6 +7068,9 @@ var $author$project$View$fromHttpError = function (error) {
 			return 'bad body: ' + body;
 	}
 };
+var $author$project$View$inlineInfoSuccessTimeout = $author$project$ElmCommon$Seconds(1);
+var $author$project$View$handleInlineInfoSuccess = A2($author$project$Notifications$addTimeoutForInlineMessage, $author$project$View$inlineInfoSuccessTimeout, $author$project$View$InlineInfoTimedOut);
+var $author$project$View$inlineErrorTimeout = $author$project$ElmCommon$Seconds(3);
 var $author$project$View$handleSearchResponse = F2(
 	function (model, remoteData) {
 		switch (remoteData.$) {
@@ -7085,15 +7083,15 @@ var $author$project$View$handleSearchResponse = F2(
 					model,
 					$author$project$ElmCommon$ErrorMessage(
 						$author$project$View$fromHttpError(e)),
-					$author$project$ElmCommon$Seconds(3),
+					$author$project$View$inlineErrorTimeout,
 					$author$project$View$InlineErrorTimedOut);
 			case 'Success':
 				var r = remoteData;
 				var notes = r.a;
-				return $author$project$ElmCommon$onlyModel(
-					_Utils_update(
-						model,
-						{notes: r, searchResultNotes: notes, whichNotes: $author$project$View$SearchResultNotes}));
+				var newModel = _Utils_update(
+					model,
+					{notes: r, searchResultNotes: notes, whichNotes: $author$project$View$SearchResultNotes});
+				return _Utils_Tuple2(newModel, $author$project$View$handleInlineInfoSuccess);
 			case 'NotAsked':
 				return A2(
 					$author$project$View$handleInlineInfo,
@@ -7185,11 +7183,17 @@ var $author$project$View$handleTopNotesResponse = F2(
 			case 'Success':
 				var r = remoteData;
 				var notes = r.a;
+				var newModel = _Utils_update(
+					model,
+					{notes: r, retrievedNotes: notes, whichNotes: $author$project$View$TopNotes});
 				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{notes: r, retrievedNotes: notes, whichNotes: $author$project$View$TopNotes}),
-					$author$project$View$saveTopNotesToSessionStorage(notes));
+					newModel,
+					$elm$core$Platform$Cmd$batch(
+						_List_fromArray(
+							[
+								$author$project$View$handleInlineInfoSuccess,
+								$author$project$View$saveTopNotesToSessionStorage(notes)
+							])));
 			case 'NotAsked':
 				return A2(
 					$author$project$View$handleInlineInfo,
