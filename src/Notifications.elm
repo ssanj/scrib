@@ -1,4 +1,4 @@
-module ErrorHandling exposing (..)
+module Notifications exposing (..)
 
 import ElmCommon exposing (..)
 import Html      exposing (Html)

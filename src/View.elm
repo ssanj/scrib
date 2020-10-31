@@ -5,7 +5,7 @@ import Html            exposing (..)
 import Html.Attributes exposing (..)
 import ElmCommon       exposing (..)
 import StorageKeys     exposing (..)
-import ErrorHandling   exposing (..)
+import Notifications   exposing (..)
 
 import Html.Events     exposing (onClick, onInput)
 import FP              exposing (maybe, const, collect, maybeToList, find)
@@ -15,8 +15,6 @@ import Markdown
 import Browser.Navigation
 import Browser
 import Http
-import Task
-import Process
 import Browser.Navigation
 
 import List.Nonempty as N
@@ -339,11 +337,6 @@ handleSearchResponse model remoteData =
 handleInlineInfo : Model -> InformationMessage -> (Model, Cmd Msg)
 handleInlineInfo model message =
   addInlineInfo informationMessageSetter model message (Seconds 3) InlineInfoTimedOut
-
-addTimeoutForInlineMessage : Seconds -> msg -> Cmd msg
-addTimeoutForInlineMessage { seconds } msg =
-  let sleepTask = Process.sleep (toFloat <| seconds * 1000)
-  in Task.perform (const msg) sleepTask
 
 handleInlineInfoTimeout : Model -> (Model, Cmd Msg)
 handleInlineInfoTimeout model = onlyModel <| onInlineInfoTimeout informationMessageGetter informationMessageSetter model
