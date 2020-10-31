@@ -12,17 +12,6 @@
         height: 20em;
         overflow: auto;
       }
-
-/*      .autohide {
-        visibility: visible;
-        animation: autohide 3s;
-        animation-fill-mode: forwards;
-      }
-
-      @keyframes autohide {
-        from {visibilty: visible;}
-        to {visibility: hidden}
-      }*/
     </style>
 
   </head>
@@ -30,6 +19,10 @@
   <div id="myapp"></div>
   <script>
 
+      //TODO: We should try and move this to ports
+      //We could also create a namespace for ports and do something like
+      //const ports = initPorts();
+      //ports.appEditKey
       const appEditKey = 'scrib.edit';
       const appViewKey = 'scrib.view';
       const appApiKey  = 'scrib.api.key';
@@ -38,12 +31,6 @@
         flags: initLoad(appViewKey),
         node: document.getElementById('myapp')
       });
-
-      function responseJson(eventType) {
-        return {
-          "eventType": eventType
-        }
-      }
 
       app.ports.scribMessage.subscribe(function(action){
         portActions(action, app.ports.jsMessage.send);
