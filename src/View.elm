@@ -5,6 +5,7 @@ import Html            exposing (..)
 import Html.Attributes exposing (..)
 import ElmCommon       exposing (..)
 import StorageKeys     exposing (..)
+import ErrorHandling   exposing (..)
 
 import Html.Events     exposing (onClick, onInput)
 import FP              exposing (maybe, const, collect, maybeToList, find)
@@ -27,26 +28,10 @@ import Subs          as S
 
 -- MODEL
 
-type AppErrors = AppErrors (N.Nonempty ErrorNotification)
-
-type ErrorDisplayType = Modal
-                      | Inline
-
-type alias ErrorNotification =
-  {
-    errorDisplay : ErrorDisplayType
-  , errorMessage : ErrorMessage
-  }
 
 type alias Seconds = { seconds : Int }
 
 type alias NoteSelection = { retrievedNotes : List SC.NoteFull,  searchResultNotes : List SC.NoteFull, whichNotes : NotesDataSource}
-
-type alias ModalErrors = N.Nonempty ModalError
-
-type ModalError = ModalError ErrorMessage
-
-type InlineError = InlineError ErrorMessage
 
 type NotesDataSource = TopNotes
                      | SearchResultNotes
@@ -128,16 +113,15 @@ update msg model =
     (SearchNotesResponse slateCallResult) -> handleSearchResponse model slateCallResult
     NotesRefreshed                        -> performOrGotoConfig model ({ model | notes = Loading, query = Nothing }, getTopRemoteNotes)
     (SearchEdited query)                  -> handleSearchQuery model query
-    ErrorModalClosed                      -> onlyModel <| handleErrorModalClosed model
-    InlineErrorTimedOut                   -> onlyModel <| handleInlineErrorTimeout model
-    InlineInfoTimedOut                    -> onlyModel <| handleInlineInfoTimeout model
-
+    ErrorModalClosed                      -> onlyModel <| handleErrorModalClosed appErrorsGetter appErrorsSetter model
+    InlineErrorTimedOut                   -> onlyModel <| handleInlineErrorTimeout appErrorsGetter appErrorsSetter model
+    InlineInfoTimedOut                    -> onlyModel <| handleInlineInfoTimeout informationMessageGetter informationMessageSetter model
 
 -- VIEW
 
 view : Model -> Html Msg
 view model =
-  let (maybeInlineErrors, maybeModalErrros) = getErrors model.appErrors
+  let (maybeInlineErrors, maybeModalErrors) = getErrors model.appErrors
       notesList                             = choseWhichNotes (noteSelection model)
   in
     div []
@@ -177,7 +161,7 @@ view model =
             ]
           ]
         ]
-     , viewModalErrorsIfAny maybeModalErrros
+     , viewModalErrorsIfAny maybeModalErrors ErrorModalClosed
      , createMarkdownPreview model.selectedNote
      ]
 
@@ -213,100 +197,17 @@ emptyModel =
   , whichNotes        = TopNotes
   }
 
+appErrorsGetter : Model -> Maybe AppErrors
+appErrorsGetter model = model.appErrors
 
--- TODO: Move error handling code into a another module?
-getInlineError : AppErrors -> Maybe InlineError
-getInlineError (AppErrors notifications) =
-  List.head <| collect findInlineError (N.toList notifications)
+appErrorsSetter : Maybe AppErrors -> Model -> Model
+appErrorsSetter appErrors model = { model | appErrors = appErrors }
 
-getModalErrors : AppErrors -> Maybe ModalErrors
-getModalErrors (AppErrors notifications) =
-  N.fromList <| collect findModalError (N.toList notifications)
+informationMessageGetter : Model -> Maybe InformationMessage
+informationMessageGetter model = model.infoMessage
 
-
--- We need collect here, filter + map
-findModalError : ErrorNotification -> Maybe ModalError
-findModalError errorNotification =
-  case errorNotification.errorDisplay of
-    Modal  ->  Just <| ModalError errorNotification.errorMessage
-    Inline -> Nothing
-
-findInlineError  : ErrorNotification -> Maybe InlineError
-findInlineError errorNotification =
-  case errorNotification.errorDisplay of
-    Modal  -> Nothing
-    Inline -> Just <| InlineError errorNotification.errorMessage
-
-addModalError : Model -> ErrorMessage -> Model
-addModalError model newErrorMessage =
-  case model.appErrors of
-    (Just appErrors) -> { model | appErrors = Just <| addModalErrorToAppErrors appErrors newErrorMessage }
-    Nothing          -> { model | appErrors = Just (AppErrors <| N.fromElement(ErrorNotification Modal newErrorMessage)) }
-
-addInlineError : Model -> ErrorMessage -> Model
-addInlineError model newError =
-  case model.appErrors of
-    -- We currently only support one inline error. This could change in the future
-    (Just appErrors) -> { model | appErrors =   Just <| addInlineErrorToAppErrros appErrors newError }
-    Nothing -> { model | appErrors = Just <| createAppErrorFromInlineError newError }
-
-
-addModalErrorToAppErrors : AppErrors -> ErrorMessage -> AppErrors
-addModalErrorToAppErrors (AppErrors notifications) newErrorMessage =
-  AppErrors <| N.cons (ErrorNotification Modal newErrorMessage) notifications
-
-addInlineErrorToAppErrros : AppErrors -> ErrorMessage -> AppErrors
-addInlineErrorToAppErrros  appErrors newErrorMessage =
-  AppErrors <| N.fromElement (ErrorNotification Inline newErrorMessage)
-
-createAppErrorFromInlineError : ErrorMessage -> AppErrors
-createAppErrorFromInlineError  newErrorMessage =
-  AppErrors <| N.fromElement (ErrorNotification Inline newErrorMessage)
-
-removeInlineErrors : AppErrors -> Maybe AppErrors
-removeInlineErrors (AppErrors errors) =
-  let result = List.filter (not << isInlineError) (N.toList errors)
-  in
-    case result of
-      []      -> Nothing
-      (x::xs) -> Just <| AppErrors (N.Nonempty x xs)
-
-removeModalErrors : AppErrors -> Maybe AppErrors
-removeModalErrors (AppErrors errors) =
-  let result = List.filter (not << isModalError) (N.toList errors)
-  in
-    case result of
-      []      -> Nothing
-      (x::xs) -> Just <| AppErrors (N.Nonempty x xs)
-
-isInlineError : ErrorNotification -> Bool
-isInlineError = not << isModalError
-
-isModalError : ErrorNotification -> Bool
-isModalError { errorDisplay } =
-  case errorDisplay of
-    Modal  -> True
-    Inline -> False
-
-handleErrorModalClosed : Model -> Model
-handleErrorModalClosed model =
-  case model.appErrors of
-    (Just appErrors) ->
-      { model | appErrors = removeModalErrors appErrors }
-    Nothing          -> model
-
-handleInlineErrorTimeout : Model -> Model
-handleInlineErrorTimeout model =
-  case model.appErrors of
-    (Just appErrors) ->
-      { model | appErrors = removeInlineErrors appErrors }
-    Nothing          -> model
-
-handleInlineInfoTimeout : Model -> Model
-handleInlineInfoTimeout model =
-  case model.infoMessage of
-    (Just infoMessage) -> { model | infoMessage = Nothing }
-    Nothing            -> model
+informationMessageSetter : Maybe InformationMessage -> Model -> Model
+informationMessageSetter infoMessage model = { model | infoMessage = infoMessage }
 
 handleSearchQuery : Model -> String -> (Model, Cmd Msg)
 handleSearchQuery model query =
@@ -422,17 +323,16 @@ performOrGotoConfig oldModel apiKeyCommand =
 handleTopNotesResponse: Model -> RemoteNotesData -> (Model, Cmd Msg)
 handleTopNotesResponse model remoteData =
   case remoteData of
-    (Failure e)          -> onlyModel <| addModalError model (ErrorMessage <| fromHttpError e)
+    (Failure e)          -> onlyModel <| addModalError appErrorsGetter appErrorsSetter model (ErrorMessage <| fromHttpError e)
     (Success notes) as r -> ({ model | retrievedNotes = notes, notes = r, whichNotes = TopNotes }, saveTopNotesToSessionStorage notes)
     NotAsked             -> ({ model | infoMessage = Just <| InformationMessage "No Data" }, addTimeoutForInlineMessage (Seconds 3) InlineInfoTimedOut)
     Loading              -> ({ model | infoMessage = Just <| InformationMessage "Loading..." }, addTimeoutForInlineMessage (Seconds 3) InlineInfoTimedOut)
-
 
 -- TODO: Combine infoMessage with addTimeoutForInlineMessage so you can't forget
 handleSearchResponse: Model -> RemoteNotesData -> (Model, Cmd Msg)
 handleSearchResponse model remoteData =
   case remoteData of
-    (Failure e)          -> (addInlineError model (ErrorMessage <| fromHttpError e), addTimeoutForInlineMessage (Seconds 3) InlineErrorTimedOut)
+    (Failure e)          -> (addInlineError appErrorsGetter appErrorsSetter model (ErrorMessage <| fromHttpError e), addTimeoutForInlineMessage (Seconds 3) InlineErrorTimedOut)
     (Success notes) as r -> onlyModel { model | searchResultNotes = notes, notes = r, whichNotes = SearchResultNotes }
     NotAsked             -> ({ model | infoMessage = Just <| InformationMessage "No Data" }, addTimeoutForInlineMessage (Seconds 3) InlineInfoTimedOut)
     Loading              -> ({ model | infoMessage = Just <| InformationMessage "Loading..." }, addTimeoutForInlineMessage (Seconds 3) InlineInfoTimedOut)
@@ -442,26 +342,9 @@ addTimeoutForInlineMessage { seconds } msg =
   let sleepTask = Process.sleep (toFloat <| seconds * 1000)
   in Task.perform (const msg) sleepTask
 
+
 -- VIEW HELPERS
 
-
-viewModalErrorsIfAny : Maybe ModalErrors -> Html Msg
-viewModalErrorsIfAny = maybe emptyDiv viewModalErrors
-
-viewInlineErrorsIfAny : Maybe InlineError -> Html Msg
-viewInlineErrorsIfAny = maybe emptyDiv viewInlineError
-
-viewInformationIfAny : Maybe InformationMessage -> Html Msg
-viewInformationIfAny = maybe emptyDiv viewInformationMessage
-
-getErrors : Maybe AppErrors -> (Maybe InlineError, Maybe ModalErrors)
-getErrors maybeAppErrors =
-  case maybeAppErrors of
-    (Just appErrors) ->
-      let maybeInlineError = getInlineError appErrors
-          maybeModalErrors = getModalErrors appErrors
-      in (maybeInlineError, maybeModalErrors)
-    Nothing -> (Nothing, Nothing)
 
 getQueryText : Maybe String -> String
 getQueryText = maybe "" identity
@@ -472,16 +355,6 @@ getNoteCount = listFold "-" (String.fromInt << N.length)
 listFold: b -> (N.Nonempty a -> b) -> List a -> b
 listFold onEmpty onFull elements =
   maybe onEmpty onFull <| N.fromList elements
-
-viewInlineError: InlineError -> Html Msg
-viewInlineError  (InlineError errorMessage) = addInlineErrorFlash errorMessage
-
-viewModalErrors : ModalErrors -> Html Msg
-viewModalErrors errorMessages =
-  openErrorModal (N.map (\(ModalError error) -> error) errorMessages) ErrorModalClosed
-
-emptyDiv : Html a
-emptyDiv = div [] []
 
 viewNotesList: List SC.NoteFull -> Html Msg
 viewNotesList notes = div [ id "notes-list" ] (List.map createNoteItem notes)
@@ -495,9 +368,6 @@ getInformationFromRemoteNotesData remoteNotesData =
           (Failure _) -> Nothing
           (Success _) -> Nothing
   in maybeInfoContent
-
-viewInformationMessage : InformationMessage -> Html a
-viewInformationMessage = addInlineInfoFlash
 
 viewRemoteCallStatus: RemoteNotesData -> Html Msg
 viewRemoteCallStatus remoteNotesData =

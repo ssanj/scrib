@@ -6674,7 +6674,16 @@ var $author$project$View$subscriptions = function (_v0) {
 	return $author$project$View$jsMessage(
 		A2($author$project$Subs$encodeJsResponse, $author$project$View$subscriptionSuccess, $author$project$View$subscriptionFailure));
 };
-var $author$project$View$AppErrors = function (a) {
+var $author$project$View$appErrorsGetter = function (model) {
+	return model.appErrors;
+};
+var $author$project$View$appErrorsSetter = F2(
+	function (appErrors, model) {
+		return _Utils_update(
+			model,
+			{appErrors: appErrors});
+	});
+var $author$project$ErrorHandling$AppErrors = function (a) {
 	return {$: 'AppErrors', a: a};
 };
 var $mgold$elm_nonempty_list$List$Nonempty$Nonempty = F2(
@@ -6697,7 +6706,7 @@ var $elm$core$List$filter = F2(
 			_List_Nil,
 			list);
 	});
-var $author$project$View$isModalError = function (_v0) {
+var $author$project$ErrorHandling$isModalError = function (_v0) {
 	var errorDisplay = _v0.errorDisplay;
 	if (errorDisplay.$ === 'Modal') {
 		return true;
@@ -6711,11 +6720,11 @@ var $mgold$elm_nonempty_list$List$Nonempty$toList = function (_v0) {
 	var xs = _v0.b;
 	return A2($elm$core$List$cons, x, xs);
 };
-var $author$project$View$removeModalErrors = function (_v0) {
+var $author$project$ErrorHandling$removeModalErrors = function (_v0) {
 	var errors = _v0.a;
 	var result = A2(
 		$elm$core$List$filter,
-		A2($elm$core$Basics$composeL, $elm$core$Basics$not, $author$project$View$isModalError),
+		A2($elm$core$Basics$composeL, $elm$core$Basics$not, $author$project$ErrorHandling$isModalError),
 		$mgold$elm_nonempty_list$List$Nonempty$toList(errors));
 	if (!result.b) {
 		return $elm$core$Maybe$Nothing;
@@ -6723,29 +6732,29 @@ var $author$project$View$removeModalErrors = function (_v0) {
 		var x = result.a;
 		var xs = result.b;
 		return $elm$core$Maybe$Just(
-			$author$project$View$AppErrors(
+			$author$project$ErrorHandling$AppErrors(
 				A2($mgold$elm_nonempty_list$List$Nonempty$Nonempty, x, xs)));
 	}
 };
-var $author$project$View$handleErrorModalClosed = function (model) {
-	var _v0 = model.appErrors;
-	if (_v0.$ === 'Just') {
-		var appErrors = _v0.a;
-		return _Utils_update(
-			model,
-			{
-				appErrors: $author$project$View$removeModalErrors(appErrors)
-			});
-	} else {
-		return model;
-	}
-};
-var $author$project$View$isInlineError = A2($elm$core$Basics$composeL, $elm$core$Basics$not, $author$project$View$isModalError);
-var $author$project$View$removeInlineErrors = function (_v0) {
+var $author$project$ErrorHandling$handleErrorModalClosed = F3(
+	function (getter, setter, model) {
+		var _v0 = getter(model);
+		if (_v0.$ === 'Just') {
+			var appErrors = _v0.a;
+			return A2(
+				setter,
+				$author$project$ErrorHandling$removeModalErrors(appErrors),
+				model);
+		} else {
+			return model;
+		}
+	});
+var $author$project$ErrorHandling$isInlineError = A2($elm$core$Basics$composeL, $elm$core$Basics$not, $author$project$ErrorHandling$isModalError);
+var $author$project$ErrorHandling$removeInlineErrors = function (_v0) {
 	var errors = _v0.a;
 	var result = A2(
 		$elm$core$List$filter,
-		A2($elm$core$Basics$composeL, $elm$core$Basics$not, $author$project$View$isInlineError),
+		A2($elm$core$Basics$composeL, $elm$core$Basics$not, $author$project$ErrorHandling$isInlineError),
 		$mgold$elm_nonempty_list$List$Nonempty$toList(errors));
 	if (!result.b) {
 		return $elm$core$Maybe$Nothing;
@@ -6753,34 +6762,33 @@ var $author$project$View$removeInlineErrors = function (_v0) {
 		var x = result.a;
 		var xs = result.b;
 		return $elm$core$Maybe$Just(
-			$author$project$View$AppErrors(
+			$author$project$ErrorHandling$AppErrors(
 				A2($mgold$elm_nonempty_list$List$Nonempty$Nonempty, x, xs)));
 	}
 };
-var $author$project$View$handleInlineErrorTimeout = function (model) {
-	var _v0 = model.appErrors;
-	if (_v0.$ === 'Just') {
-		var appErrors = _v0.a;
-		return _Utils_update(
-			model,
-			{
-				appErrors: $author$project$View$removeInlineErrors(appErrors)
-			});
-	} else {
-		return model;
-	}
-};
-var $author$project$View$handleInlineInfoTimeout = function (model) {
-	var _v0 = model.infoMessage;
-	if (_v0.$ === 'Just') {
-		var infoMessage = _v0.a;
-		return _Utils_update(
-			model,
-			{infoMessage: $elm$core$Maybe$Nothing});
-	} else {
-		return model;
-	}
-};
+var $author$project$ErrorHandling$handleInlineErrorTimeout = F3(
+	function (getter, setter, model) {
+		var _v0 = getter(model);
+		if (_v0.$ === 'Just') {
+			var appErrors = _v0.a;
+			return A2(
+				setter,
+				$author$project$ErrorHandling$removeInlineErrors(appErrors),
+				model);
+		} else {
+			return model;
+		}
+	});
+var $author$project$ErrorHandling$handleInlineInfoTimeout = F3(
+	function (getter, setter, model) {
+		var _v0 = getter(model);
+		if (_v0.$ === 'Just') {
+			var infoMessage = _v0.a;
+			return A2(setter, $elm$core$Maybe$Nothing, model);
+		} else {
+			return model;
+		}
+	});
 var $author$project$ApiKey$performApiKey = F3(
 	function (maybeApiKey, _v0, _v1) {
 		var model1 = _v0.a;
@@ -6856,43 +6864,41 @@ var $author$project$ElmCommon$ErrorMessage = function (errorMessage) {
 };
 var $author$project$View$InlineErrorTimedOut = {$: 'InlineErrorTimedOut'};
 var $author$project$View$SearchResultNotes = {$: 'SearchResultNotes'};
-var $author$project$View$ErrorNotification = F2(
+var $author$project$ErrorHandling$ErrorNotification = F2(
 	function (errorDisplay, errorMessage) {
 		return {errorDisplay: errorDisplay, errorMessage: errorMessage};
 	});
-var $author$project$View$Inline = {$: 'Inline'};
+var $author$project$ErrorHandling$Inline = {$: 'Inline'};
 var $mgold$elm_nonempty_list$List$Nonempty$fromElement = function (x) {
 	return A2($mgold$elm_nonempty_list$List$Nonempty$Nonempty, x, _List_Nil);
 };
-var $author$project$View$addInlineErrorToAppErrros = F2(
+var $author$project$ErrorHandling$addInlineErrorToAppErrros = F2(
 	function (appErrors, newErrorMessage) {
-		return $author$project$View$AppErrors(
+		return $author$project$ErrorHandling$AppErrors(
 			$mgold$elm_nonempty_list$List$Nonempty$fromElement(
-				A2($author$project$View$ErrorNotification, $author$project$View$Inline, newErrorMessage)));
+				A2($author$project$ErrorHandling$ErrorNotification, $author$project$ErrorHandling$Inline, newErrorMessage)));
 	});
-var $author$project$View$createAppErrorFromInlineError = function (newErrorMessage) {
-	return $author$project$View$AppErrors(
+var $author$project$ErrorHandling$createAppErrorFromInlineError = function (newErrorMessage) {
+	return $author$project$ErrorHandling$AppErrors(
 		$mgold$elm_nonempty_list$List$Nonempty$fromElement(
-			A2($author$project$View$ErrorNotification, $author$project$View$Inline, newErrorMessage)));
+			A2($author$project$ErrorHandling$ErrorNotification, $author$project$ErrorHandling$Inline, newErrorMessage)));
 };
-var $author$project$View$addInlineError = F2(
-	function (model, newError) {
-		var _v0 = model.appErrors;
+var $author$project$ErrorHandling$addInlineError = F4(
+	function (getter, setter, model, newError) {
+		var _v0 = getter(model);
 		if (_v0.$ === 'Just') {
 			var appErrors = _v0.a;
-			return _Utils_update(
-				model,
-				{
-					appErrors: $elm$core$Maybe$Just(
-						A2($author$project$View$addInlineErrorToAppErrros, appErrors, newError))
-				});
+			return A2(
+				setter,
+				$elm$core$Maybe$Just(
+					A2($author$project$ErrorHandling$addInlineErrorToAppErrros, appErrors, newError)),
+				model);
 		} else {
-			return _Utils_update(
-				model,
-				{
-					appErrors: $elm$core$Maybe$Just(
-						$author$project$View$createAppErrorFromInlineError(newError))
-				});
+			return A2(
+				setter,
+				$elm$core$Maybe$Just(
+					$author$project$ErrorHandling$createAppErrorFromInlineError(newError)),
+				model);
 		}
 	});
 var $author$project$View$fromHttpError = function (error) {
@@ -6918,8 +6924,10 @@ var $author$project$View$handleSearchResponse = F2(
 			case 'Failure':
 				var e = remoteData.a;
 				return _Utils_Tuple2(
-					A2(
-						$author$project$View$addInlineError,
+					A4(
+						$author$project$ErrorHandling$addInlineError,
+						$author$project$View$appErrorsGetter,
+						$author$project$View$appErrorsSetter,
 						model,
 						$author$project$ElmCommon$ErrorMessage(
 							$author$project$View$fromHttpError(e))),
@@ -6960,7 +6968,7 @@ var $author$project$View$handleSearchResponse = F2(
 						$author$project$View$InlineInfoTimedOut));
 		}
 	});
-var $author$project$View$Modal = {$: 'Modal'};
+var $author$project$ErrorHandling$Modal = {$: 'Modal'};
 var $mgold$elm_nonempty_list$List$Nonempty$cons = F2(
 	function (y, _v0) {
 		var x = _v0.a;
@@ -6970,35 +6978,33 @@ var $mgold$elm_nonempty_list$List$Nonempty$cons = F2(
 			y,
 			A2($elm$core$List$cons, x, xs));
 	});
-var $author$project$View$addModalErrorToAppErrors = F2(
+var $author$project$ErrorHandling$addModalErrorToAppErrors = F2(
 	function (_v0, newErrorMessage) {
 		var notifications = _v0.a;
-		return $author$project$View$AppErrors(
+		return $author$project$ErrorHandling$AppErrors(
 			A2(
 				$mgold$elm_nonempty_list$List$Nonempty$cons,
-				A2($author$project$View$ErrorNotification, $author$project$View$Modal, newErrorMessage),
+				A2($author$project$ErrorHandling$ErrorNotification, $author$project$ErrorHandling$Modal, newErrorMessage),
 				notifications));
 	});
-var $author$project$View$addModalError = F2(
-	function (model, newErrorMessage) {
-		var _v0 = model.appErrors;
+var $author$project$ErrorHandling$addModalError = F4(
+	function (getter, setter, model, newErrorMessage) {
+		var _v0 = getter(model);
 		if (_v0.$ === 'Just') {
 			var appErrors = _v0.a;
-			return _Utils_update(
-				model,
-				{
-					appErrors: $elm$core$Maybe$Just(
-						A2($author$project$View$addModalErrorToAppErrors, appErrors, newErrorMessage))
-				});
+			return A2(
+				setter,
+				$elm$core$Maybe$Just(
+					A2($author$project$ErrorHandling$addModalErrorToAppErrors, appErrors, newErrorMessage)),
+				model);
 		} else {
-			return _Utils_update(
-				model,
-				{
-					appErrors: $elm$core$Maybe$Just(
-						$author$project$View$AppErrors(
-							$mgold$elm_nonempty_list$List$Nonempty$fromElement(
-								A2($author$project$View$ErrorNotification, $author$project$View$Modal, newErrorMessage))))
-				});
+			return A2(
+				setter,
+				$elm$core$Maybe$Just(
+					$author$project$ErrorHandling$AppErrors(
+						$mgold$elm_nonempty_list$List$Nonempty$fromElement(
+							A2($author$project$ErrorHandling$ErrorNotification, $author$project$ErrorHandling$Modal, newErrorMessage)))),
+				model);
 		}
 	});
 var $author$project$Ports$JsStorageValue = F3(
@@ -7066,8 +7072,10 @@ var $author$project$View$handleTopNotesResponse = F2(
 			case 'Failure':
 				var e = remoteData.a;
 				return $author$project$ElmCommon$onlyModel(
-					A2(
-						$author$project$View$addModalError,
+					A4(
+						$author$project$ErrorHandling$addModalError,
+						$author$project$View$appErrorsGetter,
+						$author$project$View$appErrorsSetter,
 						model,
 						$author$project$ElmCommon$ErrorMessage(
 							$author$project$View$fromHttpError(e))));
@@ -7104,6 +7112,15 @@ var $author$project$View$handleTopNotesResponse = F2(
 						$author$project$View$Seconds(3),
 						$author$project$View$InlineInfoTimedOut));
 		}
+	});
+var $author$project$View$informationMessageGetter = function (model) {
+	return model.infoMessage;
+};
+var $author$project$View$informationMessageSetter = F2(
+	function (infoMessage, model) {
+		return _Utils_update(
+			model,
+			{infoMessage: infoMessage});
 	});
 var $author$project$StorageKeys$Delete = {$: 'Delete'};
 var $author$project$View$noteRemovedFromLocalStorageResponseKey = $author$project$Ports$ResponseKey('NoteRemovedFromLocalStorage');
@@ -7188,16 +7205,17 @@ var $author$project$View$update = F2(
 				return A2($author$project$View$handleSearchQuery, model, query);
 			case 'ErrorModalClosed':
 				return $author$project$ElmCommon$onlyModel(
-					$author$project$View$handleErrorModalClosed(model));
+					A3($author$project$ErrorHandling$handleErrorModalClosed, $author$project$View$appErrorsGetter, $author$project$View$appErrorsSetter, model));
 			case 'InlineErrorTimedOut':
 				return $author$project$ElmCommon$onlyModel(
-					$author$project$View$handleInlineErrorTimeout(model));
+					A3($author$project$ErrorHandling$handleInlineErrorTimeout, $author$project$View$appErrorsGetter, $author$project$View$appErrorsSetter, model));
 			default:
 				return $author$project$ElmCommon$onlyModel(
-					$author$project$View$handleInlineInfoTimeout(model));
+					A3($author$project$ErrorHandling$handleInlineInfoTimeout, $author$project$View$informationMessageGetter, $author$project$View$informationMessageSetter, model));
 		}
 	});
 var $author$project$View$AddNote = {$: 'AddNote'};
+var $author$project$View$ErrorModalClosed = {$: 'ErrorModalClosed'};
 var $author$project$View$NotesRefreshed = {$: 'NotesRefreshed'};
 var $author$project$View$SearchEdited = function (a) {
 	return {$: 'SearchEdited', a: a};
@@ -7356,16 +7374,16 @@ var $author$project$FP$collect = F2(
 		var mapped = A2($elm$core$List$map, predicate, elements);
 		return A2($elm$core$List$concatMap, $author$project$FP$maybeToList, mapped);
 	});
-var $author$project$View$InlineError = function (a) {
+var $author$project$ErrorHandling$InlineError = function (a) {
 	return {$: 'InlineError', a: a};
 };
-var $author$project$View$findInlineError = function (errorNotification) {
+var $author$project$ErrorHandling$findInlineError = function (errorNotification) {
 	var _v0 = errorNotification.errorDisplay;
 	if (_v0.$ === 'Modal') {
 		return $elm$core$Maybe$Nothing;
 	} else {
 		return $elm$core$Maybe$Just(
-			$author$project$View$InlineError(errorNotification.errorMessage));
+			$author$project$ErrorHandling$InlineError(errorNotification.errorMessage));
 	}
 };
 var $elm$core$List$head = function (list) {
@@ -7377,22 +7395,22 @@ var $elm$core$List$head = function (list) {
 		return $elm$core$Maybe$Nothing;
 	}
 };
-var $author$project$View$getInlineError = function (_v0) {
+var $author$project$ErrorHandling$getInlineError = function (_v0) {
 	var notifications = _v0.a;
 	return $elm$core$List$head(
 		A2(
 			$author$project$FP$collect,
-			$author$project$View$findInlineError,
+			$author$project$ErrorHandling$findInlineError,
 			$mgold$elm_nonempty_list$List$Nonempty$toList(notifications)));
 };
-var $author$project$View$ModalError = function (a) {
+var $author$project$ErrorHandling$ModalError = function (a) {
 	return {$: 'ModalError', a: a};
 };
-var $author$project$View$findModalError = function (errorNotification) {
+var $author$project$ErrorHandling$findModalError = function (errorNotification) {
 	var _v0 = errorNotification.errorDisplay;
 	if (_v0.$ === 'Modal') {
 		return $elm$core$Maybe$Just(
-			$author$project$View$ModalError(errorNotification.errorMessage));
+			$author$project$ErrorHandling$ModalError(errorNotification.errorMessage));
 	} else {
 		return $elm$core$Maybe$Nothing;
 	}
@@ -7407,19 +7425,19 @@ var $mgold$elm_nonempty_list$List$Nonempty$fromList = function (ys) {
 		return $elm$core$Maybe$Nothing;
 	}
 };
-var $author$project$View$getModalErrors = function (_v0) {
+var $author$project$ErrorHandling$getModalErrors = function (_v0) {
 	var notifications = _v0.a;
 	return $mgold$elm_nonempty_list$List$Nonempty$fromList(
 		A2(
 			$author$project$FP$collect,
-			$author$project$View$findModalError,
+			$author$project$ErrorHandling$findModalError,
 			$mgold$elm_nonempty_list$List$Nonempty$toList(notifications)));
 };
-var $author$project$View$getErrors = function (maybeAppErrors) {
+var $author$project$ErrorHandling$getErrors = function (maybeAppErrors) {
 	if (maybeAppErrors.$ === 'Just') {
 		var appErrors = maybeAppErrors.a;
-		var maybeModalErrors = $author$project$View$getModalErrors(appErrors);
-		var maybeInlineError = $author$project$View$getInlineError(appErrors);
+		var maybeModalErrors = $author$project$ErrorHandling$getModalErrors(appErrors);
+		var maybeInlineError = $author$project$ErrorHandling$getInlineError(appErrors);
 		return _Utils_Tuple2(maybeInlineError, maybeModalErrors);
 	} else {
 		return _Utils_Tuple2($elm$core$Maybe$Nothing, $elm$core$Maybe$Nothing);
@@ -7489,7 +7507,7 @@ var $elm$html$Html$section = _VirtualDom_node('section');
 var $elm$html$Html$span = _VirtualDom_node('span');
 var $elm$html$Html$Attributes$type_ = $elm$html$Html$Attributes$stringProperty('type');
 var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty('value');
-var $author$project$View$emptyDiv = A2($elm$html$Html$div, _List_Nil, _List_Nil);
+var $author$project$ElmCommon$emptyDiv = A2($elm$html$Html$div, _List_Nil, _List_Nil);
 var $author$project$ElmCommon$addClasses = function (classes) {
 	return A2($elm$core$List$map, $elm$html$Html$Attributes$class, classes);
 };
@@ -7505,8 +7523,8 @@ var $author$project$ElmCommon$addInlineInfoFlash = function (_v0) {
 				$elm$html$Html$text(infoMessage)
 			]));
 };
-var $author$project$View$viewInformationMessage = $author$project$ElmCommon$addInlineInfoFlash;
-var $author$project$View$viewInformationIfAny = A2($author$project$FP$maybe, $author$project$View$emptyDiv, $author$project$View$viewInformationMessage);
+var $author$project$ErrorHandling$viewInformationMessage = $author$project$ElmCommon$addInlineInfoFlash;
+var $author$project$ErrorHandling$viewInformationIfAny = A2($author$project$FP$maybe, $author$project$ElmCommon$emptyDiv, $author$project$ErrorHandling$viewInformationMessage);
 var $author$project$ElmCommon$addInlineErrorFlash = function (_v0) {
 	var errorMessage = _v0.errorMessage;
 	return A2(
@@ -7519,12 +7537,11 @@ var $author$project$ElmCommon$addInlineErrorFlash = function (_v0) {
 				$elm$html$Html$text(errorMessage)
 			]));
 };
-var $author$project$View$viewInlineError = function (_v0) {
+var $author$project$ErrorHandling$viewInlineError = function (_v0) {
 	var errorMessage = _v0.a;
 	return $author$project$ElmCommon$addInlineErrorFlash(errorMessage);
 };
-var $author$project$View$viewInlineErrorsIfAny = A2($author$project$FP$maybe, $author$project$View$emptyDiv, $author$project$View$viewInlineError);
-var $author$project$View$ErrorModalClosed = {$: 'ErrorModalClosed'};
+var $author$project$ErrorHandling$viewInlineErrorsIfAny = A2($author$project$FP$maybe, $author$project$ElmCommon$emptyDiv, $author$project$ErrorHandling$viewInlineError);
 var $mgold$elm_nonempty_list$List$Nonempty$map = F2(
 	function (f, _v0) {
 		var x = _v0.a;
@@ -7637,19 +7654,29 @@ var $author$project$ElmCommon$openErrorModal = F2(
 					_List_Nil)
 				]));
 	});
-var $author$project$View$viewModalErrors = function (errorMessages) {
-	return A2(
-		$author$project$ElmCommon$openErrorModal,
-		A2(
-			$mgold$elm_nonempty_list$List$Nonempty$map,
-			function (_v0) {
-				var error = _v0.a;
-				return error;
+var $author$project$ErrorHandling$viewModalErrors = F2(
+	function (errorMessages, msg) {
+		return A2(
+			$author$project$ElmCommon$openErrorModal,
+			A2(
+				$mgold$elm_nonempty_list$List$Nonempty$map,
+				function (_v0) {
+					var error = _v0.a;
+					return error;
+				},
+				errorMessages),
+			msg);
+	});
+var $author$project$ErrorHandling$viewModalErrorsIfAny = F2(
+	function (maybeError, msg) {
+		return A3(
+			$author$project$FP$maybe,
+			$author$project$ElmCommon$emptyDiv,
+			function (errors) {
+				return A2($author$project$ErrorHandling$viewModalErrors, errors, msg);
 			},
-			errorMessages),
-		$author$project$View$ErrorModalClosed);
-};
-var $author$project$View$viewModalErrorsIfAny = A2($author$project$FP$maybe, $author$project$View$emptyDiv, $author$project$View$viewModalErrors);
+			maybeError);
+	});
 var $author$project$View$NoteSelected = function (a) {
 	return {$: 'NoteSelected', a: a};
 };
@@ -7720,9 +7747,9 @@ var $author$project$View$viewNotesList = function (notes) {
 var $author$project$View$view = function (model) {
 	var notesList = $author$project$View$choseWhichNotes(
 		$author$project$View$noteSelection(model));
-	var _v0 = $author$project$View$getErrors(model.appErrors);
+	var _v0 = $author$project$ErrorHandling$getErrors(model.appErrors);
 	var maybeInlineErrors = _v0.a;
-	var maybeModalErrros = _v0.b;
+	var maybeModalErrors = _v0.b;
 	return A2(
 		$elm$html$Html$div,
 		_List_Nil,
@@ -7883,14 +7910,14 @@ var $author$project$View$view = function (model) {
 																	]))
 															]))
 													])),
-												$author$project$View$viewInlineErrorsIfAny(maybeInlineErrors),
-												$author$project$View$viewInformationIfAny(model.infoMessage),
+												$author$project$ErrorHandling$viewInlineErrorsIfAny(maybeInlineErrors),
+												$author$project$ErrorHandling$viewInformationIfAny(model.infoMessage),
 												$author$project$View$viewNotesList(notesList)
 											]))
 									]))
 							]))
 					])),
-				$author$project$View$viewModalErrorsIfAny(maybeModalErrros),
+				A2($author$project$ErrorHandling$viewModalErrorsIfAny, maybeModalErrors, $author$project$View$ErrorModalClosed),
 				$author$project$View$createMarkdownPreview(model.selectedNote)
 			]));
 };

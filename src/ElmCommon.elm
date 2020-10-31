@@ -122,3 +122,6 @@ createErrorBlock { errorMessage } =
     [
       text errorMessage
     ]
+
+emptyDiv : Html a
+emptyDiv = div [] []
