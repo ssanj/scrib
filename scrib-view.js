@@ -6960,10 +6960,7 @@ var $author$project$View$handleSearchResponse = F2(
 						$author$project$View$InlineInfoTimedOut));
 		}
 	});
-var $author$project$View$Modal = function (a) {
-	return {$: 'Modal', a: a};
-};
-var $author$project$View$OpenIt = {$: 'OpenIt'};
+var $author$project$View$Modal = {$: 'Modal'};
 var $mgold$elm_nonempty_list$List$Nonempty$cons = F2(
 	function (y, _v0) {
 		var x = _v0.a;
@@ -6979,10 +6976,7 @@ var $author$project$View$addModalErrorToAppErrors = F2(
 		return $author$project$View$AppErrors(
 			A2(
 				$mgold$elm_nonempty_list$List$Nonempty$cons,
-				A2(
-					$author$project$View$ErrorNotification,
-					$author$project$View$Modal($author$project$View$OpenIt),
-					newErrorMessage),
+				A2($author$project$View$ErrorNotification, $author$project$View$Modal, newErrorMessage),
 				notifications));
 	});
 var $author$project$View$addModalError = F2(
@@ -7003,10 +6997,7 @@ var $author$project$View$addModalError = F2(
 					appErrors: $elm$core$Maybe$Just(
 						$author$project$View$AppErrors(
 							$mgold$elm_nonempty_list$List$Nonempty$fromElement(
-								A2(
-									$author$project$View$ErrorNotification,
-									$author$project$View$Modal($author$project$View$OpenIt),
-									newErrorMessage))))
+								A2($author$project$View$ErrorNotification, $author$project$View$Modal, newErrorMessage))))
 				});
 		}
 	});

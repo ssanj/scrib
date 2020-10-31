@@ -27,12 +27,9 @@ import Subs          as S
 
 -- MODEL
 
-type ErrorModalStatus = OpenIt
-                      | CloseIt
-
 type AppErrors = AppErrors (N.Nonempty ErrorNotification)
 
-type ErrorDisplayType = Modal ErrorModalStatus
+type ErrorDisplayType = Modal
                       | Inline
 
 type alias ErrorNotification =
@@ -231,20 +228,20 @@ getModalErrors (AppErrors notifications) =
 findModalError : ErrorNotification -> Maybe ModalError
 findModalError errorNotification =
   case errorNotification.errorDisplay of
-    (Modal _) ->  Just <| ModalError errorNotification.errorMessage
-    Inline    -> Nothing
+    Modal  ->  Just <| ModalError errorNotification.errorMessage
+    Inline -> Nothing
 
 findInlineError  : ErrorNotification -> Maybe InlineError
 findInlineError errorNotification =
   case errorNotification.errorDisplay of
-    (Modal _) -> Nothing
-    Inline    -> Just <| InlineError errorNotification.errorMessage
+    Modal  -> Nothing
+    Inline -> Just <| InlineError errorNotification.errorMessage
 
 addModalError : Model -> ErrorMessage -> Model
 addModalError model newErrorMessage =
   case model.appErrors of
     (Just appErrors) -> { model | appErrors = Just <| addModalErrorToAppErrors appErrors newErrorMessage }
-    Nothing          -> { model | appErrors = Just (AppErrors <| N.fromElement(ErrorNotification (Modal OpenIt) newErrorMessage)) }
+    Nothing          -> { model | appErrors = Just (AppErrors <| N.fromElement(ErrorNotification Modal newErrorMessage)) }
 
 addInlineError : Model -> ErrorMessage -> Model
 addInlineError model newError =
@@ -256,7 +253,7 @@ addInlineError model newError =
 
 addModalErrorToAppErrors : AppErrors -> ErrorMessage -> AppErrors
 addModalErrorToAppErrors (AppErrors notifications) newErrorMessage =
-  AppErrors <| N.cons (ErrorNotification (Modal OpenIt) newErrorMessage) notifications
+  AppErrors <| N.cons (ErrorNotification Modal newErrorMessage) notifications
 
 addInlineErrorToAppErrros : AppErrors -> ErrorMessage -> AppErrors
 addInlineErrorToAppErrros  appErrors newErrorMessage =
@@ -288,8 +285,8 @@ isInlineError = not << isModalError
 isModalError : ErrorNotification -> Bool
 isModalError { errorDisplay } =
   case errorDisplay of
-    (Modal _) -> True
-    Inline    -> False
+    Modal  -> True
+    Inline -> False
 
 handleErrorModalClosed : Model -> Model
 handleErrorModalClosed model =
