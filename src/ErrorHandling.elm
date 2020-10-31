@@ -2,10 +2,11 @@ module ErrorHandling exposing (..)
 
 import ElmCommon exposing (..)
 import Html      exposing (Html)
-import FP        exposing (maybe, collect)
+import FP        exposing (maybe, collect, const)
 
+import Task
+import Process
 import List.Nonempty as N
-
 
 -- MODEL
 
@@ -59,12 +60,19 @@ addModalError getter setter model newErrorMessage =
     (Just appErrors) -> setter (Just <| addModalErrorToAppErrors appErrors newErrorMessage) model
     Nothing          -> setter (Just (AppErrors <| N.fromElement(ErrorNotification Modal newErrorMessage))) model
 
-addInlineError : (a -> Maybe AppErrors) -> (Maybe AppErrors -> a -> a) -> a -> ErrorMessage -> a
-addInlineError getter setter model newError =
-  case getter model of
-    -- We currently only support one inline error. This could change in the future
-    (Just appErrors) -> setter (Just <| addInlineErrorToAppErrros appErrors newError) model
-    Nothing -> setter (Just <| createAppErrorFromInlineError newError) model
+addInlineError : (a -> Maybe AppErrors) -> (Maybe AppErrors -> a -> a) -> a -> ErrorMessage -> Seconds -> b -> (a, Cmd b)
+addInlineError getter setter model newError timeout msg =
+  let newModel =
+        case getter model of
+          -- We currently only support one inline error. This could change in the future
+          (Just appErrors) -> setter (Just <| addInlineErrorToAppErrros appErrors newError) model
+          Nothing -> setter (Just <| createAppErrorFromInlineError newError) model
+  in (newModel, addTimeoutForInlineMessage timeout msg)
+
+addInlineInfo : (Maybe InformationMessage -> a -> a) -> a -> InformationMessage -> Seconds -> b -> (a, Cmd b)
+addInlineInfo setter model message timeout msg =
+  let newModel = setter (Just message) model
+  in (newModel, addTimeoutForInlineMessage timeout msg)
 
 
 addModalErrorToAppErrors : AppErrors -> ErrorMessage -> AppErrors
@@ -141,3 +149,11 @@ viewModalErrors : ModalErrors -> a -> Html a
 viewModalErrors errorMessages msg =
   openErrorModal (N.map (\(ModalError error) -> error) errorMessages) msg
 
+
+-- SIDE EFFECTS
+
+
+addTimeoutForInlineMessage : Seconds -> msg -> Cmd msg
+addTimeoutForInlineMessage { seconds } msg =
+  let sleepTask = Process.sleep (toFloat <| seconds * 1000)
+  in Task.perform (const msg) sleepTask

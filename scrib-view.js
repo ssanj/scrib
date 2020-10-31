@@ -5683,25 +5683,7 @@ var $author$project$View$handleInitError = function (err) {
 var $author$project$ElmCommon$InformationMessage = function (infoMessage) {
 	return {infoMessage: infoMessage};
 };
-var $author$project$View$InlineInfoTimedOut = {$: 'InlineInfoTimedOut'};
 var $krisajenkins$remotedata$RemoteData$Loading = {$: 'Loading'};
-var $author$project$View$Seconds = function (seconds) {
-	return {seconds: seconds};
-};
-var $author$project$FP$const = F2(
-	function (a, _v0) {
-		return a;
-	});
-var $elm$core$Process$sleep = _Process_sleep;
-var $author$project$View$addTimeoutForInlineMessage = F2(
-	function (_v0, msg) {
-		var seconds = _v0.seconds;
-		var sleepTask = $elm$core$Process$sleep(seconds * 1000);
-		return A2(
-			$elm$core$Task$perform,
-			$author$project$FP$const(msg),
-			sleepTask);
-	});
 var $author$project$View$TopNotesResponse = function (a) {
 	return {$: 'TopNotesResponse', a: a};
 };
@@ -6529,6 +6511,50 @@ var $author$project$View$getTopRemoteNotes = function (apiKey) {
 			url: '/notes'
 		});
 };
+var $author$project$View$InlineInfoTimedOut = {$: 'InlineInfoTimedOut'};
+var $author$project$ElmCommon$Seconds = function (seconds) {
+	return {seconds: seconds};
+};
+var $author$project$FP$const = F2(
+	function (a, _v0) {
+		return a;
+	});
+var $elm$core$Process$sleep = _Process_sleep;
+var $author$project$ErrorHandling$addTimeoutForInlineMessage = F2(
+	function (_v0, msg) {
+		var seconds = _v0.seconds;
+		var sleepTask = $elm$core$Process$sleep(seconds * 1000);
+		return A2(
+			$elm$core$Task$perform,
+			$author$project$FP$const(msg),
+			sleepTask);
+	});
+var $author$project$ErrorHandling$addInlineInfo = F5(
+	function (setter, model, message, timeout, msg) {
+		var newModel = A2(
+			setter,
+			$elm$core$Maybe$Just(message),
+			model);
+		return _Utils_Tuple2(
+			newModel,
+			A2($author$project$ErrorHandling$addTimeoutForInlineMessage, timeout, msg));
+	});
+var $author$project$View$informationMessageSetter = F2(
+	function (infoMessage, model) {
+		return _Utils_update(
+			model,
+			{infoMessage: infoMessage});
+	});
+var $author$project$View$handleInlineInfo = F2(
+	function (model, message) {
+		return A5(
+			$author$project$ErrorHandling$addInlineInfo,
+			$author$project$View$informationMessageSetter,
+			model,
+			message,
+			$author$project$ElmCommon$Seconds(3),
+			$author$project$View$InlineInfoTimedOut);
+	});
 var $elm$core$List$isEmpty = function (xs) {
 	if (!xs.b) {
 		return true;
@@ -6544,30 +6570,38 @@ var $author$project$View$handleInitSuccess = function (_v0) {
 	var apiKey = _v0.apiKey;
 	var payload = _v0.payload;
 	var notes = A3($author$project$FP$maybe, _List_Nil, $elm$core$Basics$identity, payload);
-	var mc = $elm$core$List$isEmpty(notes) ? _Utils_Tuple2(
-		_Utils_update(
-			$author$project$View$emptyModel,
-			{
-				apiKey: $elm$core$Maybe$Just(apiKey),
-				infoMessage: $elm$core$Maybe$Just(
-					$author$project$ElmCommon$InformationMessage('No cached data, refreshing')),
-				notes: $krisajenkins$remotedata$RemoteData$Loading
-			}),
-		$elm$core$Platform$Cmd$batch(
-			_List_fromArray(
+	var mc = function () {
+		if ($elm$core$List$isEmpty(notes)) {
+			var model = _Utils_update(
+				$author$project$View$emptyModel,
+				{
+					apiKey: $elm$core$Maybe$Just(apiKey),
+					notes: $krisajenkins$remotedata$RemoteData$Loading
+				});
+			var _v1 = A2(
+				$author$project$View$handleInlineInfo,
+				model,
+				$author$project$ElmCommon$InformationMessage('No cached data, refreshing'));
+			var newModel = _v1.a;
+			var cmdTimeoutInfoMessage = _v1.b;
+			var commands = _List_fromArray(
 				[
 					$author$project$View$getTopRemoteNotes(apiKey),
-					A2(
-					$author$project$View$addTimeoutForInlineMessage,
-					$author$project$View$Seconds(3),
-					$author$project$View$InlineInfoTimedOut)
-				]))) : $author$project$ElmCommon$onlyModel(
-		_Utils_update(
-			$author$project$View$emptyModel,
-			{
-				apiKey: $elm$core$Maybe$Just(apiKey),
-				retrievedNotes: notes
-			}));
+					cmdTimeoutInfoMessage
+				]);
+			return _Utils_Tuple2(
+				newModel,
+				$elm$core$Platform$Cmd$batch(commands));
+		} else {
+			return $author$project$ElmCommon$onlyModel(
+				_Utils_update(
+					$author$project$View$emptyModel,
+					{
+						apiKey: $elm$core$Maybe$Just(apiKey),
+						retrievedNotes: notes
+					}));
+		}
+	}();
 	return mc;
 };
 var $author$project$View$init = function (topNotes) {
@@ -6831,12 +6865,6 @@ var $author$project$View$handleInlineErrorTimeout = function (model) {
 var $author$project$View$informationMessageGetter = function (model) {
 	return model.infoMessage;
 };
-var $author$project$View$informationMessageSetter = F2(
-	function (infoMessage, model) {
-		return _Utils_update(
-			model,
-			{infoMessage: infoMessage});
-	});
 var $author$project$ErrorHandling$onInlineInfoTimeout = F3(
 	function (getter, setter, model) {
 		var _v0 = getter(model);
@@ -7005,23 +7033,28 @@ var $author$project$ErrorHandling$createAppErrorFromInlineError = function (newE
 		$mgold$elm_nonempty_list$List$Nonempty$fromElement(
 			A2($author$project$ErrorHandling$ErrorNotification, $author$project$ErrorHandling$Inline, newErrorMessage)));
 };
-var $author$project$ErrorHandling$addInlineError = F4(
-	function (getter, setter, model, newError) {
-		var _v0 = getter(model);
-		if (_v0.$ === 'Just') {
-			var appErrors = _v0.a;
-			return A2(
-				setter,
-				$elm$core$Maybe$Just(
-					A2($author$project$ErrorHandling$addInlineErrorToAppErrros, appErrors, newError)),
-				model);
-		} else {
-			return A2(
-				setter,
-				$elm$core$Maybe$Just(
-					$author$project$ErrorHandling$createAppErrorFromInlineError(newError)),
-				model);
-		}
+var $author$project$ErrorHandling$addInlineError = F6(
+	function (getter, setter, model, newError, timeout, msg) {
+		var newModel = function () {
+			var _v0 = getter(model);
+			if (_v0.$ === 'Just') {
+				var appErrors = _v0.a;
+				return A2(
+					setter,
+					$elm$core$Maybe$Just(
+						A2($author$project$ErrorHandling$addInlineErrorToAppErrros, appErrors, newError)),
+					model);
+			} else {
+				return A2(
+					setter,
+					$elm$core$Maybe$Just(
+						$author$project$ErrorHandling$createAppErrorFromInlineError(newError)),
+					model);
+			}
+		}();
+		return _Utils_Tuple2(
+			newModel,
+			A2($author$project$ErrorHandling$addTimeoutForInlineMessage, timeout, msg));
 	});
 var $author$project$View$fromHttpError = function (error) {
 	switch (error.$) {
@@ -7045,18 +7078,15 @@ var $author$project$View$handleSearchResponse = F2(
 		switch (remoteData.$) {
 			case 'Failure':
 				var e = remoteData.a;
-				return _Utils_Tuple2(
-					A4(
-						$author$project$ErrorHandling$addInlineError,
-						$author$project$View$appErrorsGetter,
-						$author$project$View$appErrorsSetter,
-						model,
-						$author$project$ElmCommon$ErrorMessage(
-							$author$project$View$fromHttpError(e))),
-					A2(
-						$author$project$View$addTimeoutForInlineMessage,
-						$author$project$View$Seconds(3),
-						$author$project$View$InlineErrorTimedOut));
+				return A6(
+					$author$project$ErrorHandling$addInlineError,
+					$author$project$View$appErrorsGetter,
+					$author$project$View$appErrorsSetter,
+					model,
+					$author$project$ElmCommon$ErrorMessage(
+						$author$project$View$fromHttpError(e)),
+					$author$project$ElmCommon$Seconds(3),
+					$author$project$View$InlineErrorTimedOut);
 			case 'Success':
 				var r = remoteData;
 				var notes = r.a;
@@ -7065,29 +7095,15 @@ var $author$project$View$handleSearchResponse = F2(
 						model,
 						{notes: r, searchResultNotes: notes, whichNotes: $author$project$View$SearchResultNotes}));
 			case 'NotAsked':
-				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{
-							infoMessage: $elm$core$Maybe$Just(
-								$author$project$ElmCommon$InformationMessage('No Data'))
-						}),
-					A2(
-						$author$project$View$addTimeoutForInlineMessage,
-						$author$project$View$Seconds(3),
-						$author$project$View$InlineInfoTimedOut));
+				return A2(
+					$author$project$View$handleInlineInfo,
+					model,
+					$author$project$ElmCommon$InformationMessage('No Data'));
 			default:
-				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{
-							infoMessage: $elm$core$Maybe$Just(
-								$author$project$ElmCommon$InformationMessage('Loading...'))
-						}),
-					A2(
-						$author$project$View$addTimeoutForInlineMessage,
-						$author$project$View$Seconds(3),
-						$author$project$View$InlineInfoTimedOut));
+				return A2(
+					$author$project$View$handleInlineInfo,
+					model,
+					$author$project$ElmCommon$InformationMessage('Loading...'));
 		}
 	});
 var $author$project$ErrorHandling$Modal = {$: 'Modal'};
@@ -7175,29 +7191,15 @@ var $author$project$View$handleTopNotesResponse = F2(
 						{notes: r, retrievedNotes: notes, whichNotes: $author$project$View$TopNotes}),
 					$author$project$View$saveTopNotesToSessionStorage(notes));
 			case 'NotAsked':
-				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{
-							infoMessage: $elm$core$Maybe$Just(
-								$author$project$ElmCommon$InformationMessage('No Data'))
-						}),
-					A2(
-						$author$project$View$addTimeoutForInlineMessage,
-						$author$project$View$Seconds(3),
-						$author$project$View$InlineInfoTimedOut));
+				return A2(
+					$author$project$View$handleInlineInfo,
+					model,
+					$author$project$ElmCommon$InformationMessage('No Data'));
 			default:
-				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{
-							infoMessage: $elm$core$Maybe$Just(
-								$author$project$ElmCommon$InformationMessage('Loading...'))
-						}),
-					A2(
-						$author$project$View$addTimeoutForInlineMessage,
-						$author$project$View$Seconds(3),
-						$author$project$View$InlineInfoTimedOut));
+				return A2(
+					$author$project$View$handleInlineInfo,
+					model,
+					$author$project$ElmCommon$InformationMessage('Loading...'));
 		}
 	});
 var $author$project$View$handleTopNotesSavedToSessionStorage = function (model) {

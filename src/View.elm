@@ -28,9 +28,6 @@ import Subs          as S
 
 -- MODEL
 
-
-type alias Seconds = { seconds : Int }
-
 type alias NoteSelection = { retrievedNotes : List SC.NoteFull,  searchResultNotes : List SC.NoteFull, whichNotes : NotesDataSource}
 
 type NotesDataSource = TopNotes
@@ -241,18 +238,19 @@ handleInitSuccess { apiKey, payload } =
   let notes = maybe [] identity payload
       mc    =
         if List.isEmpty notes
-        then (
+        then
+          let model =
                { emptyModel |
                     notes       = Loading
                   , apiKey      = Just apiKey
-                  , infoMessage = Just <| InformationMessage "No cached data, refreshing"
                }
-             , Cmd.batch
+              (newModel, cmdTimeoutInfoMessage) = handleInlineInfo model <| InformationMessage "No cached data, refreshing"
+              commands =
                 [
                   getTopRemoteNotes apiKey
-                , addTimeoutForInlineMessage (Seconds 3) InlineInfoTimedOut
+                , cmdTimeoutInfoMessage
                 ]
-             )
+          in (newModel, Cmd.batch commands)
         else onlyModel { emptyModel | retrievedNotes = notes, apiKey = Just apiKey }
  in mc
 
@@ -326,17 +324,21 @@ handleTopNotesResponse model remoteData =
   case remoteData of
     (Failure e)          -> onlyModel <| addModalError appErrorsGetter appErrorsSetter model (ErrorMessage <| fromHttpError e)
     (Success notes) as r -> ({ model | retrievedNotes = notes, notes = r, whichNotes = TopNotes }, saveTopNotesToSessionStorage notes)
-    NotAsked             -> ({ model | infoMessage = Just <| InformationMessage "No Data" }, addTimeoutForInlineMessage (Seconds 3) InlineInfoTimedOut)
-    Loading              -> ({ model | infoMessage = Just <| InformationMessage "Loading..." }, addTimeoutForInlineMessage (Seconds 3) InlineInfoTimedOut)
+    NotAsked             -> handleInlineInfo model <| InformationMessage "No Data"
+    Loading              -> handleInlineInfo model <| InformationMessage "Loading..."
 
 -- TODO: Combine infoMessage with addTimeoutForInlineMessage so you can't forget
 handleSearchResponse: Model -> RemoteNotesData -> (Model, Cmd Msg)
 handleSearchResponse model remoteData =
   case remoteData of
-    (Failure e)          -> (addInlineError appErrorsGetter appErrorsSetter model (ErrorMessage <| fromHttpError e), addTimeoutForInlineMessage (Seconds 3) InlineErrorTimedOut)
+    (Failure e)          -> addInlineError appErrorsGetter appErrorsSetter model (ErrorMessage <| fromHttpError e) (Seconds 3) InlineErrorTimedOut
     (Success notes) as r -> onlyModel { model | searchResultNotes = notes, notes = r, whichNotes = SearchResultNotes }
-    NotAsked             -> ({ model | infoMessage = Just <| InformationMessage "No Data" }, addTimeoutForInlineMessage (Seconds 3) InlineInfoTimedOut)
-    Loading              -> ({ model | infoMessage = Just <| InformationMessage "Loading..." }, addTimeoutForInlineMessage (Seconds 3) InlineInfoTimedOut)
+    NotAsked             -> handleInlineInfo model <| InformationMessage "No Data"
+    Loading              -> handleInlineInfo model <| InformationMessage "Loading..."
+
+handleInlineInfo : Model -> InformationMessage -> (Model, Cmd Msg)
+handleInlineInfo model message =
+  addInlineInfo informationMessageSetter model message (Seconds 3) InlineInfoTimedOut
 
 addTimeoutForInlineMessage : Seconds -> msg -> Cmd msg
 addTimeoutForInlineMessage { seconds } msg =

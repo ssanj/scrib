@@ -15,6 +15,7 @@ type alias InformationMessage = { infoMessage : String }
 
 type alias SuccessMessage = { successMessage : String }
 
+type alias Seconds = { seconds : Int }
 
 type alias Encoder a = a -> Value
 
