@@ -102,26 +102,27 @@ init topNotes =
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    (NoteSelected note)                   ->  onlyModel  { model| selectedNote = Just note }
-    (NoteEdited note)                     -> (model, saveSelectedNoteToLocalStorage note)
-    TopNotesSavedToSessionStorage         -> onlyModel {model | selectedNote = Nothing }
-    NoteSavedToLocalStorage               -> (model, Browser.Navigation.load "save.html")
-    NoteRemovedFromLocalStorage           -> (model, Browser.Navigation.load "save.html")
-    (JSNotificationError error)           -> (model, logMessage error)
-    AddNote                               -> (model, removeSelectedNoteFromLocalStorage)
+    (NoteSelected note)                   -> handleNoteSelected model note
+    (NoteEdited note)                     -> handleNoteEdited model note
+    TopNotesSavedToSessionStorage         -> handleTopNotesSavedToSessionStorage model
+    NoteSavedToLocalStorage               -> gotoConfigScreen model
+    NoteRemovedFromLocalStorage           -> gotoConfigScreen model
+    (JSNotificationError error)           -> handleJSError model error
+    AddNote                               -> handleAddNote model
     (TopNotesResponse slateCallResult)    -> handleTopNotesResponse model slateCallResult
     (SearchNotesResponse slateCallResult) -> handleSearchResponse model slateCallResult
-    NotesRefreshed                        -> performOrGotoConfig model ({ model | notes = Loading, query = Nothing }, getTopRemoteNotes)
+    NotesRefreshed                        -> handleNotesRefreshed model
     (SearchEdited query)                  -> handleSearchQuery model query
-    ErrorModalClosed                      -> onlyModel <| handleErrorModalClosed appErrorsGetter appErrorsSetter model
-    InlineErrorTimedOut                   -> onlyModel <| handleInlineErrorTimeout appErrorsGetter appErrorsSetter model
-    InlineInfoTimedOut                    -> onlyModel <| handleInlineInfoTimeout informationMessageGetter informationMessageSetter model
+    ErrorModalClosed                      -> handleErrorModalClosed model
+    InlineErrorTimedOut                   -> handleInlineErrorTimeout model
+    InlineInfoTimedOut                    -> handleInlineInfoTimeout model
+
 
 -- VIEW
 
 view : Model -> Html Msg
 view model =
-  let (maybeInlineErrors, maybeModalErrors) = getErrors model.appErrors
+  let (maybeInlineErrors, maybeModalErrors) = maybe (Nothing, Nothing) getErrors model.appErrors
       notesList                             = choseWhichNotes (noteSelection model)
   in
     div []
@@ -342,6 +343,36 @@ addTimeoutForInlineMessage { seconds } msg =
   let sleepTask = Process.sleep (toFloat <| seconds * 1000)
   in Task.perform (const msg) sleepTask
 
+handleInlineInfoTimeout : Model -> (Model, Cmd Msg)
+handleInlineInfoTimeout model = onlyModel <| onInlineInfoTimeout informationMessageGetter informationMessageSetter model
+
+handleInlineErrorTimeout : Model -> (Model, Cmd Msg)
+handleInlineErrorTimeout model = onlyModel <| onInlineErrorTimeout appErrorsGetter appErrorsSetter model
+
+handleErrorModalClosed : Model -> (Model, Cmd Msg)
+handleErrorModalClosed model = onlyModel <| onErrorModalClosed appErrorsGetter appErrorsSetter model
+
+handleTopNotesSavedToSessionStorage : Model -> (Model, Cmd Msg)
+handleTopNotesSavedToSessionStorage model = onlyModel {model | selectedNote = Nothing }
+
+handleAddNote : Model -> (Model, Cmd Msg)
+handleAddNote model = (model, removeSelectedNoteFromLocalStorage)
+
+handleNoteEdited : Model -> SC.NoteFull -> (Model, Cmd Msg)
+handleNoteEdited model note = (model, saveSelectedNoteToLocalStorage note)
+
+handleNoteSelected : Model -> SC.NoteFull -> (Model, Cmd Msg)
+handleNoteSelected model note = onlyModel  { model| selectedNote = Just note }
+
+gotoConfigScreen : Model -> (Model, Cmd Msg)
+gotoConfigScreen model = (model, Browser.Navigation.load "save.html")
+
+handleNotesRefreshed : Model -> (Model, Cmd Msg)
+handleNotesRefreshed model = performOrGotoConfig model ({ model | notes = Loading, query = Nothing }, getTopRemoteNotes)
+
+handleJSError : Model -> String -> (Model, Cmd Msg)
+handleJSError model error = (model, logMessage error)
+
 
 -- VIEW HELPERS
 
@@ -432,9 +463,17 @@ viewMarkdownPreviewDefault =
       ]
     ]
 
-
 markdownViewId : String
 markdownViewId = "markdown-view"
+
+viewModalErrorsIfAny : Maybe ModalErrors -> a -> Html a
+viewModalErrorsIfAny maybeError msg = maybe emptyDiv (\errors -> viewModalErrors errors msg) maybeError
+
+viewInlineErrorsIfAny : Maybe InlineError -> Html a
+viewInlineErrorsIfAny = maybe emptyDiv viewInlineError
+
+viewInformationIfAny : Maybe InformationMessage -> Html a
+viewInformationIfAny = maybe emptyDiv addInlineInfoFlash
 
 
 -- JS COMMANDS

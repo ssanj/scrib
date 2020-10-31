@@ -104,47 +104,35 @@ isModalError { errorDisplay } =
     Modal  -> True
     Inline -> False
 
-handleErrorModalClosed : (a -> Maybe AppErrors) -> (Maybe AppErrors -> a -> a) -> a -> a
-handleErrorModalClosed getter setter model =
+onErrorModalClosed : (a -> Maybe AppErrors) -> (Maybe AppErrors -> a -> a) -> a -> a
+onErrorModalClosed getter setter model =
   case getter model of
     (Just appErrors) ->
       setter (removeModalErrors appErrors) model
     Nothing          -> model
 
-handleInlineErrorTimeout : (a -> Maybe AppErrors) -> (Maybe AppErrors -> a -> a) -> a -> a
-handleInlineErrorTimeout getter setter model =
+onInlineErrorTimeout : (a -> Maybe AppErrors) -> (Maybe AppErrors -> a -> a) -> a -> a
+onInlineErrorTimeout getter setter model =
   case getter model of
     (Just appErrors) ->
       setter (removeInlineErrors appErrors) model
     Nothing          -> model
 
-handleInlineInfoTimeout : (a -> Maybe InformationMessage) -> (Maybe InformationMessage -> a -> a) -> a -> a
-handleInlineInfoTimeout getter setter model =
+onInlineInfoTimeout : (a -> Maybe InformationMessage) -> (Maybe InformationMessage -> a -> a) -> a -> a
+onInlineInfoTimeout getter setter model =
   case getter model of
     (Just infoMessage) -> setter Nothing model
     Nothing            -> model
 
-
-getErrors : Maybe AppErrors -> (Maybe InlineError, Maybe ModalErrors)
-getErrors maybeAppErrors =
-  case maybeAppErrors of
-    (Just appErrors) ->
-      let maybeInlineError = getInlineError appErrors
-          maybeModalErrors = getModalErrors appErrors
-      in (maybeInlineError, maybeModalErrors)
-    Nothing -> (Nothing, Nothing)
+getErrors : AppErrors -> (Maybe InlineError, Maybe ModalErrors)
+getErrors appErrors =
+  let maybeInlineError = getInlineError appErrors
+      maybeModalErrors = getModalErrors appErrors
+  in (maybeInlineError, maybeModalErrors)
 
 
 -- VIEW HELPERS
 
-viewModalErrorsIfAny : Maybe ModalErrors -> a -> Html a
-viewModalErrorsIfAny maybeError msg = maybe emptyDiv (\errors -> viewModalErrors errors msg) maybeError
-
-viewInlineErrorsIfAny : Maybe InlineError -> Html a
-viewInlineErrorsIfAny = maybe emptyDiv viewInlineError
-
-viewInformationIfAny : Maybe InformationMessage -> Html a
-viewInformationIfAny = maybe emptyDiv viewInformationMessage
 
 viewInlineError: InlineError -> Html a
 viewInlineError  (InlineError errorMessage) = addInlineErrorFlash errorMessage
@@ -153,5 +141,3 @@ viewModalErrors : ModalErrors -> a -> Html a
 viewModalErrors errorMessages msg =
   openErrorModal (N.map (\(ModalError error) -> error) errorMessages) msg
 
-viewInformationMessage : InformationMessage -> Html a
-viewInformationMessage = addInlineInfoFlash

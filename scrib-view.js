@@ -6674,6 +6674,47 @@ var $author$project$View$subscriptions = function (_v0) {
 	return $author$project$View$jsMessage(
 		A2($author$project$Subs$encodeJsResponse, $author$project$View$subscriptionSuccess, $author$project$View$subscriptionFailure));
 };
+var $author$project$View$gotoConfigScreen = function (model) {
+	return _Utils_Tuple2(
+		model,
+		$elm$browser$Browser$Navigation$load('save.html'));
+};
+var $author$project$StorageKeys$Delete = {$: 'Delete'};
+var $author$project$Ports$JsStorageValue = F3(
+	function (storageArea, storageAction, value) {
+		return {storageAction: storageAction, storageArea: storageArea, value: value};
+	});
+var $author$project$Ports$WithStorage = F2(
+	function (a, b) {
+		return {$: 'WithStorage', a: a, b: b};
+	});
+var $author$project$View$noteRemovedFromLocalStorageResponseKey = $author$project$Ports$ResponseKey('NoteRemovedFromLocalStorage');
+var $author$project$StorageKeys$Local = {$: 'Local'};
+var $author$project$StorageKeys$StorageArea = F2(
+	function (a, b) {
+		return {$: 'StorageArea', a: a, b: b};
+	});
+var $author$project$StorageKeys$StorageKey = function (a) {
+	return {$: 'StorageKey', a: a};
+};
+var $author$project$StorageKeys$viewSelectedNoteStorageArea = A2(
+	$author$project$StorageKeys$StorageArea,
+	$author$project$StorageKeys$Local,
+	$author$project$StorageKeys$StorageKey('scrib.edit'));
+var $author$project$View$removeSelectedNoteFromLocalStorage = function () {
+	var storageArea = $author$project$StorageKeys$viewSelectedNoteStorageArea;
+	var responseKey = $elm$core$Maybe$Just($author$project$View$noteRemovedFromLocalStorageResponseKey);
+	var removeSelectedNoteValue = A3($author$project$Ports$JsStorageValue, storageArea, $author$project$StorageKeys$Delete, _Utils_Tuple0);
+	var removeSelectedNoteCommand = A2($author$project$Ports$WithStorage, removeSelectedNoteValue, responseKey);
+	return $author$project$View$scribMessage(
+		A2(
+			$author$project$Ports$encodeJsCommand,
+			removeSelectedNoteCommand,
+			$author$project$FP$const($elm$json$Json$Encode$null)));
+}();
+var $author$project$View$handleAddNote = function (model) {
+	return _Utils_Tuple2(model, $author$project$View$removeSelectedNoteFromLocalStorage);
+};
 var $author$project$View$appErrorsGetter = function (model) {
 	return model.appErrors;
 };
@@ -6736,7 +6777,7 @@ var $author$project$ErrorHandling$removeModalErrors = function (_v0) {
 				A2($mgold$elm_nonempty_list$List$Nonempty$Nonempty, x, xs)));
 	}
 };
-var $author$project$ErrorHandling$handleErrorModalClosed = F3(
+var $author$project$ErrorHandling$onErrorModalClosed = F3(
 	function (getter, setter, model) {
 		var _v0 = getter(model);
 		if (_v0.$ === 'Just') {
@@ -6749,6 +6790,10 @@ var $author$project$ErrorHandling$handleErrorModalClosed = F3(
 			return model;
 		}
 	});
+var $author$project$View$handleErrorModalClosed = function (model) {
+	return $author$project$ElmCommon$onlyModel(
+		A3($author$project$ErrorHandling$onErrorModalClosed, $author$project$View$appErrorsGetter, $author$project$View$appErrorsSetter, model));
+};
 var $author$project$ErrorHandling$isInlineError = A2($elm$core$Basics$composeL, $elm$core$Basics$not, $author$project$ErrorHandling$isModalError);
 var $author$project$ErrorHandling$removeInlineErrors = function (_v0) {
 	var errors = _v0.a;
@@ -6766,7 +6811,7 @@ var $author$project$ErrorHandling$removeInlineErrors = function (_v0) {
 				A2($mgold$elm_nonempty_list$List$Nonempty$Nonempty, x, xs)));
 	}
 };
-var $author$project$ErrorHandling$handleInlineErrorTimeout = F3(
+var $author$project$ErrorHandling$onInlineErrorTimeout = F3(
 	function (getter, setter, model) {
 		var _v0 = getter(model);
 		if (_v0.$ === 'Just') {
@@ -6779,7 +6824,20 @@ var $author$project$ErrorHandling$handleInlineErrorTimeout = F3(
 			return model;
 		}
 	});
-var $author$project$ErrorHandling$handleInlineInfoTimeout = F3(
+var $author$project$View$handleInlineErrorTimeout = function (model) {
+	return $author$project$ElmCommon$onlyModel(
+		A3($author$project$ErrorHandling$onInlineErrorTimeout, $author$project$View$appErrorsGetter, $author$project$View$appErrorsSetter, model));
+};
+var $author$project$View$informationMessageGetter = function (model) {
+	return model.infoMessage;
+};
+var $author$project$View$informationMessageSetter = F2(
+	function (infoMessage, model) {
+		return _Utils_update(
+			model,
+			{infoMessage: infoMessage});
+	});
+var $author$project$ErrorHandling$onInlineInfoTimeout = F3(
 	function (getter, setter, model) {
 		var _v0 = getter(model);
 		if (_v0.$ === 'Just') {
@@ -6788,6 +6846,60 @@ var $author$project$ErrorHandling$handleInlineInfoTimeout = F3(
 		} else {
 			return model;
 		}
+	});
+var $author$project$View$handleInlineInfoTimeout = function (model) {
+	return $author$project$ElmCommon$onlyModel(
+		A3($author$project$ErrorHandling$onInlineInfoTimeout, $author$project$View$informationMessageGetter, $author$project$View$informationMessageSetter, model));
+};
+var $author$project$View$handleJSError = F2(
+	function (model, error) {
+		return _Utils_Tuple2(
+			model,
+			$author$project$View$logMessage(error));
+	});
+var $author$project$StorageKeys$Save = {$: 'Save'};
+var $elm$json$Json$Encode$int = _Json_wrap;
+var $author$project$Note$encodeFullNote = function (_v0) {
+	var noteText = _v0.noteText;
+	var noteId = _v0.noteId;
+	var noteVersion = _v0.noteVersion;
+	return $elm$json$Json$Encode$object(
+		_List_fromArray(
+			[
+				_Utils_Tuple2(
+				'noteText',
+				$elm$json$Json$Encode$string(noteText)),
+				_Utils_Tuple2(
+				'noteId',
+				$elm$json$Json$Encode$int(noteId)),
+				_Utils_Tuple2(
+				'noteVersion',
+				$elm$json$Json$Encode$int(noteVersion))
+			]));
+};
+var $author$project$View$noteSavedToLocalStorageResponseKey = $author$project$Ports$ResponseKey('NoteSavedToLocalStorage');
+var $author$project$View$saveSelectedNoteToLocalStorage = function (note) {
+	var storageArea = $author$project$StorageKeys$viewSelectedNoteStorageArea;
+	var saveSelectedNoteValue = A3($author$project$Ports$JsStorageValue, storageArea, $author$project$StorageKeys$Save, note);
+	var responseKey = $elm$core$Maybe$Just($author$project$View$noteSavedToLocalStorageResponseKey);
+	var saveSelectedNoteCommand = A2($author$project$Ports$WithStorage, saveSelectedNoteValue, responseKey);
+	return $author$project$View$scribMessage(
+		A2($author$project$Ports$encodeJsCommand, saveSelectedNoteCommand, $author$project$Note$encodeFullNote));
+};
+var $author$project$View$handleNoteEdited = F2(
+	function (model, note) {
+		return _Utils_Tuple2(
+			model,
+			$author$project$View$saveSelectedNoteToLocalStorage(note));
+	});
+var $author$project$View$handleNoteSelected = F2(
+	function (model, note) {
+		return $author$project$ElmCommon$onlyModel(
+			_Utils_update(
+				model,
+				{
+					selectedNote: $elm$core$Maybe$Just(note)
+				}));
 	});
 var $author$project$ApiKey$performApiKey = F3(
 	function (maybeApiKey, _v0, _v1) {
@@ -6814,6 +6926,16 @@ var $author$project$View$performOrGotoConfig = F2(
 				oldModel,
 				$elm$browser$Browser$Navigation$load('config.html')));
 	});
+var $author$project$View$handleNotesRefreshed = function (model) {
+	return A2(
+		$author$project$View$performOrGotoConfig,
+		model,
+		_Utils_Tuple2(
+			_Utils_update(
+				model,
+				{notes: $krisajenkins$remotedata$RemoteData$Loading, query: $elm$core$Maybe$Nothing}),
+			$author$project$View$getTopRemoteNotes));
+};
 var $author$project$View$SearchNotesResponse = function (a) {
 	return {$: 'SearchNotesResponse', a: a};
 };
@@ -7007,34 +7129,6 @@ var $author$project$ErrorHandling$addModalError = F4(
 				model);
 		}
 	});
-var $author$project$Ports$JsStorageValue = F3(
-	function (storageArea, storageAction, value) {
-		return {storageAction: storageAction, storageArea: storageArea, value: value};
-	});
-var $author$project$StorageKeys$Save = {$: 'Save'};
-var $author$project$Ports$WithStorage = F2(
-	function (a, b) {
-		return {$: 'WithStorage', a: a, b: b};
-	});
-var $elm$json$Json$Encode$int = _Json_wrap;
-var $author$project$Note$encodeFullNote = function (_v0) {
-	var noteText = _v0.noteText;
-	var noteId = _v0.noteId;
-	var noteVersion = _v0.noteVersion;
-	return $elm$json$Json$Encode$object(
-		_List_fromArray(
-			[
-				_Utils_Tuple2(
-				'noteText',
-				$elm$json$Json$Encode$string(noteText)),
-				_Utils_Tuple2(
-				'noteId',
-				$elm$json$Json$Encode$int(noteId)),
-				_Utils_Tuple2(
-				'noteVersion',
-				$elm$json$Json$Encode$int(noteVersion))
-			]));
-};
 var $elm$json$Json$Encode$list = F2(
 	function (func, entries) {
 		return _Json_wrap(
@@ -7047,13 +7141,6 @@ var $elm$json$Json$Encode$list = F2(
 var $author$project$Note$encodeFullNotes = $elm$json$Json$Encode$list($author$project$Note$encodeFullNote);
 var $author$project$View$topNotesSavedToSessionStorageResponseKey = $author$project$Ports$ResponseKey('TopNotesSavedToSessionStorage');
 var $author$project$StorageKeys$Session = {$: 'Session'};
-var $author$project$StorageKeys$StorageArea = F2(
-	function (a, b) {
-		return {$: 'StorageArea', a: a, b: b};
-	});
-var $author$project$StorageKeys$StorageKey = function (a) {
-	return {$: 'StorageKey', a: a};
-};
 var $author$project$StorageKeys$viewTopNotesStorageArea = A2(
 	$author$project$StorageKeys$StorageArea,
 	$author$project$StorageKeys$Session,
@@ -7113,78 +7200,32 @@ var $author$project$View$handleTopNotesResponse = F2(
 						$author$project$View$InlineInfoTimedOut));
 		}
 	});
-var $author$project$View$informationMessageGetter = function (model) {
-	return model.infoMessage;
-};
-var $author$project$View$informationMessageSetter = F2(
-	function (infoMessage, model) {
-		return _Utils_update(
+var $author$project$View$handleTopNotesSavedToSessionStorage = function (model) {
+	return $author$project$ElmCommon$onlyModel(
+		_Utils_update(
 			model,
-			{infoMessage: infoMessage});
-	});
-var $author$project$StorageKeys$Delete = {$: 'Delete'};
-var $author$project$View$noteRemovedFromLocalStorageResponseKey = $author$project$Ports$ResponseKey('NoteRemovedFromLocalStorage');
-var $author$project$StorageKeys$Local = {$: 'Local'};
-var $author$project$StorageKeys$viewSelectedNoteStorageArea = A2(
-	$author$project$StorageKeys$StorageArea,
-	$author$project$StorageKeys$Local,
-	$author$project$StorageKeys$StorageKey('scrib.edit'));
-var $author$project$View$removeSelectedNoteFromLocalStorage = function () {
-	var storageArea = $author$project$StorageKeys$viewSelectedNoteStorageArea;
-	var responseKey = $elm$core$Maybe$Just($author$project$View$noteRemovedFromLocalStorageResponseKey);
-	var removeSelectedNoteValue = A3($author$project$Ports$JsStorageValue, storageArea, $author$project$StorageKeys$Delete, _Utils_Tuple0);
-	var removeSelectedNoteCommand = A2($author$project$Ports$WithStorage, removeSelectedNoteValue, responseKey);
-	return $author$project$View$scribMessage(
-		A2(
-			$author$project$Ports$encodeJsCommand,
-			removeSelectedNoteCommand,
-			$author$project$FP$const($elm$json$Json$Encode$null)));
-}();
-var $author$project$View$noteSavedToLocalStorageResponseKey = $author$project$Ports$ResponseKey('NoteSavedToLocalStorage');
-var $author$project$View$saveSelectedNoteToLocalStorage = function (note) {
-	var storageArea = $author$project$StorageKeys$viewSelectedNoteStorageArea;
-	var saveSelectedNoteValue = A3($author$project$Ports$JsStorageValue, storageArea, $author$project$StorageKeys$Save, note);
-	var responseKey = $elm$core$Maybe$Just($author$project$View$noteSavedToLocalStorageResponseKey);
-	var saveSelectedNoteCommand = A2($author$project$Ports$WithStorage, saveSelectedNoteValue, responseKey);
-	return $author$project$View$scribMessage(
-		A2($author$project$Ports$encodeJsCommand, saveSelectedNoteCommand, $author$project$Note$encodeFullNote));
+			{selectedNote: $elm$core$Maybe$Nothing}));
 };
 var $author$project$View$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
 			case 'NoteSelected':
 				var note = msg.a;
-				return $author$project$ElmCommon$onlyModel(
-					_Utils_update(
-						model,
-						{
-							selectedNote: $elm$core$Maybe$Just(note)
-						}));
+				return A2($author$project$View$handleNoteSelected, model, note);
 			case 'NoteEdited':
 				var note = msg.a;
-				return _Utils_Tuple2(
-					model,
-					$author$project$View$saveSelectedNoteToLocalStorage(note));
+				return A2($author$project$View$handleNoteEdited, model, note);
 			case 'TopNotesSavedToSessionStorage':
-				return $author$project$ElmCommon$onlyModel(
-					_Utils_update(
-						model,
-						{selectedNote: $elm$core$Maybe$Nothing}));
+				return $author$project$View$handleTopNotesSavedToSessionStorage(model);
 			case 'NoteSavedToLocalStorage':
-				return _Utils_Tuple2(
-					model,
-					$elm$browser$Browser$Navigation$load('save.html'));
+				return $author$project$View$gotoConfigScreen(model);
 			case 'NoteRemovedFromLocalStorage':
-				return _Utils_Tuple2(
-					model,
-					$elm$browser$Browser$Navigation$load('save.html'));
+				return $author$project$View$gotoConfigScreen(model);
 			case 'JSNotificationError':
 				var error = msg.a;
-				return _Utils_Tuple2(
-					model,
-					$author$project$View$logMessage(error));
+				return A2($author$project$View$handleJSError, model, error);
 			case 'AddNote':
-				return _Utils_Tuple2(model, $author$project$View$removeSelectedNoteFromLocalStorage);
+				return $author$project$View$handleAddNote(model);
 			case 'TopNotesResponse':
 				var slateCallResult = msg.a;
 				return A2($author$project$View$handleTopNotesResponse, model, slateCallResult);
@@ -7192,26 +7233,16 @@ var $author$project$View$update = F2(
 				var slateCallResult = msg.a;
 				return A2($author$project$View$handleSearchResponse, model, slateCallResult);
 			case 'NotesRefreshed':
-				return A2(
-					$author$project$View$performOrGotoConfig,
-					model,
-					_Utils_Tuple2(
-						_Utils_update(
-							model,
-							{notes: $krisajenkins$remotedata$RemoteData$Loading, query: $elm$core$Maybe$Nothing}),
-						$author$project$View$getTopRemoteNotes));
+				return $author$project$View$handleNotesRefreshed(model);
 			case 'SearchEdited':
 				var query = msg.a;
 				return A2($author$project$View$handleSearchQuery, model, query);
 			case 'ErrorModalClosed':
-				return $author$project$ElmCommon$onlyModel(
-					A3($author$project$ErrorHandling$handleErrorModalClosed, $author$project$View$appErrorsGetter, $author$project$View$appErrorsSetter, model));
+				return $author$project$View$handleErrorModalClosed(model);
 			case 'InlineErrorTimedOut':
-				return $author$project$ElmCommon$onlyModel(
-					A3($author$project$ErrorHandling$handleInlineErrorTimeout, $author$project$View$appErrorsGetter, $author$project$View$appErrorsSetter, model));
+				return $author$project$View$handleInlineErrorTimeout(model);
 			default:
-				return $author$project$ElmCommon$onlyModel(
-					A3($author$project$ErrorHandling$handleInlineInfoTimeout, $author$project$View$informationMessageGetter, $author$project$View$informationMessageSetter, model));
+				return $author$project$View$handleInlineInfoTimeout(model);
 		}
 	});
 var $author$project$View$AddNote = {$: 'AddNote'};
@@ -7433,15 +7464,10 @@ var $author$project$ErrorHandling$getModalErrors = function (_v0) {
 			$author$project$ErrorHandling$findModalError,
 			$mgold$elm_nonempty_list$List$Nonempty$toList(notifications)));
 };
-var $author$project$ErrorHandling$getErrors = function (maybeAppErrors) {
-	if (maybeAppErrors.$ === 'Just') {
-		var appErrors = maybeAppErrors.a;
-		var maybeModalErrors = $author$project$ErrorHandling$getModalErrors(appErrors);
-		var maybeInlineError = $author$project$ErrorHandling$getInlineError(appErrors);
-		return _Utils_Tuple2(maybeInlineError, maybeModalErrors);
-	} else {
-		return _Utils_Tuple2($elm$core$Maybe$Nothing, $elm$core$Maybe$Nothing);
-	}
+var $author$project$ErrorHandling$getErrors = function (appErrors) {
+	var maybeModalErrors = $author$project$ErrorHandling$getModalErrors(appErrors);
+	var maybeInlineError = $author$project$ErrorHandling$getInlineError(appErrors);
+	return _Utils_Tuple2(maybeInlineError, maybeModalErrors);
 };
 var $mgold$elm_nonempty_list$List$Nonempty$length = function (_v0) {
 	var x = _v0.a;
@@ -7507,7 +7533,6 @@ var $elm$html$Html$section = _VirtualDom_node('section');
 var $elm$html$Html$span = _VirtualDom_node('span');
 var $elm$html$Html$Attributes$type_ = $elm$html$Html$Attributes$stringProperty('type');
 var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty('value');
-var $author$project$ElmCommon$emptyDiv = A2($elm$html$Html$div, _List_Nil, _List_Nil);
 var $author$project$ElmCommon$addClasses = function (classes) {
 	return A2($elm$core$List$map, $elm$html$Html$Attributes$class, classes);
 };
@@ -7523,8 +7548,8 @@ var $author$project$ElmCommon$addInlineInfoFlash = function (_v0) {
 				$elm$html$Html$text(infoMessage)
 			]));
 };
-var $author$project$ErrorHandling$viewInformationMessage = $author$project$ElmCommon$addInlineInfoFlash;
-var $author$project$ErrorHandling$viewInformationIfAny = A2($author$project$FP$maybe, $author$project$ElmCommon$emptyDiv, $author$project$ErrorHandling$viewInformationMessage);
+var $author$project$ElmCommon$emptyDiv = A2($elm$html$Html$div, _List_Nil, _List_Nil);
+var $author$project$View$viewInformationIfAny = A2($author$project$FP$maybe, $author$project$ElmCommon$emptyDiv, $author$project$ElmCommon$addInlineInfoFlash);
 var $author$project$ElmCommon$addInlineErrorFlash = function (_v0) {
 	var errorMessage = _v0.errorMessage;
 	return A2(
@@ -7541,7 +7566,7 @@ var $author$project$ErrorHandling$viewInlineError = function (_v0) {
 	var errorMessage = _v0.a;
 	return $author$project$ElmCommon$addInlineErrorFlash(errorMessage);
 };
-var $author$project$ErrorHandling$viewInlineErrorsIfAny = A2($author$project$FP$maybe, $author$project$ElmCommon$emptyDiv, $author$project$ErrorHandling$viewInlineError);
+var $author$project$View$viewInlineErrorsIfAny = A2($author$project$FP$maybe, $author$project$ElmCommon$emptyDiv, $author$project$ErrorHandling$viewInlineError);
 var $mgold$elm_nonempty_list$List$Nonempty$map = F2(
 	function (f, _v0) {
 		var x = _v0.a;
@@ -7667,7 +7692,7 @@ var $author$project$ErrorHandling$viewModalErrors = F2(
 				errorMessages),
 			msg);
 	});
-var $author$project$ErrorHandling$viewModalErrorsIfAny = F2(
+var $author$project$View$viewModalErrorsIfAny = F2(
 	function (maybeError, msg) {
 		return A3(
 			$author$project$FP$maybe,
@@ -7747,7 +7772,11 @@ var $author$project$View$viewNotesList = function (notes) {
 var $author$project$View$view = function (model) {
 	var notesList = $author$project$View$choseWhichNotes(
 		$author$project$View$noteSelection(model));
-	var _v0 = $author$project$ErrorHandling$getErrors(model.appErrors);
+	var _v0 = A3(
+		$author$project$FP$maybe,
+		_Utils_Tuple2($elm$core$Maybe$Nothing, $elm$core$Maybe$Nothing),
+		$author$project$ErrorHandling$getErrors,
+		model.appErrors);
 	var maybeInlineErrors = _v0.a;
 	var maybeModalErrors = _v0.b;
 	return A2(
@@ -7910,14 +7939,14 @@ var $author$project$View$view = function (model) {
 																	]))
 															]))
 													])),
-												$author$project$ErrorHandling$viewInlineErrorsIfAny(maybeInlineErrors),
-												$author$project$ErrorHandling$viewInformationIfAny(model.infoMessage),
+												$author$project$View$viewInlineErrorsIfAny(maybeInlineErrors),
+												$author$project$View$viewInformationIfAny(model.infoMessage),
 												$author$project$View$viewNotesList(notesList)
 											]))
 									]))
 							]))
 					])),
-				A2($author$project$ErrorHandling$viewModalErrorsIfAny, maybeModalErrors, $author$project$View$ErrorModalClosed),
+				A2($author$project$View$viewModalErrorsIfAny, maybeModalErrors, $author$project$View$ErrorModalClosed),
 				$author$project$View$createMarkdownPreview(model.selectedNote)
 			]));
 };
