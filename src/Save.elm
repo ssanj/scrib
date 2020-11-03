@@ -216,8 +216,8 @@ viewNoteEditingArea model =
 viewNotificationsArea: RemoteNoteData -> Html a
 viewNotificationsArea remoteSaveStatus =
   case remoteSaveStatus of
-    Failure e   -> addFailureAlert <| "Save failed: " ++ fromHttpError e -- show error
-    (Success _) -> addSuccessAlert "Saved note"
+    Failure e   -> addInlineErrorFlash <| ErrorMessage <| "Save failed: " ++ fromHttpError e -- show error
+    (Success _) -> addInlineSuccessFlash <| SuccessMessage "Saved note"
     _           -> hideAlertSpace
 
 
