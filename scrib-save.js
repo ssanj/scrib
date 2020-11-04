@@ -6831,13 +6831,13 @@ var $author$project$StorageKeys$StorageArea = F2(
 var $author$project$StorageKeys$StorageKey = function (a) {
 	return {$: 'StorageKey', a: a};
 };
-var $author$project$StorageKeys$viewSelectedNoteStorageArea = A2(
+var $author$project$StorageKeys$savedNoteStorageArea = A2(
 	$author$project$StorageKeys$StorageArea,
 	$author$project$StorageKeys$Local,
 	$author$project$StorageKeys$StorageKey('scrib.edit'));
 var $author$project$Save$saveEditingNoteToLocalStorage = F2(
 	function (responseKey, note) {
-		var storageArea = $author$project$StorageKeys$viewSelectedNoteStorageArea;
+		var storageArea = $author$project$StorageKeys$savedNoteStorageArea;
 		var saveSelectedNoteValue = A3($author$project$Ports$JsStorageValue, storageArea, $author$project$StorageKeys$Save, note);
 		var saveSelectedNoteCommand = A2(
 			$author$project$Ports$WithStorage,

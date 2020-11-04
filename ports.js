@@ -3,30 +3,9 @@ function portActions(action, cb) {
     console.log("[" + JSON.stringify(action.log.appName) + "]: " + JSON.stringify(action.log.data));
   } else if (action.eventType === "storage_action") {
     handleStorage(action, cb);
-  } else if (action.eventType === "markdown_action") {
-    handleMarkdown(action);
   } else {
     console.log("error, handled action:" + JSON.stringify(action));
   }
-}
-
-function handleMarkdown(action) {
-  const markdown       = action.markdown;
-  const elementId       = markdown.elementId;
-  const markdownContent = markdown.data.noteText;
-
-  const markedOptions = {
-    "gfm": true,
-    "smartLists": true,
-    "xhtml": true
-  }
-
-  const markdownView = document.getElementById(elementId);
-    if (typeof marked !== 'undefined' && markdownView) {
-      markdownView.innerHTML = marked(markdownContent, markedOptions);
-    } else {
-     console.log("markdown renderer has not loaded.");
-    }
 }
 
 function handleStorage(action, cb) {

@@ -23,22 +23,7 @@ import Ports         as P
 import Subs          as S
 
 
---
--- MAIN
---
-
-main: Program E.Value Model Msg
-main =
-  Browser.element
-    { init          = init
-    , update        = update
-    , subscriptions = subscriptions
-    , view          = view
-    }
-
---
 -- MODEL
---
 
 
 -- Where did the note originate?
@@ -70,10 +55,112 @@ type alias Model =
   }
 
 
+type PortType = SaveMessage
+              | PreviewMessage
+
+
+type Msg = NoteSavedMsg
+         | NoteEditedMsg String
+         | NewNoteMsg
+         | ViewNoteMsg
+         | NoteSaveResponseMsg RemoteNoteData
+         | NoteSavedToLocalStorage
+         | RemoteNoteIdVersionSavedToLocalStorage
+         | JSNotificationError String
+
+-- MAIN
+
+
+main: Program E.Value Model Msg
+main =
+  Browser.element
+    { init          = init
+    , update        = update
+    , subscriptions = subscriptions
+    , view          = view
+    }
+
+
+-- INIT
+
 init : E.Value -> (Model, Cmd Msg)
 init json =
   let decodeResult = D.decodeValue decodeLocalSave json
   in foldResult handleInitFailure handleInitSuccess decodeResult
+
+
+
+-- UPDATE
+
+
+update : Msg -> Model -> (Model, Cmd Msg)
+update msg model =
+  case msg of
+    NoteSavedMsg -> saveNote model
+
+    (NoteEditedMsg newNoteText) ->
+       let updatedModel =
+            case model.note of
+              BrandNewNote                          -> { model | note = HavingContent <| NoteWithoutId <| SC.NoteLight newNoteText,     noteContentStatus  = NeedsToSave }
+              (HavingContent (NoteWithoutId _))     -> { model | note = HavingContent <| NoteWithoutId <| SC.NoteLight newNoteText,     noteContentStatus  = NeedsToSave }
+              (HavingContent (NoteWithId fullNote))   ->
+                let note =  SC.updateNoteText newNoteText fullNote
+                in { model | note = HavingContent <| NoteWithId note, noteContentStatus  = NeedsToSave }
+       in onlyModel updatedModel
+
+    NewNoteMsg -> onlyModel { defaultModel | dataSource =  UserCreated, apiKey = model.apiKey }
+
+    ViewNoteMsg -> (model, Browser.Navigation.load "view.html")
+
+    (NoteSaveResponseMsg noteResponse) ->
+      let updatedNote =
+            case model.note of
+              BrandNewNote            -> model.note -- illegal, you shouldn't be able to save a new note (without content)
+              (HavingContent content) -> HavingContent <| noteFromRemoteSave content noteResponse
+          updatedModel = {model | remoteSaveStatus = noteResponse, note = updatedNote, noteContentStatus = contentStatusFromRemoteSave noteResponse }
+      in (updatedModel, saveRemoteUpdateToLocalStorage updatedModel.note)
+
+    NoteSavedToLocalStorage ->
+      case model.note of
+        BrandNewNote -> onlyModel model
+        (HavingContent content) -> performOrGotoConfig model ({model | remoteSaveStatus = Loading }, performSaveNote content)
+
+    RemoteNoteIdVersionSavedToLocalStorage -> onlyModel model
+
+    (JSNotificationError error) -> (model, logMessage error)
+
+
+-- VIEW
+
+
+view : Model -> Html Msg
+view model =
+  section [class "section"]
+    [
+      div [class "container"]
+        (
+          viewHeadings ++
+          [
+            viewNoteEditingArea model
+          , createMarkdownPreview model.note
+          ]
+        )
+    ]
+
+
+-- PORTS
+
+
+port scribMessage : E.Value -> Cmd msg
+port jsMessage : (E.Value -> msg) -> Sub msg
+
+
+-- SUBSCRIPTIONS
+
+
+subscriptions : Model -> Sub Msg
+subscriptions _ = jsMessage (S.encodeJsResponse subscriptionSuccess subscriptionFailure)
+
 
 appName : String
 appName = "scrib"
@@ -119,100 +206,8 @@ defaultModel: Model
 defaultModel = Model BrandNewNote InitNote NotAsked UpToDate Nothing
 
 
---
--- UPDATE
---
+-- REMOTE CALLS
 
-type PortType = SaveMessage
-              | PreviewMessage
-
-
-type Msg = NoteSavedMsg
-         | NoteEditedMsg String
-         | NewNoteMsg
-         | ViewNoteMsg
-         | NoteSaveResponseMsg RemoteNoteData
-         | NoteSavedToLocalStorage
-         | RemoteNoteIdVersionSavedToLocalStorage
-         | JSNotificationError String
-
-
-update : Msg -> Model -> (Model, Cmd Msg)
-update msg model =
-  case msg of
-    NoteSavedMsg -> saveNote model
-
-    (NoteEditedMsg newNoteText) ->
-       let updatedModel =
-            case model.note of
-              BrandNewNote                          -> { model | note = HavingContent <| NoteWithoutId <| SC.NoteLight newNoteText,     noteContentStatus  = NeedsToSave }
-              (HavingContent (NoteWithoutId _))     -> { model | note = HavingContent <| NoteWithoutId <| SC.NoteLight newNoteText,     noteContentStatus  = NeedsToSave }
-              (HavingContent (NoteWithId fullNote))   ->
-                let note =  SC.updateNoteText newNoteText fullNote
-                in { model | note = HavingContent <| NoteWithId note, noteContentStatus  = NeedsToSave }
-       in onlyModel updatedModel
-
-    NewNoteMsg -> onlyModel { defaultModel | dataSource =  UserCreated, apiKey = model.apiKey }
-
-    ViewNoteMsg -> (model, Browser.Navigation.load "view.html")
-
-    (NoteSaveResponseMsg noteResponse) ->
-      let updatedNote =
-            case model.note of
-              BrandNewNote            -> model.note -- illegal, you shouldn't be able to save a new note (without content)
-              (HavingContent content) -> HavingContent <| noteFromRemoteSave content noteResponse
-          updatedModel = {model | remoteSaveStatus = noteResponse, note = updatedNote, noteContentStatus = contentStatusFromRemoteSave noteResponse }
-      in (updatedModel, saveRemoteUpdateToLocalStorage updatedModel.note)
-
-    NoteSavedToLocalStorage ->
-      case model.note of
-        BrandNewNote -> onlyModel model
-        (HavingContent content) -> performOrGotoConfig model ({model | remoteSaveStatus = Loading }, performSaveNote content)
-
-    RemoteNoteIdVersionSavedToLocalStorage -> onlyModel model
-
-    (JSNotificationError error) -> (model, logMessage error)
-
-contentStatusFromRemoteSave : RemoteNoteData -> ContentStatus
-contentStatusFromRemoteSave remoteData =
-  if RemoteData.isSuccess remoteData then UpToDate else NeedsToSave
-
-noteFromRemoteSave : NoteWithContent -> RemoteNoteData -> NoteWithContent
-noteFromRemoteSave existingNote remoteData =
-  case (existingNote, remoteData) of
-    (NoteWithoutId noteText, Success noteIdVersion) -> NoteWithId <| SC.updateNoteIdVersion noteIdVersion noteText
-    (NoteWithoutId _, _)                            -> existingNote -- if we didn't succeed in updating the note, then there's no id to save
-    ((NoteWithId fullNote), Success noteIdVersion)  -> NoteWithId <| SC.updateNoteVersion noteIdVersion fullNote -- if we already have an id, then there's nothing to update
-    ((NoteWithId fullNote), _)                      -> existingNote -- if we didn't succeed then don't update the existing note
-
-saveNote: Model -> (Model, Cmd Msg)
-saveNote model =
-  case model.remoteSaveStatus of
-    Loading       -> (model, Cmd.none) -- still loading from a previous save...
-    _             ->
-      case model.note of
-        BrandNewNote -> (model, Cmd.none)
-        HavingContent content -> (model, saveEditingNoteToLocalStorage noteSavedToLocalStorageResponseKey content)
-
-saveRemoteUpdateToLocalStorage : Note -> Cmd Msg
-saveRemoteUpdateToLocalStorage note =
-  case note of
-    BrandNewNote -> Cmd.none
-    HavingContent content -> saveEditingNoteToLocalStorage remoteNoteIdVersionSavedToLocalStorageResponseKey content
-
-saveEditingNoteToLocalStorage : P.ResponseKey -> NoteWithContent -> Cmd Msg
-saveEditingNoteToLocalStorage responseKey note =
-  let storageArea             = viewSelectedNoteStorageArea --TODO: Name this better (local/scrib.edit)
-      saveSelectedNoteValue   = P.JsStorageValue storageArea Save note
-      saveSelectedNoteCommand = P.WithStorage saveSelectedNoteValue (Just responseKey)
-  in scribMessage <| P.encodeJsCommand saveSelectedNoteCommand encodeSaveNote
-
-
-noteSavedToLocalStorageResponseKey : P.ResponseKey
-noteSavedToLocalStorageResponseKey = P.ResponseKey "NoteSavedToLocalStorage"
-
-remoteNoteIdVersionSavedToLocalStorageResponseKey : P.ResponseKey
-remoteNoteIdVersionSavedToLocalStorageResponseKey = P.ResponseKey "RemoteNoteIdVersionSavedToLocalStorage"
 
 performSaveNote: NoteWithContent -> ApiKey -> Cmd Msg
 performSaveNote note apiKey =
@@ -226,12 +221,64 @@ performSaveNote note apiKey =
   , tracker  = Nothing
   }
 
+
+-- PAGE REDIRECTS
+
+
 performOrGotoConfig : Model -> (Model, (ApiKey -> Cmd Msg)) -> (Model, Cmd Msg)
 performOrGotoConfig oldModel apiKeyCommand =
   performApiKey
     oldModel.apiKey
     apiKeyCommand
     (oldModel, Browser.Navigation.load "config.html")
+
+
+-- MODEL HELPERS
+
+
+getNoteVersion : Note -> Maybe Int
+getNoteVersion note =
+  case note of
+    BrandNewNote                        -> Nothing
+    (HavingContent (NoteWithId scNote)) -> Just <| SC.getNoteVersionNoteFull scNote
+    (HavingContent (NoteWithoutId _))   -> Nothing
+
+getNoteId : Note -> Maybe Int
+getNoteId note =
+  case note of
+    BrandNewNote                        -> Nothing
+    (HavingContent (NoteWithId scNote)) -> Just <| SC.getNoteIdNoteFull scNote
+    (HavingContent (NoteWithoutId _))   -> Nothing
+
+getNoteText : Note -> String
+getNoteText note =
+  case note of
+    BrandNewNote                          -> ""
+    (HavingContent (NoteWithId scNote))    -> SC.getNoteFullText scNote
+    (HavingContent (NoteWithoutId scNote)) -> SC.getNoteLightText scNote
+
+hasContent: Note -> Bool
+hasContent note =
+  case note of
+    BrandNewNote                             -> False
+    (HavingContent (NoteWithoutId noteText)) -> not (String.isEmpty <| SC.getNoteLightText noteText)
+    (HavingContent (NoteWithId noteText))    -> not (String.isEmpty <| SC.getNoteFullText noteText)
+
+
+-- REMOTE HELPERS
+
+
+contentStatusFromRemoteSave : RemoteNoteData -> ContentStatus
+contentStatusFromRemoteSave remoteData =
+  if RemoteData.isSuccess remoteData then UpToDate else NeedsToSave
+
+noteFromRemoteSave : NoteWithContent -> RemoteNoteData -> NoteWithContent
+noteFromRemoteSave existingNote remoteData =
+  case (existingNote, remoteData) of
+    (NoteWithoutId noteText, Success noteIdVersion) -> NoteWithId <| SC.updateNoteIdVersion noteIdVersion noteText
+    (NoteWithoutId _, _)                            -> existingNote -- if we didn't succeed in updating the note, then there's no id to save
+    ((NoteWithId fullNote), Success noteIdVersion)  -> NoteWithId <| SC.updateNoteVersion noteIdVersion fullNote -- if we already have an id, then there's nothing to update
+    ((NoteWithId fullNote), _)                      -> existingNote -- if we didn't succeed then don't update the existing note
 
 processSaveNoteResults: Result Http.Error SC.NoteIdVersion -> Msg
 processSaveNoteResults = processHttpResult NoteSaveResponseMsg
@@ -241,24 +288,29 @@ processHttpResult toMsg httpResult   =
   let result  = RemoteData.fromResult httpResult
   in toMsg result
 
+fromHttpError: Http.Error -> String
+fromHttpError error =
+  case error of
+    (Http.BadUrl burl)      -> "bad url: " ++ burl
+    Http.Timeout            -> "timeout"
+    Http.NetworkError       -> "network error"
+    (Http.BadStatus status) -> "bad status: " ++ String.fromInt status
+    (Http.BadBody body)     -> "bad body: " ++ body
 
---
--- VIEW
---
+-- UPDATE HELPERS
 
-view : Model -> Html Msg
-view model =
-  section [class "section"]
-    [
-      div [class "container"]
-        (
-          viewHeadings ++
-          [
-            viewNoteEditingArea model
-          , createMarkdownPreview model.note
-          ]
-        )
-    ]
+
+saveNote: Model -> (Model, Cmd Msg)
+saveNote model =
+  case model.remoteSaveStatus of
+    Loading       -> (model, Cmd.none) -- still saving from a previous save...
+    _             ->
+      case model.note of
+        BrandNewNote -> (model, Cmd.none)
+        HavingContent content -> (model, saveEditingNoteToLocalStorage noteSavedToLocalStorageResponseKey content)
+
+
+-- VIEW HELPERS
 
 
 viewHeadings : List (Html msg)
@@ -386,19 +438,33 @@ viewMarkdownPreview noteText =
 markdownViewId : String
 markdownViewId = "markdown-view"
 
---
--- PORTS
---
 
-port scribMessage : E.Value -> Cmd msg
-port jsMessage : (E.Value -> msg) -> Sub msg
+-- JS COMMANDS
 
---
--- SUBSCRIPTIONS
---
 
-subscriptions : Model -> Sub Msg
-subscriptions _ = jsMessage (S.encodeJsResponse subscriptionSuccess subscriptionFailure)
+noteSavedToLocalStorageResponseKey : P.ResponseKey
+noteSavedToLocalStorageResponseKey = P.ResponseKey "NoteSavedToLocalStorage"
+
+remoteNoteIdVersionSavedToLocalStorageResponseKey : P.ResponseKey
+remoteNoteIdVersionSavedToLocalStorageResponseKey = P.ResponseKey "RemoteNoteIdVersionSavedToLocalStorage"
+
+saveRemoteUpdateToLocalStorage : Note -> Cmd Msg
+saveRemoteUpdateToLocalStorage note =
+  case note of
+    BrandNewNote -> Cmd.none
+    HavingContent content -> saveEditingNoteToLocalStorage remoteNoteIdVersionSavedToLocalStorageResponseKey content
+
+saveEditingNoteToLocalStorage : P.ResponseKey -> NoteWithContent -> Cmd Msg
+saveEditingNoteToLocalStorage responseKey note =
+  let storageArea             = savedNoteStorageArea
+      saveSelectedNoteValue   = P.JsStorageValue storageArea Save note
+      saveSelectedNoteCommand = P.WithStorage saveSelectedNoteValue (Just responseKey)
+  in scribMessage <| P.encodeJsCommand saveSelectedNoteCommand encodeSaveNote
+
+
+
+-- SUBSCRIPTION HELPERS
+
 
 subscriptionSuccess : S.JsResponse E.Value -> Msg
 subscriptionSuccess (S.JsResponse (P.ResponseKey key) result) =
@@ -411,9 +477,8 @@ subscriptionFailure : String -> Msg
 subscriptionFailure m = JSNotificationError ("subscriptionFailure: " ++ m)
 
 
---
--- JSON ENCODE/DECODE
---
+-- ENCODERS
+
 
 encodeSaveNote: NoteWithContent -> E.Value
 encodeSaveNote note =
@@ -421,120 +486,3 @@ encodeSaveNote note =
     (NoteWithoutId noteText)                       -> SC.encodeLightNote noteText
     (NoteWithId { noteId, noteText, noteVersion }) -> SC.encodeFullNote { noteId = noteId, noteText = noteText, noteVersion = noteVersion }
 
---encodeUnsavedNote: String -> E.Value
---encodeUnsavedNote noteText =
---  E.object
---    [
---      ("noteText", E.string noteText)
---    ]
-
-
---encode : PortType -> Model -> E.Value
---encode portType model =
---  E.object
---    [
---      ("eventType", E.string (showPortType portType))
---    , ("note", encodeNoteForLocalSave model.note)
---    ]
-
-
---encodeNoteForLocalSave : Note -> E.Value
---encodeNoteForLocalSave note =
---  E.object
---    [
---      ("noteText", E.string <| getNoteText note)
---    , ("noteId", maybe E.null E.int <| getNoteId note)
---    , ("noteVersion", maybe E.null E.int <| getNoteVersion note)
---    ]
-
-
--- MODEL HELPERS
-
-
-getNoteVersion : Note -> Maybe Int
-getNoteVersion note =
-  case note of
-    BrandNewNote                        -> Nothing
-    (HavingContent (NoteWithId scNote)) -> Just <| SC.getNoteVersionNoteFull scNote
-    (HavingContent (NoteWithoutId _))   -> Nothing
-
-getNoteId : Note -> Maybe Int
-getNoteId note =
-  case note of
-    BrandNewNote                        -> Nothing
-    (HavingContent (NoteWithId scNote)) -> Just <| SC.getNoteIdNoteFull scNote
-    (HavingContent (NoteWithoutId _))   -> Nothing
-
-getNoteText : Note -> String
-getNoteText note =
-  case note of
-    BrandNewNote                          -> ""
-    (HavingContent (NoteWithId scNote))    -> SC.getNoteFullText scNote
-    (HavingContent (NoteWithoutId scNote)) -> SC.getNoteLightText scNote
-
-
--- DECODERS
-
-
---decoderNoteIdVersion : D.Decoder NoteIdVersion
---decoderNoteIdVersion =
---  D.map2
---    NoteIdVersion
---    (D.field "noteId" D.int)
---    (D.field "noteVersion" D.int)
-
--- TODO: What happens if we go directly to Save without saving an edit?
---decoderLocalEdits : D.Decoder LocalEdit
---decoderLocalEdits =
-  --let
-      --maybeNoteIdDecoder      = D.maybe (D.at ["note", "noteId"] D.int)
-      --maybeNoteTextDecoder    = D.maybe (D.at ["note", "noteText"] D.string)
-      --maybeNoteVersionDecoder = D.maybe (D.at ["note", "noteVersion"] D.int)
-      --apiKeyDecoder        = D.field "apiKey" decodeApiKey
-      --noteDecoder          =
-        --D.map3
-        --  maybeNoteContent
-        --  maybeNoteIdDecoder
-        --  maybeNoteTextDecoder
-        --  maybeNoteVersionDecoder
-  --in D.map2
-  --    LocalEdit
-  --    apiKeyDecoder
-  --    noteDecoder
-
-
---maybeNoteContent : Maybe Int -> Maybe String -> Maybe Int -> Note
---maybeNoteContent maybeNoteId maybeNoteText maybeNoteVersion =
---  case (maybeNoteId, maybeNoteText, maybeNoteVersion) of
---    (Just noteId, Just noteText, Just noteVersion) -> HavingContent <| NoteWithId { noteId = noteId,  noteText = noteText, noteVersion = noteVersion }
---    (Just noteId, Nothing, _)                      -> BrandNewNote -- technically shouldn't happen, treat it as no note
---    (Nothing, Just noteText, _)                    -> HavingContent <| NoteWithoutId noteText -- ignore version as it's an illegal state
---    (Nothing, Nothing, _)                          -> BrandNewNote
---    (Just noteId, Just noteText, Nothing)          -> BrandNewNote -- TODO: we need to couple noteId and Version as they don't make sense separately
-
---
--- UTIL
---
-
-hasContent: Note -> Bool
-hasContent note =
-  case note of
-    BrandNewNote                             -> False
-    (HavingContent (NoteWithoutId noteText)) -> not (String.isEmpty <| SC.getNoteLightText noteText)
-    (HavingContent (NoteWithId noteText))    -> not (String.isEmpty <| SC.getNoteFullText noteText)
-
---showPortType: PortType -> String
---showPortType portType =
---  case portType of
---    SaveMessage    -> "save_message"
---    PreviewMessage -> "preview_message"
-
-
-fromHttpError: Http.Error -> String
-fromHttpError error =
-  case error of
-    (Http.BadUrl burl)      -> "bad url: " ++ burl
-    Http.Timeout            -> "timeout"
-    Http.NetworkError       -> "network error"
-    (Http.BadStatus status) -> "bad status: " ++ String.fromInt status
-    (Http.BadBody body)     -> "bad body: " ++ body

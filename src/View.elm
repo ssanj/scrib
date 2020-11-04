@@ -513,7 +513,7 @@ logMessage message =
 
 saveSelectedNoteToLocalStorage : SC.NoteFull -> Cmd Msg
 saveSelectedNoteToLocalStorage note =
-  let storageArea             = viewSelectedNoteStorageArea
+  let storageArea             = savedNoteStorageArea
       saveSelectedNoteValue   = P.JsStorageValue storageArea Save note
       responseKey             = Just noteSavedToLocalStorageResponseKey
       saveSelectedNoteCommand = P.WithStorage saveSelectedNoteValue responseKey
@@ -521,7 +521,7 @@ saveSelectedNoteToLocalStorage note =
 
 removeSelectedNoteFromLocalStorage : Cmd Msg
 removeSelectedNoteFromLocalStorage =
-  let storageArea               = viewSelectedNoteStorageArea
+  let storageArea               = savedNoteStorageArea
       removeSelectedNoteValue   = P.JsStorageValue storageArea Delete ()
       responseKey               = Just noteRemovedFromLocalStorageResponseKey
       removeSelectedNoteCommand = P.WithStorage removeSelectedNoteValue responseKey

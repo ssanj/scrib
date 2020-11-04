@@ -6726,12 +6726,12 @@ var $author$project$StorageKeys$StorageArea = F2(
 var $author$project$StorageKeys$StorageKey = function (a) {
 	return {$: 'StorageKey', a: a};
 };
-var $author$project$StorageKeys$viewSelectedNoteStorageArea = A2(
+var $author$project$StorageKeys$savedNoteStorageArea = A2(
 	$author$project$StorageKeys$StorageArea,
 	$author$project$StorageKeys$Local,
 	$author$project$StorageKeys$StorageKey('scrib.edit'));
 var $author$project$View$removeSelectedNoteFromLocalStorage = function () {
-	var storageArea = $author$project$StorageKeys$viewSelectedNoteStorageArea;
+	var storageArea = $author$project$StorageKeys$savedNoteStorageArea;
 	var responseKey = $elm$core$Maybe$Just($author$project$View$noteRemovedFromLocalStorageResponseKey);
 	var removeSelectedNoteValue = A3($author$project$Ports$JsStorageValue, storageArea, $author$project$StorageKeys$Delete, _Utils_Tuple0);
 	var removeSelectedNoteCommand = A2($author$project$Ports$WithStorage, removeSelectedNoteValue, responseKey);
@@ -6902,7 +6902,7 @@ var $author$project$Note$encodeFullNote = function (_v0) {
 };
 var $author$project$View$noteSavedToLocalStorageResponseKey = $author$project$Ports$ResponseKey('NoteSavedToLocalStorage');
 var $author$project$View$saveSelectedNoteToLocalStorage = function (note) {
-	var storageArea = $author$project$StorageKeys$viewSelectedNoteStorageArea;
+	var storageArea = $author$project$StorageKeys$savedNoteStorageArea;
 	var saveSelectedNoteValue = A3($author$project$Ports$JsStorageValue, storageArea, $author$project$StorageKeys$Save, note);
 	var responseKey = $elm$core$Maybe$Just($author$project$View$noteSavedToLocalStorageResponseKey);
 	var saveSelectedNoteCommand = A2($author$project$Ports$WithStorage, saveSelectedNoteValue, responseKey);

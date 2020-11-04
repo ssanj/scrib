@@ -5,7 +5,6 @@ module StorageKeys exposing
     , outputKey
     , apiKeyKey
     , viewTopNotesStorageArea
-    , viewSelectedNoteStorageArea
     , savedNoteStorageArea
     , apiKeyStorageArea
     , encodeKeyAndPayload
@@ -48,15 +47,11 @@ type StorageArea = StorageArea StorageType StorageKey
 viewTopNotesStorageArea: StorageArea
 viewTopNotesStorageArea = StorageArea Session (StorageKey "scrib.view")
 
-viewSelectedNoteStorageArea: StorageArea
-viewSelectedNoteStorageArea = StorageArea Local (StorageKey "scrib.edit")
-
 savedNoteStorageArea: StorageArea
 savedNoteStorageArea = StorageArea Local (StorageKey "scrib.edit")
 
 apiKeyStorageArea: StorageArea
 apiKeyStorageArea = StorageArea Local (StorageKey "scrib.api.key")
-
 
 encodeStorageType : Encoder StorageType
 encodeStorageType st =

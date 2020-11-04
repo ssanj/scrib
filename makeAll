@@ -1,0 +1,4 @@
+#!/bin/bash
+
+elm make src/*.elm --report=json --output=/dev/null 2>&1 | sharpen
+
