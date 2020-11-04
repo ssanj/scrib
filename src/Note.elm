@@ -16,10 +16,37 @@ type alias NoteLight =
     noteText: String
   }
 
+-- TODO: Make the types in this class opaque
 
 type Note = Note NoteFull
           | NoteText NoteLight
 
+getNoteLightText : NoteLight -> String
+getNoteLightText { noteText } = noteText
+
+getNoteFullText : NoteFull -> String
+getNoteFullText { noteText } = noteText
+
+getNoteText : Note -> String
+getNoteText note =
+  case note of
+    (Note { noteText })     -> noteText
+    (NoteText { noteText }) -> noteText
+
+getNoteId : Note -> Maybe Int
+getNoteId note =
+  case note of
+    (Note { noteId }) -> Just noteId
+    _                 -> Nothing
+
+getNoteVersion : Note -> Maybe Int
+getNoteVersion note =
+  case note of
+    (Note { noteVersion }) -> Just noteVersion
+    _                      -> Nothing
+
+updateNoteText : String -> NoteFull -> NoteFull
+updateNoteText newText { noteId, noteVersion } = { noteId = noteId, noteVersion = noteVersion, noteText = newText }
 
 encodeNote: Note -> E.Value
 encodeNote note =

@@ -30,8 +30,15 @@ debugWith = Debug.log
 onlyModel : a -> (a, Cmd msg)
 onlyModel model = (model, Cmd.none)
 
+
+-- HTML
+
+
 plainDiv : List (Html msg) -> Html msg
 plainDiv = div []
+
+emptyDiv : Html a
+emptyDiv = div [] []
 
 addClasses : List String -> List (Attribute a)
 addClasses classes = List.map class classes
@@ -126,8 +133,6 @@ createErrorBlock { errorMessage } =
       text errorMessage
     ]
 
-emptyDiv : Html a
-emptyDiv = div [] []
 
 foldResult : (D.Error -> b) -> (a -> b) -> Result D.Error a ->  b
 foldResult failure success result =

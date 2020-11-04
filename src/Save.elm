@@ -13,11 +13,12 @@ import FP              exposing (maybe, const)
 import Browser
 import Http
 import Browser.Navigation
+import Markdown
 
 import List.Nonempty as N
 import Json.Decode   as D
 import Json.Encode   as E
-import Note          as N
+import Note          as SC
 import Ports         as P
 import Subs          as S
 
@@ -48,8 +49,8 @@ type DataSource = LocalLoad
 
 type alias RemoteNoteData = WebData NoteIdVersion
 
-type NoteWithContent = NoteWithoutId String
-                     | NoteWithId N.Note
+type NoteWithContent = NoteWithoutId SC.NoteLight
+                     | NoteWithId SC.NoteFull
 
 -- What information do we have about the note?
 type Note = BrandNewNote
@@ -134,17 +135,21 @@ type Msg = NoteSavedMsg
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
-update msg model = onlyModel model
-  --case msg of
+update msg model =
+  case msg of
   --  NoteSavedMsg -> saveNote model
 
-  --  (NoteEditedMsg newNoteText) ->
-  --     let updatedModel =
-  --          case model.note of
-  --            BrandNewNote                          -> { model | note = HavingContent <| NoteWithoutId newNoteText,     noteContentStatus  = NeedsToSave }
-  --            (HavingContent (NoteWithoutId _))     -> { model | note = HavingContent <| NoteWithoutId newNoteText,     noteContentStatus  = NeedsToSave }
-  --            (HavingContent (NoteWithId { noteId, noteVersion })) -> { model | note = HavingContent <| NoteWithId { noteId = noteId, noteVersion = noteVersion, noteText = newNoteText }, noteContentStatus  = NeedsToSave }
-  --     in (updatedModel, scribMessage (encode PreviewMessage updatedModel))
+    (NoteEditedMsg newNoteText) ->
+       let updatedModel =
+            case model.note of
+              BrandNewNote                          -> { model | note = HavingContent <| NoteWithoutId <| SC.NoteLight newNoteText,     noteContentStatus  = NeedsToSave }
+              (HavingContent (NoteWithoutId _))     -> { model | note = HavingContent <| NoteWithoutId <| SC.NoteLight newNoteText,     noteContentStatus  = NeedsToSave }
+              (HavingContent (NoteWithId fullNote))   ->
+                let note =  SC.updateNoteText newNoteText fullNote
+                in { model | note = HavingContent <| NoteWithId note, noteContentStatus  = NeedsToSave }
+       in onlyModel updatedModel  --(updatedModel, scribMessage (encode PreviewMessage updatedModel))
+
+    _ -> onlyModel model
 
   --  NewNoteMsg ->
   --    let updatedModel = { defaultModel | dataSource =  UserCreated, apiKey = model.apiKey }
@@ -227,7 +232,7 @@ view model =
           viewHeadings ++
           [
             viewNoteEditingArea model
-          , viewMarkdownPreview
+          , createMarkdownPreview model.note
           ]
         )
     ]
@@ -319,13 +324,44 @@ viewSaveButton model =
       [text "Save"]
 
 
-viewMarkdownPreview : Html Msg
-viewMarkdownPreview =
-  plainDiv
+createMarkdownPreview : Note -> Html Msg
+createMarkdownPreview note =
+  case note of
+    BrandNewNote                           -> viewMarkdownInstructions
+
+    (HavingContent (NoteWithoutId scNote)) ->
+      let noteText = SC.getNoteLightText scNote
+      in
+        if String.isEmpty noteText then viewMarkdownInstructions
+        else viewMarkdownPreview noteText
+
+    (HavingContent (NoteWithId scNote))    ->
+      let noteText = SC.getNoteFullText scNote
+      in
+        if String.isEmpty noteText then viewMarkdownInstructions
+        else viewMarkdownPreview noteText
+
+viewMarkdownInstructions : Html Msg
+viewMarkdownInstructions =
+  div [ class "content", class "is-large my-6" ]
     [
-      hr [] []
-    , div [id "markdown-view"] []
+      div [ class "block", class "has-text-centered", class "is-size-3" ]
+        [ text "Please enter some text to see a preview here" ]
     ]
+
+viewMarkdownPreview : String -> Html Msg
+viewMarkdownPreview noteText =
+  div []
+    [ hr []
+      []
+    , div [ id "preview" ]
+      [ div [ id markdownViewId ]
+        [ Markdown.toHtml [] noteText ]
+      ]
+    ]
+
+markdownViewId : String
+markdownViewId = "markdown-view"
 
 --
 -- PORTS
@@ -395,11 +431,11 @@ getNoteId note = Nothing
   --  (HavingContent (NoteWithoutId _))        -> Nothing
 
 getNoteText : Note -> String
-getNoteText note = ""
-  --case note of
-  --  BrandNewNote                              -> ""
-  --  (HavingContent (NoteWithId { noteText })) -> noteText
-  --  (HavingContent (NoteWithoutId noteText))  -> noteText
+getNoteText note =
+  case note of
+    BrandNewNote                                 -> ""
+    (HavingContent (NoteWithId { noteText }))    -> noteText
+    (HavingContent (NoteWithoutId { noteText })) -> noteText
 
 
 -- DECODERS
