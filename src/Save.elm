@@ -40,14 +40,13 @@ main =
 -- MODEL
 --
 
-type alias NoteIdVersion = { noteId : Int, noteVersion : Int }
 
 -- Where did the note originate?
 type DataSource = LocalLoad
                 | InitNote
                 | UserCreated
 
-type alias RemoteNoteData = WebData NoteIdVersion
+type alias RemoteNoteData = WebData SC.NoteIdVersion
 
 type NoteWithContent = NoteWithoutId SC.NoteLight
                      | NoteWithId SC.NoteFull
@@ -133,12 +132,15 @@ type Msg = NoteSavedMsg
          | NewNoteMsg
          | ViewNoteMsg
          | NoteSaveResponseMsg RemoteNoteData
+         | NoteSavedToLocalStorage
+         | RemoteNoteIdVersionSavedToLocalStorage
+         | JSNotificationError String
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-  --  NoteSavedMsg -> saveNote model
+    NoteSavedMsg -> saveNote model
 
     (NoteEditedMsg newNoteText) ->
        let updatedModel =
@@ -148,76 +150,97 @@ update msg model =
               (HavingContent (NoteWithId fullNote))   ->
                 let note =  SC.updateNoteText newNoteText fullNote
                 in { model | note = HavingContent <| NoteWithId note, noteContentStatus  = NeedsToSave }
-       in onlyModel updatedModel  --(updatedModel, scribMessage (encode PreviewMessage updatedModel))
+       in onlyModel updatedModel
 
     NewNoteMsg -> onlyModel { defaultModel | dataSource =  UserCreated, apiKey = model.apiKey }
 
     ViewNoteMsg -> (model, Browser.Navigation.load "view.html")
 
-  --  (NoteSaveResponseMsg noteResponse) ->
-  --    let updatedNote =
-  --          case model.note of
-  --            BrandNewNote            -> model.note -- illegal
-  --            (HavingContent content) -> HavingContent <| noteFromRemoteSave content noteResponse
-  --        updatedModel = {model | remoteSaveStatus = noteResponse, note = updatedNote, noteContentStatus = contentStatusFromRemoteSave noteResponse }
-  --    in (updatedModel, sendSaveMessage updatedModel)
-    _ -> onlyModel model
+    (NoteSaveResponseMsg noteResponse) ->
+      let updatedNote =
+            case model.note of
+              BrandNewNote            -> model.note -- illegal, you shouldn't be able to save a new note (without content)
+              (HavingContent content) -> HavingContent <| noteFromRemoteSave content noteResponse
+          updatedModel = {model | remoteSaveStatus = noteResponse, note = updatedNote, noteContentStatus = contentStatusFromRemoteSave noteResponse }
+      in (updatedModel, saveRemoteUpdateToLocalStorage updatedModel.note)
+
+    NoteSavedToLocalStorage ->
+      case model.note of
+        BrandNewNote -> onlyModel model
+        (HavingContent content) -> performOrGotoConfig model ({model | remoteSaveStatus = Loading }, performSaveNote content)
+
+    RemoteNoteIdVersionSavedToLocalStorage -> onlyModel model
+
+    (JSNotificationError error) -> (model, logMessage error)
+
+contentStatusFromRemoteSave : RemoteNoteData -> ContentStatus
+contentStatusFromRemoteSave remoteData =
+  if RemoteData.isSuccess remoteData then UpToDate else NeedsToSave
+
+noteFromRemoteSave : NoteWithContent -> RemoteNoteData -> NoteWithContent
+noteFromRemoteSave existingNote remoteData =
+  case (existingNote, remoteData) of
+    (NoteWithoutId noteText, Success noteIdVersion) -> NoteWithId <| SC.updateNoteIdVersion noteIdVersion noteText
+    (NoteWithoutId _, _)                            -> existingNote -- if we didn't succeed in updating the note, then there's no id to save
+    ((NoteWithId fullNote), Success noteIdVersion)  -> NoteWithId <| SC.updateNoteVersion noteIdVersion fullNote -- if we already have an id, then there's nothing to update
+    ((NoteWithId fullNote), _)                      -> existingNote -- if we didn't succeed then don't update the existing note
+
+saveNote: Model -> (Model, Cmd Msg)
+saveNote model =
+  case model.remoteSaveStatus of
+    Loading       -> (model, Cmd.none) -- still loading from a previous save...
+    _             ->
+      case model.note of
+        BrandNewNote -> (model, Cmd.none)
+        HavingContent content -> (model, saveEditingNoteToLocalStorage noteSavedToLocalStorageResponseKey content)
+
+saveRemoteUpdateToLocalStorage : Note -> Cmd Msg
+saveRemoteUpdateToLocalStorage note =
+  case note of
+    BrandNewNote -> Cmd.none
+    HavingContent content -> saveEditingNoteToLocalStorage remoteNoteIdVersionSavedToLocalStorageResponseKey content
+
+saveEditingNoteToLocalStorage : P.ResponseKey -> NoteWithContent -> Cmd Msg
+saveEditingNoteToLocalStorage responseKey note =
+  let storageArea             = viewSelectedNoteStorageArea --TODO: Name this better (local/scrib.edit)
+      saveSelectedNoteValue   = P.JsStorageValue storageArea Save note
+      saveSelectedNoteCommand = P.WithStorage saveSelectedNoteValue (Just responseKey)
+  in scribMessage <| P.encodeJsCommand saveSelectedNoteCommand encodeSaveNote
 
 
+noteSavedToLocalStorageResponseKey : P.ResponseKey
+noteSavedToLocalStorageResponseKey = P.ResponseKey "NoteSavedToLocalStorage"
 
---contentStatusFromRemoteSave : RemoteNoteData -> ContentStatus
---contentStatusFromRemoteSave remoteData =
---  if RemoteData.isSuccess remoteData then UpToDate else NeedsToSave
+remoteNoteIdVersionSavedToLocalStorageResponseKey : P.ResponseKey
+remoteNoteIdVersionSavedToLocalStorageResponseKey = P.ResponseKey "RemoteNoteIdVersionSavedToLocalStorage"
 
---noteFromRemoteSave : NoteWithContent -> RemoteNoteData -> NoteWithContent
---noteFromRemoteSave existingNote remoteData =
---  case (existingNote, remoteData) of
---    (NoteWithoutId noteText, Success { noteId, noteVersion }) -> NoteWithId  { noteId = noteId, noteText = noteText, noteVersion = noteVersion }
---    (NoteWithoutId _, _) -> existingNote -- if we didn't succeed in updating the note, then there's no id to save
---    ((NoteWithId _ ), _) -> existingNote -- if we already have an id, then there's nothing to update
+performSaveNote: NoteWithContent -> ApiKey -> Cmd Msg
+performSaveNote note apiKey =
+  Http.request {
+   method    = "POST"
+  , headers  = [ apiKeyHeader apiKey ]
+  , url      = "/note"
+  , body     = Http.jsonBody <| encodeSaveNote note
+  , expect   = Http.expectJson processSaveNoteResults SC.decoderNoteIdVersion
+  , timeout  = Nothing
+  , tracker  = Nothing
+  }
 
+performOrGotoConfig : Model -> (Model, (ApiKey -> Cmd Msg)) -> (Model, Cmd Msg)
+performOrGotoConfig oldModel apiKeyCommand =
+  performApiKey
+    oldModel.apiKey
+    apiKeyCommand
+    (oldModel, Browser.Navigation.load "config.html")
 
---saveNote: Model -> (Model, Cmd Msg)
---saveNote model =
---  case model.remoteSaveStatus of
---    Loading       -> (model, Cmd.none) -- still loading from a previous save...
---    _             ->
---      case model.note of
---        BrandNewNote -> (model, Cmd.none)
---        HavingContent content ->
---          let  (newModel, remoteSaveCmd) =  performOrGotoConfig model ({model | remoteSaveStatus = Loading }, performSaveNote content)
---          in (newModel, Cmd.batch [remoteSaveCmd, sendSaveMessage newModel]) -- TODO: Change this into a Task
+processSaveNoteResults: Result Http.Error SC.NoteIdVersion -> Msg
+processSaveNoteResults = processHttpResult NoteSaveResponseMsg
 
---sendSaveMessage: Model -> Cmd Msg
---sendSaveMessage model = scribMessage (encode SaveMessage model)
+processHttpResult: (RemoteNoteData -> Msg) -> Result Http.Error SC.NoteIdVersion -> Msg
+processHttpResult toMsg httpResult   =
+  let result  = RemoteData.fromResult httpResult
+  in toMsg result
 
-
---performSaveNote: NoteWithContent -> ApiKey -> Cmd Msg
---performSaveNote note apiKey =
---  Http.request {
---   method    = "POST"
---  , headers  = [apiKeyHeader apiKey]
---  , url      = "/note"
---  , body     = Http.jsonBody <| encodeSaveNote note
---  , expect = Http.expectJson processSaveNoteResults decoderNoteIdVersion
---  , timeout  = Nothing
---  , tracker  = Nothing
---  }
-
---performOrGotoConfig : Model -> (Model, (ApiKey -> Cmd Msg)) -> (Model, Cmd Msg)
---performOrGotoConfig oldModel apiKeyCommand =
---  performApiKey
---    oldModel.apiKey
---    apiKeyCommand
---    (oldModel, Browser.Navigation.load "config.html")
-
---processSaveNoteResults: Result Http.Error NoteIdVersion -> Msg
---processSaveNoteResults = processHttpResult NoteSaveResponseMsg
-
---processHttpResult: (RemoteNoteData -> Msg) -> Result Http.Error NoteIdVersion -> Msg
---processHttpResult toMsg httpResult   =
---  let result  = RemoteData.fromResult httpResult
-  --in toMsg result
 
 --
 -- VIEW
@@ -368,23 +391,35 @@ markdownViewId = "markdown-view"
 --
 
 port scribMessage : E.Value -> Cmd msg
+port jsMessage : (E.Value -> msg) -> Sub msg
 
 --
 -- SUBSCRIPTIONS
 --
 
 subscriptions : Model -> Sub Msg
-subscriptions _ = Sub.none
+subscriptions _ = jsMessage (S.encodeJsResponse subscriptionSuccess subscriptionFailure)
+
+subscriptionSuccess : S.JsResponse E.Value -> Msg
+subscriptionSuccess (S.JsResponse (P.ResponseKey key) result) =
+  case (key) of
+    "NoteSavedToLocalStorage"                -> NoteSavedToLocalStorage
+    "RemoteNoteIdVersionSavedToLocalStorage" -> RemoteNoteIdVersionSavedToLocalStorage
+    otherKey                                 -> subscriptionFailure <| ("Unhandled JS notification: " ++ otherKey)
+
+subscriptionFailure : String -> Msg
+subscriptionFailure m = JSNotificationError ("subscriptionFailure: " ++ m)
+
 
 --
 -- JSON ENCODE/DECODE
 --
 
---encodeSaveNote: NoteWithContent -> E.Value
---encodeSaveNote note =
---  case note of
---    (NoteWithoutId noteText)            -> encodeUnsavedNote noteText
---    (NoteWithId { noteId, noteText, noteVersion }) -> N.encodeNote { noteId = noteId, noteText = noteText, noteVersion = noteVersion }
+encodeSaveNote: NoteWithContent -> E.Value
+encodeSaveNote note =
+  case note of
+    (NoteWithoutId noteText)                       -> SC.encodeLightNote noteText
+    (NoteWithId { noteId, noteText, noteVersion }) -> SC.encodeFullNote { noteId = noteId, noteText = noteText, noteVersion = noteVersion }
 
 --encodeUnsavedNote: String -> E.Value
 --encodeUnsavedNote noteText =
@@ -417,25 +452,25 @@ subscriptions _ = Sub.none
 
 
 getNoteVersion : Note -> Maybe Int
-getNoteVersion note = Nothing
-  --case note of
-  --  BrandNewNote                                 -> Nothing
-  --  (HavingContent (NoteWithId { noteVersion })) -> Just noteVersion
-  --  (HavingContent (NoteWithoutId _))            -> Nothing
+getNoteVersion note =
+  case note of
+    BrandNewNote                        -> Nothing
+    (HavingContent (NoteWithId scNote)) -> Just <| SC.getNoteVersionNoteFull scNote
+    (HavingContent (NoteWithoutId _))   -> Nothing
 
 getNoteId : Note -> Maybe Int
-getNoteId note = Nothing
-  --case note of
-  --  BrandNewNote           -> Nothing
-  --  (HavingContent (NoteWithId { noteId }))  -> Just noteId
-  --  (HavingContent (NoteWithoutId _))        -> Nothing
+getNoteId note =
+  case note of
+    BrandNewNote                        -> Nothing
+    (HavingContent (NoteWithId scNote)) -> Just <| SC.getNoteIdNoteFull scNote
+    (HavingContent (NoteWithoutId _))   -> Nothing
 
 getNoteText : Note -> String
 getNoteText note =
   case note of
-    BrandNewNote                                 -> ""
-    (HavingContent (NoteWithId { noteText }))    -> noteText
-    (HavingContent (NoteWithoutId { noteText })) -> noteText
+    BrandNewNote                          -> ""
+    (HavingContent (NoteWithId scNote))    -> SC.getNoteFullText scNote
+    (HavingContent (NoteWithoutId scNote)) -> SC.getNoteLightText scNote
 
 
 -- DECODERS
@@ -482,18 +517,17 @@ getNoteText note =
 --
 
 hasContent: Note -> Bool
-hasContent note = False
-  --case note of
-  --  BrandNewNote -> False
-  --  (HavingContent (NoteWithoutId noteText))   -> not (String.isEmpty noteText)
-  --  (HavingContent (NoteWithId { noteText } )) -> not (String.isEmpty noteText)
+hasContent note =
+  case note of
+    BrandNewNote                             -> False
+    (HavingContent (NoteWithoutId noteText)) -> not (String.isEmpty <| SC.getNoteLightText noteText)
+    (HavingContent (NoteWithId noteText))    -> not (String.isEmpty <| SC.getNoteFullText noteText)
 
-
-showPortType: PortType -> String
-showPortType portType =
-  case portType of
-    SaveMessage    -> "save_message"
-    PreviewMessage -> "preview_message"
+--showPortType: PortType -> String
+--showPortType portType =
+--  case portType of
+--    SaveMessage    -> "save_message"
+--    PreviewMessage -> "preview_message"
 
 
 fromHttpError: Http.Error -> String
