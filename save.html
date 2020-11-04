@@ -31,7 +31,7 @@
       //TODO: we should try/catch here.
       const noteForEditing = storedData ? JSON.parse(storedData) : null;
       const apiKey         = localStorage.getItem(appApiKey);
-      return { "note": noteForEditing.note , "apiKey": apiKey};
+      return { "note": noteForEditing , "apiKey": apiKey};
     }
   </script>
 </body>

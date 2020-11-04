@@ -86,3 +86,11 @@ decodeFullNote =
 
 decodeLightNote: D.Decoder NoteLight
 decodeLightNote = D.map NoteLight (D.field "noteText" D.string)
+
+decodeNote : D.Decoder Note
+decodeNote =
+  D.oneOf
+    [
+      D.map Note decodeFullNote
+    , D.map NoteText decodeLightNote
+    ]

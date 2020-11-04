@@ -5285,11 +5285,39 @@ var $author$project$ApiKey$decodeApiKeyWithPayload = F2(
 					$author$project$StorageKeys$keyValue(key),
 					payloadDecoder)));
 	});
+var $author$project$Note$Note = function (a) {
+	return {$: 'Note', a: a};
+};
+var $author$project$Note$NoteText = function (a) {
+	return {$: 'NoteText', a: a};
+};
+var $author$project$Note$NoteFull = F3(
+	function (noteText, noteId, noteVersion) {
+		return {noteId: noteId, noteText: noteText, noteVersion: noteVersion};
+	});
+var $elm$json$Json$Decode$int = _Json_decodeInt;
+var $elm$json$Json$Decode$map3 = _Json_map3;
+var $author$project$Note$decodeFullNote = A4(
+	$elm$json$Json$Decode$map3,
+	$author$project$Note$NoteFull,
+	A2($elm$json$Json$Decode$field, 'noteText', $elm$json$Json$Decode$string),
+	A2($elm$json$Json$Decode$field, 'noteId', $elm$json$Json$Decode$int),
+	A2($elm$json$Json$Decode$field, 'noteVersion', $elm$json$Json$Decode$int));
+var $author$project$Note$NoteLight = function (noteText) {
+	return {noteText: noteText};
+};
+var $author$project$Note$decodeLightNote = A2(
+	$elm$json$Json$Decode$map,
+	$author$project$Note$NoteLight,
+	A2($elm$json$Json$Decode$field, 'noteText', $elm$json$Json$Decode$string));
+var $author$project$Note$decodeNote = $elm$json$Json$Decode$oneOf(
+	_List_fromArray(
+		[
+			A2($elm$json$Json$Decode$map, $author$project$Note$Note, $author$project$Note$decodeFullNote),
+			A2($elm$json$Json$Decode$map, $author$project$Note$NoteText, $author$project$Note$decodeLightNote)
+		]));
 var $author$project$StorageKeys$noteKey = $author$project$StorageKeys$JsonKey('note');
-var $author$project$Save$decodeLocalSave = A2(
-	$author$project$ApiKey$decodeApiKeyWithPayload,
-	$author$project$StorageKeys$noteKey,
-	$elm$json$Json$Decode$succeed(_Utils_Tuple0));
+var $author$project$Save$decodeLocalSave = A2($author$project$ApiKey$decodeApiKeyWithPayload, $author$project$StorageKeys$noteKey, $author$project$Note$decodeNote);
 var $elm$json$Json$Decode$decodeValue = _Json_run;
 var $author$project$ElmCommon$foldResult = F3(
 	function (failure, success, result) {
@@ -5500,19 +5528,48 @@ var $author$project$Save$handleInitFailure = function (err) {
 					'Decode of init data failed due to: ' + $elm$json$Json$Decode$errorToString(err))
 				])));
 };
+var $author$project$Save$HavingContent = function (a) {
+	return {$: 'HavingContent', a: a};
+};
 var $author$project$Save$LocalLoad = {$: 'LocalLoad'};
+var $elm$core$Basics$composeL = F3(
+	function (g, f, x) {
+		return g(
+			f(x));
+	});
+var $author$project$Save$NoteWithId = function (a) {
+	return {$: 'NoteWithId', a: a};
+};
+var $author$project$Save$NoteWithoutId = function (a) {
+	return {$: 'NoteWithoutId', a: a};
+};
+var $author$project$Save$createNote = function (scNote) {
+	if (scNote.$ === 'Note') {
+		var noteFull = scNote.a;
+		return $author$project$Save$NoteWithId(noteFull);
+	} else {
+		var noteLight = scNote.a;
+		return $author$project$Save$NoteWithoutId(noteLight);
+	}
+};
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
 var $author$project$ElmCommon$onlyModel = function (model) {
 	return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 };
 var $author$project$Save$handleInitSuccess = function (_v0) {
 	var apiKey = _v0.apiKey;
+	var payload = _v0.payload;
+	var note = A3(
+		$author$project$FP$maybe,
+		$author$project$Save$BrandNewNote,
+		A2($elm$core$Basics$composeL, $author$project$Save$HavingContent, $author$project$Save$createNote),
+		payload);
 	var model = _Utils_update(
 		$author$project$Save$defaultModel,
 		{
 			apiKey: $elm$core$Maybe$Just(apiKey),
 			dataSource: $author$project$Save$LocalLoad,
-			note: $author$project$Save$BrandNewNote
+			note: note
 		});
 	return $author$project$ElmCommon$onlyModel(model);
 };
@@ -5525,19 +5582,7 @@ var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
 var $author$project$Save$subscriptions = function (_v0) {
 	return $elm$core$Platform$Sub$none;
 };
-var $author$project$Save$HavingContent = function (a) {
-	return {$: 'HavingContent', a: a};
-};
 var $author$project$Save$NeedsToSave = {$: 'NeedsToSave'};
-var $author$project$Note$NoteLight = function (noteText) {
-	return {noteText: noteText};
-};
-var $author$project$Save$NoteWithId = function (a) {
-	return {$: 'NoteWithId', a: a};
-};
-var $author$project$Save$NoteWithoutId = function (a) {
-	return {$: 'NoteWithoutId', a: a};
-};
 var $author$project$Save$UserCreated = {$: 'UserCreated'};
 var $author$project$Note$updateNoteText = F2(
 	function (newText, _v0) {

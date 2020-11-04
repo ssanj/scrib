@@ -76,13 +76,6 @@ init json =
   let decodeResult = D.decodeValue decodeLocalSave json
   in foldResult handleInitFailure handleInitSuccess decodeResult
 
-  --case localEdit of
-  --  (Ok {apiKey, note})  ->
-  --    let model =
-  --          {defaultModel | note = note, apiKey = Just apiKey, dataSource = LocalLoad}
-  --    in onlyModel model {- (model, scribMessage <| encode PreviewMessage model ) -}
-  --  Err _     -> (defaultModel, Browser.Navigation.load "config.html")
-
 appName : String
 appName = "scrib"
 
@@ -95,14 +88,22 @@ logMessage message =
   in scribMessage <| P.encodeJsCommand logCommand E.string
 
 
-decodeLocalSave : D.Decoder (ApiKeyWithPayload ())
-decodeLocalSave = decodeApiKeyWithPayload noteKey (D.succeed ())
+decodeLocalSave : D.Decoder (ApiKeyWithPayload SC.Note)
+decodeLocalSave = decodeApiKeyWithPayload noteKey SC.decodeNote
 
-handleInitSuccess : ApiKeyWithPayload () -> (Model, Cmd Msg)
-handleInitSuccess { apiKey } =
-    let model =
-            { defaultModel | note = BrandNewNote, apiKey = Just apiKey, dataSource = LocalLoad }
+handleInitSuccess : ApiKeyWithPayload SC.Note -> (Model, Cmd Msg)
+handleInitSuccess { apiKey, payload } =
+    let note  = maybe BrandNewNote (HavingContent << createNote) payload
+        model =
+            { defaultModel | note = note, apiKey = Just apiKey, dataSource = LocalLoad }
     in onlyModel model
+
+
+createNote : SC.Note -> NoteWithContent
+createNote scNote =
+  case scNote of
+    (SC.Note noteFull)      -> NoteWithId noteFull
+    (SC.NoteText noteLight) -> NoteWithoutId noteLight
 
 -- TODO: Should we have a FATAL error instead of logging to the console and redirecting to config?
 handleInitFailure : D.Error -> (Model, Cmd Msg)
