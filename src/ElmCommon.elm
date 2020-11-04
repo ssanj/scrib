@@ -7,6 +7,8 @@ import Json.Encode     exposing (Value)
 import Debug
 
 import List.Nonempty as N
+import Json.Decode   as D
+
 import FP exposing (maybe, maybeToBool)
 
 type alias ErrorMessage = { errorMessage : String }
@@ -126,3 +128,10 @@ createErrorBlock { errorMessage } =
 
 emptyDiv : Html a
 emptyDiv = div [] []
+
+foldResult : (D.Error -> b) -> (a -> b) -> Result D.Error a ->  b
+foldResult failure success result =
+  case result of
+    (Ok value)  -> success value
+    (Err error) -> failure error
+

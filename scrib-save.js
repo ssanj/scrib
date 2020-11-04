@@ -4355,182 +4355,7 @@ function _Browser_load(url)
 		}
 	}));
 }
-
-
-
-// SEND REQUEST
-
-var _Http_toTask = F3(function(router, toTask, request)
-{
-	return _Scheduler_binding(function(callback)
-	{
-		function done(response) {
-			callback(toTask(request.expect.a(response)));
-		}
-
-		var xhr = new XMLHttpRequest();
-		xhr.addEventListener('error', function() { done($elm$http$Http$NetworkError_); });
-		xhr.addEventListener('timeout', function() { done($elm$http$Http$Timeout_); });
-		xhr.addEventListener('load', function() { done(_Http_toResponse(request.expect.b, xhr)); });
-		$elm$core$Maybe$isJust(request.tracker) && _Http_track(router, xhr, request.tracker.a);
-
-		try {
-			xhr.open(request.method, request.url, true);
-		} catch (e) {
-			return done($elm$http$Http$BadUrl_(request.url));
-		}
-
-		_Http_configureRequest(xhr, request);
-
-		request.body.a && xhr.setRequestHeader('Content-Type', request.body.a);
-		xhr.send(request.body.b);
-
-		return function() { xhr.c = true; xhr.abort(); };
-	});
-});
-
-
-// CONFIGURE
-
-function _Http_configureRequest(xhr, request)
-{
-	for (var headers = request.headers; headers.b; headers = headers.b) // WHILE_CONS
-	{
-		xhr.setRequestHeader(headers.a.a, headers.a.b);
-	}
-	xhr.timeout = request.timeout.a || 0;
-	xhr.responseType = request.expect.d;
-	xhr.withCredentials = request.allowCookiesFromOtherDomains;
-}
-
-
-// RESPONSES
-
-function _Http_toResponse(toBody, xhr)
-{
-	return A2(
-		200 <= xhr.status && xhr.status < 300 ? $elm$http$Http$GoodStatus_ : $elm$http$Http$BadStatus_,
-		_Http_toMetadata(xhr),
-		toBody(xhr.response)
-	);
-}
-
-
-// METADATA
-
-function _Http_toMetadata(xhr)
-{
-	return {
-		url: xhr.responseURL,
-		statusCode: xhr.status,
-		statusText: xhr.statusText,
-		headers: _Http_parseHeaders(xhr.getAllResponseHeaders())
-	};
-}
-
-
-// HEADERS
-
-function _Http_parseHeaders(rawHeaders)
-{
-	if (!rawHeaders)
-	{
-		return $elm$core$Dict$empty;
-	}
-
-	var headers = $elm$core$Dict$empty;
-	var headerPairs = rawHeaders.split('\r\n');
-	for (var i = headerPairs.length; i--; )
-	{
-		var headerPair = headerPairs[i];
-		var index = headerPair.indexOf(': ');
-		if (index > 0)
-		{
-			var key = headerPair.substring(0, index);
-			var value = headerPair.substring(index + 2);
-
-			headers = A3($elm$core$Dict$update, key, function(oldValue) {
-				return $elm$core$Maybe$Just($elm$core$Maybe$isJust(oldValue)
-					? value + ', ' + oldValue.a
-					: value
-				);
-			}, headers);
-		}
-	}
-	return headers;
-}
-
-
-// EXPECT
-
-var _Http_expect = F3(function(type, toBody, toValue)
-{
-	return {
-		$: 0,
-		d: type,
-		b: toBody,
-		a: toValue
-	};
-});
-
-var _Http_mapExpect = F2(function(func, expect)
-{
-	return {
-		$: 0,
-		d: expect.d,
-		b: expect.b,
-		a: function(x) { return func(expect.a(x)); }
-	};
-});
-
-function _Http_toDataView(arrayBuffer)
-{
-	return new DataView(arrayBuffer);
-}
-
-
-// BODY and PARTS
-
-var _Http_emptyBody = { $: 0 };
-var _Http_pair = F2(function(a, b) { return { $: 0, a: a, b: b }; });
-
-function _Http_toFormData(parts)
-{
-	for (var formData = new FormData(); parts.b; parts = parts.b) // WHILE_CONS
-	{
-		var part = parts.a;
-		formData.append(part.a, part.b);
-	}
-	return formData;
-}
-
-var _Http_bytesToBlob = F2(function(mime, bytes)
-{
-	return new Blob([bytes], { type: mime });
-});
-
-
-// PROGRESS
-
-function _Http_track(router, xhr, tracker)
-{
-	// TODO check out lengthComputable on loadstart event
-
-	xhr.upload.addEventListener('progress', function(event) {
-		if (xhr.c) { return; }
-		_Scheduler_rawSpawn(A2($elm$core$Platform$sendToSelf, router, _Utils_Tuple2(tracker, $elm$http$Http$Sending({
-			sent: event.loaded,
-			size: event.total
-		}))));
-	});
-	xhr.addEventListener('progress', function(event) {
-		if (xhr.c) { return; }
-		_Scheduler_rawSpawn(A2($elm$core$Platform$sendToSelf, router, _Utils_Tuple2(tracker, $elm$http$Http$Receiving({
-			received: event.loaded,
-			size: event.lengthComputable ? $elm$core$Maybe$Just(event.total) : $elm$core$Maybe$Nothing
-		}))));
-	});
-}var $elm$core$Basics$EQ = {$: 'EQ'};
+var $elm$core$Basics$EQ = {$: 'EQ'};
 var $elm$core$Basics$GT = {$: 'GT'};
 var $elm$core$Basics$LT = {$: 'LT'};
 var $elm$core$List$cons = _List_cons;
@@ -5319,103 +5144,25 @@ var $elm$core$Task$perform = F2(
 				A2($elm$core$Task$map, toMessage, task)));
 	});
 var $elm$browser$Browser$element = _Browser_element;
-var $author$project$Save$LocalLoad = {$: 'LocalLoad'};
-var $author$project$Save$PreviewMessage = {$: 'PreviewMessage'};
-var $elm$json$Json$Decode$decodeValue = _Json_run;
-var $author$project$Save$LocalEdit = F2(
-	function (apiKey, note) {
-		return {apiKey: apiKey, note: note};
-	});
-var $elm$json$Json$Decode$field = _Json_decodeField;
-var $elm$json$Json$Decode$at = F2(
-	function (fields, decoder) {
-		return A3($elm$core$List$foldr, $elm$json$Json$Decode$field, decoder, fields);
-	});
 var $author$project$ApiKey$ApiKey = function (value) {
 	return {value: value};
 };
 var $elm$json$Json$Decode$string = _Json_decodeString;
 var $author$project$ApiKey$decodeApiKey = A2($elm$json$Json$Decode$map, $author$project$ApiKey$ApiKey, $elm$json$Json$Decode$string);
-var $elm$json$Json$Decode$int = _Json_decodeInt;
-var $elm$json$Json$Decode$map3 = _Json_map3;
-var $elm$json$Json$Decode$oneOf = _Json_oneOf;
-var $elm$json$Json$Decode$maybe = function (decoder) {
-	return $elm$json$Json$Decode$oneOf(
-		_List_fromArray(
-			[
-				A2($elm$json$Json$Decode$map, $elm$core$Maybe$Just, decoder),
-				$elm$json$Json$Decode$succeed($elm$core$Maybe$Nothing)
-			]));
-};
-var $author$project$Save$BrandNewNote = {$: 'BrandNewNote'};
-var $author$project$Save$HavingContent = function (a) {
-	return {$: 'HavingContent', a: a};
-};
-var $author$project$Save$NoteWithId = function (a) {
-	return {$: 'NoteWithId', a: a};
-};
-var $author$project$Save$NoteWithoutId = function (a) {
-	return {$: 'NoteWithoutId', a: a};
-};
-var $author$project$Save$maybeNoteContent = F3(
-	function (maybeNoteId, maybeNoteText, maybeNoteVersion) {
-		var _v0 = _Utils_Tuple3(maybeNoteId, maybeNoteText, maybeNoteVersion);
-		if (_v0.a.$ === 'Nothing') {
-			if (_v0.b.$ === 'Just') {
-				var _v2 = _v0.a;
-				var noteText = _v0.b.a;
-				return $author$project$Save$HavingContent(
-					$author$project$Save$NoteWithoutId(noteText));
-			} else {
-				var _v3 = _v0.a;
-				var _v4 = _v0.b;
-				return $author$project$Save$BrandNewNote;
-			}
+var $author$project$Save$decodeLocalSave = $author$project$ApiKey$decodeApiKey;
+var $elm$json$Json$Decode$decodeValue = _Json_run;
+var $author$project$ElmCommon$foldResult = F3(
+	function (failure, success, result) {
+		if (result.$ === 'Ok') {
+			var value = result.a;
+			return success(value);
 		} else {
-			if (_v0.b.$ === 'Nothing') {
-				var noteId = _v0.a.a;
-				var _v1 = _v0.b;
-				return $author$project$Save$BrandNewNote;
-			} else {
-				if (_v0.c.$ === 'Just') {
-					var noteId = _v0.a.a;
-					var noteText = _v0.b.a;
-					var noteVersion = _v0.c.a;
-					return $author$project$Save$HavingContent(
-						$author$project$Save$NoteWithId(
-							{noteId: noteId, noteText: noteText, noteVersion: noteVersion}));
-				} else {
-					var noteId = _v0.a.a;
-					var noteText = _v0.b.a;
-					var _v5 = _v0.c;
-					return $author$project$Save$BrandNewNote;
-				}
-			}
+			var error = result.a;
+			return failure(error);
 		}
 	});
-var $author$project$Save$decoderLocalEdits = function () {
-	var maybeNoteVersionDecoder = $elm$json$Json$Decode$maybe(
-		A2(
-			$elm$json$Json$Decode$at,
-			_List_fromArray(
-				['note', 'noteVersion']),
-			$elm$json$Json$Decode$int));
-	var maybeNoteTextDecoder = $elm$json$Json$Decode$maybe(
-		A2(
-			$elm$json$Json$Decode$at,
-			_List_fromArray(
-				['note', 'noteText']),
-			$elm$json$Json$Decode$string));
-	var maybeNoteIdDecoder = $elm$json$Json$Decode$maybe(
-		A2(
-			$elm$json$Json$Decode$at,
-			_List_fromArray(
-				['note', 'noteId']),
-			$elm$json$Json$Decode$int));
-	var noteDecoder = A4($elm$json$Json$Decode$map3, $author$project$Save$maybeNoteContent, maybeNoteIdDecoder, maybeNoteTextDecoder, maybeNoteVersionDecoder);
-	var apiKeyDecoder = A2($elm$json$Json$Decode$field, 'apiKey', $author$project$ApiKey$decodeApiKey);
-	return A3($elm$json$Json$Decode$map2, $author$project$Save$LocalEdit, apiKeyDecoder, noteDecoder);
-}();
+var $elm$core$Platform$Cmd$batch = _Platform_batch;
+var $author$project$Save$BrandNewNote = {$: 'BrandNewNote'};
 var $author$project$Save$InitNote = {$: 'InitNote'};
 var $author$project$Save$Model = F5(
 	function (note, dataSource, remoteSaveStatus, noteContentStatus, apiKey) {
@@ -5424,54 +5171,31 @@ var $author$project$Save$Model = F5(
 var $krisajenkins$remotedata$RemoteData$NotAsked = {$: 'NotAsked'};
 var $author$project$Save$UpToDate = {$: 'UpToDate'};
 var $author$project$Save$defaultModel = A5($author$project$Save$Model, $author$project$Save$BrandNewNote, $author$project$Save$InitNote, $krisajenkins$remotedata$RemoteData$NotAsked, $author$project$Save$UpToDate, $elm$core$Maybe$Nothing);
-var $author$project$Save$getNoteId = function (note) {
-	if (note.$ === 'BrandNewNote') {
-		return $elm$core$Maybe$Nothing;
-	} else {
-		if (note.a.$ === 'NoteWithId') {
-			var noteId = note.a.a.noteId;
-			return $elm$core$Maybe$Just(noteId);
-		} else {
-			return $elm$core$Maybe$Nothing;
-		}
-	}
+var $elm$browser$Browser$Navigation$load = _Browser_load;
+var $author$project$Ports$LogConsole = function (a) {
+	return {$: 'LogConsole', a: a};
 };
-var $author$project$Save$getNoteText = function (note) {
-	if (note.$ === 'BrandNewNote') {
-		return '';
-	} else {
-		if (note.a.$ === 'NoteWithId') {
-			var noteText = note.a.a.noteText;
-			return noteText;
-		} else {
-			var noteText = note.a.a;
-			return noteText;
-		}
-	}
-};
-var $author$project$Save$getNoteVersion = function (note) {
-	if (note.$ === 'BrandNewNote') {
-		return $elm$core$Maybe$Nothing;
-	} else {
-		if (note.a.$ === 'NoteWithId') {
-			var noteVersion = note.a.a.noteVersion;
-			return $elm$core$Maybe$Just(noteVersion);
-		} else {
-			return $elm$core$Maybe$Nothing;
-		}
-	}
-};
-var $elm$json$Json$Encode$int = _Json_wrap;
-var $author$project$FP$maybe = F3(
-	function (onNothing, onJust, maybeVal) {
-		if (maybeVal.$ === 'Just') {
-			var a = maybeVal.a;
-			return onJust(a);
-		} else {
-			return onNothing;
-		}
+var $author$project$Ports$JsAppMessage = F2(
+	function (appName, value) {
+		return {appName: appName, value: value};
 	});
-var $elm$json$Json$Encode$null = _Json_encodeNull;
+var $author$project$Save$appName = 'scrib';
+var $author$project$Save$appMessage = $author$project$Ports$JsAppMessage($author$project$Save$appName);
+var $author$project$Ports$dataKeyField = 'data';
+var $author$project$Ports$encodeDataTuple = F2(
+	function (encoder, value) {
+		return _Utils_Tuple2(
+			$author$project$Ports$dataKeyField,
+			encoder(value));
+	});
+var $author$project$Ports$eventTypeKeyField = 'eventType';
+var $elm$json$Json$Encode$string = _Json_wrap;
+var $author$project$Ports$encodeEventTypeTuple = function (_v0) {
+	var portType = _v0.a;
+	return _Utils_Tuple2(
+		$author$project$Ports$eventTypeKeyField,
+		$elm$json$Json$Encode$string(portType));
+};
 var $elm$json$Json$Encode$object = function (pairs) {
 	return _Json_wrap(
 		A3(
@@ -5485,1139 +5209,184 @@ var $elm$json$Json$Encode$object = function (pairs) {
 			_Json_emptyObject(_Utils_Tuple0),
 			pairs));
 };
-var $elm$json$Json$Encode$string = _Json_wrap;
-var $author$project$Save$encodeNoteForLocalSave = function (note) {
-	return $elm$json$Json$Encode$object(
-		_List_fromArray(
-			[
-				_Utils_Tuple2(
-				'noteText',
-				$elm$json$Json$Encode$string(
-					$author$project$Save$getNoteText(note))),
-				_Utils_Tuple2(
-				'noteId',
-				A3(
-					$author$project$FP$maybe,
-					$elm$json$Json$Encode$null,
-					$elm$json$Json$Encode$int,
-					$author$project$Save$getNoteId(note))),
-				_Utils_Tuple2(
-				'noteVersion',
-				A3(
-					$author$project$FP$maybe,
-					$elm$json$Json$Encode$null,
-					$elm$json$Json$Encode$int,
-					$author$project$Save$getNoteVersion(note)))
-			]));
+var $author$project$Ports$encodePortWithLog = F3(
+	function (portType, encoder, _v0) {
+		var appName = _v0.appName;
+		var value = _v0.value;
+		return $elm$json$Json$Encode$object(
+			_List_fromArray(
+				[
+					$author$project$Ports$encodeEventTypeTuple(portType),
+					_Utils_Tuple2(
+					'log',
+					$elm$json$Json$Encode$object(
+						_List_fromArray(
+							[
+								_Utils_Tuple2(
+								'appName',
+								$elm$json$Json$Encode$string(appName)),
+								A2($author$project$Ports$encodeDataTuple, encoder, value)
+							])))
+				]));
+	});
+var $author$project$Ports$PortTypeName = function (a) {
+	return {$: 'PortTypeName', a: a};
 };
-var $author$project$Save$showPortType = function (portType) {
-	if (portType.$ === 'SaveMessage') {
-		return 'save_message';
+var $author$project$Ports$logMessagePort = $author$project$Ports$PortTypeName('log_action');
+var $author$project$Ports$logCommand = $author$project$Ports$encodePortWithLog($author$project$Ports$logMessagePort);
+var $author$project$Ports$encodePortWithMarkdownCommand = F3(
+	function (portType, encoder, _v0) {
+		var elementId = _v0.elementId;
+		var value = _v0.value;
+		return $elm$json$Json$Encode$object(
+			_List_fromArray(
+				[
+					$author$project$Ports$encodeEventTypeTuple(portType),
+					_Utils_Tuple2(
+					'markdown',
+					$elm$json$Json$Encode$object(
+						_List_fromArray(
+							[
+								_Utils_Tuple2(
+								'elementId',
+								$elm$json$Json$Encode$string(elementId)),
+								A2($author$project$Ports$encodeDataTuple, encoder, value)
+							])))
+				]));
+	});
+var $author$project$Ports$markdownPreviewPort = $author$project$Ports$PortTypeName('markdown_action');
+var $author$project$Ports$markdownPreviewCommand = $author$project$Ports$encodePortWithMarkdownCommand($author$project$Ports$markdownPreviewPort);
+var $author$project$StorageKeys$encodeStorageAction = function (storageAction) {
+	if (storageAction.$ === 'Save') {
+		return $elm$json$Json$Encode$string('save');
 	} else {
-		return 'preview_message';
+		return $elm$json$Json$Encode$string('delete');
 	}
 };
-var $author$project$Save$encode = F2(
-	function (portType, model) {
+var $author$project$StorageKeys$encodeStorageType = function (st) {
+	if (st.$ === 'Local') {
+		return $elm$json$Json$Encode$string('local');
+	} else {
+		return $elm$json$Json$Encode$string('session');
+	}
+};
+var $author$project$StorageKeys$encodeStorageAreaAction = F4(
+	function (_v0, action, payloadEncoder, payload) {
+		var st = _v0.a;
+		var storageKey = _v0.b.a;
 		return $elm$json$Json$Encode$object(
 			_List_fromArray(
 				[
 					_Utils_Tuple2(
-					'eventType',
-					$elm$json$Json$Encode$string(
-						$author$project$Save$showPortType(portType))),
+					'storageType',
+					$author$project$StorageKeys$encodeStorageType(st)),
 					_Utils_Tuple2(
-					'note',
-					$author$project$Save$encodeNoteForLocalSave(model.note))
+					'storageKey',
+					$elm$json$Json$Encode$string(storageKey)),
+					_Utils_Tuple2(
+					'storageAction',
+					$author$project$StorageKeys$encodeStorageAction(action)),
+					_Utils_Tuple2(
+					'data',
+					payloadEncoder(payload))
 				]));
 	});
-var $elm$browser$Browser$Navigation$load = _Browser_load;
+var $author$project$FP$maybe = F3(
+	function (onNothing, onJust, maybeVal) {
+		if (maybeVal.$ === 'Just') {
+			var a = maybeVal.a;
+			return onJust(a);
+		} else {
+			return onNothing;
+		}
+	});
+var $elm$json$Json$Encode$null = _Json_encodeNull;
+var $author$project$Ports$encodePortWithStorageAccess = F4(
+	function (portType, encoder, _v0, maybeKey) {
+		var storageArea = _v0.storageArea;
+		var storageAction = _v0.storageAction;
+		var value = _v0.value;
+		return $elm$json$Json$Encode$object(
+			_List_fromArray(
+				[
+					$author$project$Ports$encodeEventTypeTuple(portType),
+					_Utils_Tuple2(
+					'storage',
+					A4($author$project$StorageKeys$encodeStorageAreaAction, storageArea, storageAction, encoder, value)),
+					_Utils_Tuple2(
+					'responseKey',
+					A3(
+						$author$project$FP$maybe,
+						$elm$json$Json$Encode$null,
+						function (_v1) {
+							var key = _v1.a;
+							return $elm$json$Json$Encode$string(key);
+						},
+						maybeKey))
+				]));
+	});
+var $author$project$Ports$withStoragePort = $author$project$Ports$PortTypeName('storage_action');
+var $author$project$Ports$withStorageCommand = $author$project$Ports$encodePortWithStorageAccess($author$project$Ports$withStoragePort);
+var $author$project$Ports$encodeJsCommand = F2(
+	function (command, encoder) {
+		switch (command.$) {
+			case 'LogConsole':
+				var value = command.a;
+				return A2($author$project$Ports$logCommand, encoder, value);
+			case 'MarkdownPreview':
+				var value = command.a;
+				return A2($author$project$Ports$markdownPreviewCommand, encoder, value);
+			default:
+				var value = command.a;
+				var key = command.b;
+				return A3($author$project$Ports$withStorageCommand, encoder, value, key);
+		}
+	});
 var $author$project$Save$scribMessage = _Platform_outgoingPort('scribMessage', $elm$core$Basics$identity);
+var $author$project$Save$logMessage = function (message) {
+	var logCommand = $author$project$Ports$LogConsole(
+		$author$project$Save$appMessage(message));
+	return $author$project$Save$scribMessage(
+		A2($author$project$Ports$encodeJsCommand, logCommand, $elm$json$Json$Encode$string));
+};
+var $author$project$Save$handleInitFailure = function (err) {
+	return _Utils_Tuple2(
+		$author$project$Save$defaultModel,
+		$elm$core$Platform$Cmd$batch(
+			_List_fromArray(
+				[
+					$elm$browser$Browser$Navigation$load('config.html'),
+					$author$project$Save$logMessage(
+					'Decode of init data failed due to: ' + $elm$json$Json$Decode$errorToString(err))
+				])));
+};
+var $author$project$Save$LocalLoad = {$: 'LocalLoad'};
+var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
+var $author$project$ElmCommon$onlyModel = function (model) {
+	return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+};
+var $author$project$Save$handleInitSuccess = function (apiKey) {
+	var model = _Utils_update(
+		$author$project$Save$defaultModel,
+		{
+			apiKey: $elm$core$Maybe$Just(apiKey),
+			dataSource: $author$project$Save$LocalLoad,
+			note: $author$project$Save$BrandNewNote
+		});
+	return $author$project$ElmCommon$onlyModel(model);
+};
 var $author$project$Save$init = function (json) {
-	var localEdit = A2($elm$json$Json$Decode$decodeValue, $author$project$Save$decoderLocalEdits, json);
-	if (localEdit.$ === 'Ok') {
-		var apiKey = localEdit.a.apiKey;
-		var note = localEdit.a.note;
-		var model = _Utils_update(
-			$author$project$Save$defaultModel,
-			{
-				apiKey: $elm$core$Maybe$Just(apiKey),
-				dataSource: $author$project$Save$LocalLoad,
-				note: note
-			});
-		return _Utils_Tuple2(
-			model,
-			$author$project$Save$scribMessage(
-				A2($author$project$Save$encode, $author$project$Save$PreviewMessage, model)));
-	} else {
-		return _Utils_Tuple2(
-			$author$project$Save$defaultModel,
-			$elm$browser$Browser$Navigation$load('config.html'));
-	}
+	var decodeResult = A2($elm$json$Json$Decode$decodeValue, $author$project$Save$decodeLocalSave, json);
+	return A3($author$project$ElmCommon$foldResult, $author$project$Save$handleInitFailure, $author$project$Save$handleInitSuccess, decodeResult);
 };
 var $elm$core$Platform$Sub$batch = _Platform_batch;
 var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
 var $author$project$Save$subscriptions = function (_v0) {
 	return $elm$core$Platform$Sub$none;
 };
-var $author$project$Save$NeedsToSave = {$: 'NeedsToSave'};
-var $author$project$Save$UserCreated = {$: 'UserCreated'};
-var $krisajenkins$remotedata$RemoteData$isSuccess = function (data) {
-	if (data.$ === 'Success') {
-		var x = data.a;
-		return true;
-	} else {
-		return false;
-	}
-};
-var $author$project$Save$contentStatusFromRemoteSave = function (remoteData) {
-	return $krisajenkins$remotedata$RemoteData$isSuccess(remoteData) ? $author$project$Save$UpToDate : $author$project$Save$NeedsToSave;
-};
-var $author$project$Save$noteFromRemoteSave = F2(
-	function (existingNote, remoteData) {
-		var _v0 = _Utils_Tuple2(existingNote, remoteData);
-		if (_v0.a.$ === 'NoteWithoutId') {
-			if (_v0.b.$ === 'Success') {
-				var noteText = _v0.a.a;
-				var noteId = _v0.b.a.noteId;
-				var noteVersion = _v0.b.a.noteVersion;
-				return $author$project$Save$NoteWithId(
-					{noteId: noteId, noteText: noteText, noteVersion: noteVersion});
-			} else {
-				return existingNote;
-			}
-		} else {
-			return existingNote;
-		}
-	});
-var $krisajenkins$remotedata$RemoteData$Loading = {$: 'Loading'};
-var $elm$core$Platform$Cmd$batch = _Platform_batch;
-var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
-var $author$project$ApiKey$performApiKey = F3(
-	function (maybeApiKey, _v0, _v1) {
-		var model1 = _v0.a;
-		var apiKeyCmd = _v0.b;
-		var model2 = _v1.a;
-		var nonApiKeyCmd = _v1.b;
-		if (maybeApiKey.$ === 'Just') {
-			var apiKey = maybeApiKey.a;
-			return _Utils_Tuple2(
-				model1,
-				apiKeyCmd(apiKey));
-		} else {
-			return _Utils_Tuple2(model2, nonApiKeyCmd);
-		}
-	});
-var $author$project$Save$performOrGotoConfig = F2(
-	function (oldModel, apiKeyCommand) {
-		return A3(
-			$author$project$ApiKey$performApiKey,
-			oldModel.apiKey,
-			apiKeyCommand,
-			_Utils_Tuple2(
-				oldModel,
-				$elm$browser$Browser$Navigation$load('config.html')));
-	});
-var $elm$http$Http$Header = F2(
-	function (a, b) {
-		return {$: 'Header', a: a, b: b};
-	});
-var $elm$http$Http$header = $elm$http$Http$Header;
-var $author$project$ApiKey$apiKeyHeader = function (apiKey) {
-	return A2($elm$http$Http$header, 'X-API-KEY', apiKey.value);
-};
-var $author$project$Save$NoteIdVersion = F2(
-	function (noteId, noteVersion) {
-		return {noteId: noteId, noteVersion: noteVersion};
-	});
-var $author$project$Save$decoderNoteIdVersion = A3(
-	$elm$json$Json$Decode$map2,
-	$author$project$Save$NoteIdVersion,
-	A2($elm$json$Json$Decode$field, 'noteId', $elm$json$Json$Decode$int),
-	A2($elm$json$Json$Decode$field, 'noteVersion', $elm$json$Json$Decode$int));
-var $author$project$Note$encodeNote = function (_v0) {
-	var noteText = _v0.noteText;
-	var noteId = _v0.noteId;
-	var noteVersion = _v0.noteVersion;
-	return $elm$json$Json$Encode$object(
-		_List_fromArray(
-			[
-				_Utils_Tuple2(
-				'noteText',
-				$elm$json$Json$Encode$string(noteText)),
-				_Utils_Tuple2(
-				'noteId',
-				$elm$json$Json$Encode$int(noteId)),
-				_Utils_Tuple2(
-				'noteVersion',
-				$elm$json$Json$Encode$int(noteVersion))
-			]));
-};
-var $author$project$Save$encodeUnsavedNote = function (noteText) {
-	return $elm$json$Json$Encode$object(
-		_List_fromArray(
-			[
-				_Utils_Tuple2(
-				'noteText',
-				$elm$json$Json$Encode$string(noteText))
-			]));
-};
-var $author$project$Save$encodeSaveNote = function (note) {
-	if (note.$ === 'NoteWithoutId') {
-		var noteText = note.a;
-		return $author$project$Save$encodeUnsavedNote(noteText);
-	} else {
-		var noteId = note.a.noteId;
-		var noteText = note.a.noteText;
-		var noteVersion = note.a.noteVersion;
-		return $author$project$Note$encodeNote(
-			{noteId: noteId, noteText: noteText, noteVersion: noteVersion});
-	}
-};
-var $elm$json$Json$Decode$decodeString = _Json_runOnString;
-var $elm$http$Http$BadStatus_ = F2(
-	function (a, b) {
-		return {$: 'BadStatus_', a: a, b: b};
-	});
-var $elm$http$Http$BadUrl_ = function (a) {
-	return {$: 'BadUrl_', a: a};
-};
-var $elm$http$Http$GoodStatus_ = F2(
-	function (a, b) {
-		return {$: 'GoodStatus_', a: a, b: b};
-	});
-var $elm$http$Http$NetworkError_ = {$: 'NetworkError_'};
-var $elm$http$Http$Receiving = function (a) {
-	return {$: 'Receiving', a: a};
-};
-var $elm$http$Http$Sending = function (a) {
-	return {$: 'Sending', a: a};
-};
-var $elm$http$Http$Timeout_ = {$: 'Timeout_'};
-var $elm$core$Dict$RBEmpty_elm_builtin = {$: 'RBEmpty_elm_builtin'};
-var $elm$core$Dict$empty = $elm$core$Dict$RBEmpty_elm_builtin;
-var $elm$core$Maybe$isJust = function (maybe) {
-	if (maybe.$ === 'Just') {
-		return true;
-	} else {
-		return false;
-	}
-};
-var $elm$core$Platform$sendToSelf = _Platform_sendToSelf;
-var $elm$core$Basics$compare = _Utils_compare;
-var $elm$core$Dict$get = F2(
-	function (targetKey, dict) {
-		get:
-		while (true) {
-			if (dict.$ === 'RBEmpty_elm_builtin') {
-				return $elm$core$Maybe$Nothing;
-			} else {
-				var key = dict.b;
-				var value = dict.c;
-				var left = dict.d;
-				var right = dict.e;
-				var _v1 = A2($elm$core$Basics$compare, targetKey, key);
-				switch (_v1.$) {
-					case 'LT':
-						var $temp$targetKey = targetKey,
-							$temp$dict = left;
-						targetKey = $temp$targetKey;
-						dict = $temp$dict;
-						continue get;
-					case 'EQ':
-						return $elm$core$Maybe$Just(value);
-					default:
-						var $temp$targetKey = targetKey,
-							$temp$dict = right;
-						targetKey = $temp$targetKey;
-						dict = $temp$dict;
-						continue get;
-				}
-			}
-		}
-	});
-var $elm$core$Dict$Black = {$: 'Black'};
-var $elm$core$Dict$RBNode_elm_builtin = F5(
-	function (a, b, c, d, e) {
-		return {$: 'RBNode_elm_builtin', a: a, b: b, c: c, d: d, e: e};
-	});
-var $elm$core$Dict$Red = {$: 'Red'};
-var $elm$core$Dict$balance = F5(
-	function (color, key, value, left, right) {
-		if ((right.$ === 'RBNode_elm_builtin') && (right.a.$ === 'Red')) {
-			var _v1 = right.a;
-			var rK = right.b;
-			var rV = right.c;
-			var rLeft = right.d;
-			var rRight = right.e;
-			if ((left.$ === 'RBNode_elm_builtin') && (left.a.$ === 'Red')) {
-				var _v3 = left.a;
-				var lK = left.b;
-				var lV = left.c;
-				var lLeft = left.d;
-				var lRight = left.e;
-				return A5(
-					$elm$core$Dict$RBNode_elm_builtin,
-					$elm$core$Dict$Red,
-					key,
-					value,
-					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Black, lK, lV, lLeft, lRight),
-					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Black, rK, rV, rLeft, rRight));
-			} else {
-				return A5(
-					$elm$core$Dict$RBNode_elm_builtin,
-					color,
-					rK,
-					rV,
-					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Red, key, value, left, rLeft),
-					rRight);
-			}
-		} else {
-			if ((((left.$ === 'RBNode_elm_builtin') && (left.a.$ === 'Red')) && (left.d.$ === 'RBNode_elm_builtin')) && (left.d.a.$ === 'Red')) {
-				var _v5 = left.a;
-				var lK = left.b;
-				var lV = left.c;
-				var _v6 = left.d;
-				var _v7 = _v6.a;
-				var llK = _v6.b;
-				var llV = _v6.c;
-				var llLeft = _v6.d;
-				var llRight = _v6.e;
-				var lRight = left.e;
-				return A5(
-					$elm$core$Dict$RBNode_elm_builtin,
-					$elm$core$Dict$Red,
-					lK,
-					lV,
-					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Black, llK, llV, llLeft, llRight),
-					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Black, key, value, lRight, right));
-			} else {
-				return A5($elm$core$Dict$RBNode_elm_builtin, color, key, value, left, right);
-			}
-		}
-	});
-var $elm$core$Dict$insertHelp = F3(
-	function (key, value, dict) {
-		if (dict.$ === 'RBEmpty_elm_builtin') {
-			return A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Red, key, value, $elm$core$Dict$RBEmpty_elm_builtin, $elm$core$Dict$RBEmpty_elm_builtin);
-		} else {
-			var nColor = dict.a;
-			var nKey = dict.b;
-			var nValue = dict.c;
-			var nLeft = dict.d;
-			var nRight = dict.e;
-			var _v1 = A2($elm$core$Basics$compare, key, nKey);
-			switch (_v1.$) {
-				case 'LT':
-					return A5(
-						$elm$core$Dict$balance,
-						nColor,
-						nKey,
-						nValue,
-						A3($elm$core$Dict$insertHelp, key, value, nLeft),
-						nRight);
-				case 'EQ':
-					return A5($elm$core$Dict$RBNode_elm_builtin, nColor, nKey, value, nLeft, nRight);
-				default:
-					return A5(
-						$elm$core$Dict$balance,
-						nColor,
-						nKey,
-						nValue,
-						nLeft,
-						A3($elm$core$Dict$insertHelp, key, value, nRight));
-			}
-		}
-	});
-var $elm$core$Dict$insert = F3(
-	function (key, value, dict) {
-		var _v0 = A3($elm$core$Dict$insertHelp, key, value, dict);
-		if ((_v0.$ === 'RBNode_elm_builtin') && (_v0.a.$ === 'Red')) {
-			var _v1 = _v0.a;
-			var k = _v0.b;
-			var v = _v0.c;
-			var l = _v0.d;
-			var r = _v0.e;
-			return A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Black, k, v, l, r);
-		} else {
-			var x = _v0;
-			return x;
-		}
-	});
-var $elm$core$Dict$getMin = function (dict) {
-	getMin:
-	while (true) {
-		if ((dict.$ === 'RBNode_elm_builtin') && (dict.d.$ === 'RBNode_elm_builtin')) {
-			var left = dict.d;
-			var $temp$dict = left;
-			dict = $temp$dict;
-			continue getMin;
-		} else {
-			return dict;
-		}
-	}
-};
-var $elm$core$Dict$moveRedLeft = function (dict) {
-	if (((dict.$ === 'RBNode_elm_builtin') && (dict.d.$ === 'RBNode_elm_builtin')) && (dict.e.$ === 'RBNode_elm_builtin')) {
-		if ((dict.e.d.$ === 'RBNode_elm_builtin') && (dict.e.d.a.$ === 'Red')) {
-			var clr = dict.a;
-			var k = dict.b;
-			var v = dict.c;
-			var _v1 = dict.d;
-			var lClr = _v1.a;
-			var lK = _v1.b;
-			var lV = _v1.c;
-			var lLeft = _v1.d;
-			var lRight = _v1.e;
-			var _v2 = dict.e;
-			var rClr = _v2.a;
-			var rK = _v2.b;
-			var rV = _v2.c;
-			var rLeft = _v2.d;
-			var _v3 = rLeft.a;
-			var rlK = rLeft.b;
-			var rlV = rLeft.c;
-			var rlL = rLeft.d;
-			var rlR = rLeft.e;
-			var rRight = _v2.e;
-			return A5(
-				$elm$core$Dict$RBNode_elm_builtin,
-				$elm$core$Dict$Red,
-				rlK,
-				rlV,
-				A5(
-					$elm$core$Dict$RBNode_elm_builtin,
-					$elm$core$Dict$Black,
-					k,
-					v,
-					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Red, lK, lV, lLeft, lRight),
-					rlL),
-				A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Black, rK, rV, rlR, rRight));
-		} else {
-			var clr = dict.a;
-			var k = dict.b;
-			var v = dict.c;
-			var _v4 = dict.d;
-			var lClr = _v4.a;
-			var lK = _v4.b;
-			var lV = _v4.c;
-			var lLeft = _v4.d;
-			var lRight = _v4.e;
-			var _v5 = dict.e;
-			var rClr = _v5.a;
-			var rK = _v5.b;
-			var rV = _v5.c;
-			var rLeft = _v5.d;
-			var rRight = _v5.e;
-			if (clr.$ === 'Black') {
-				return A5(
-					$elm$core$Dict$RBNode_elm_builtin,
-					$elm$core$Dict$Black,
-					k,
-					v,
-					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Red, lK, lV, lLeft, lRight),
-					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Red, rK, rV, rLeft, rRight));
-			} else {
-				return A5(
-					$elm$core$Dict$RBNode_elm_builtin,
-					$elm$core$Dict$Black,
-					k,
-					v,
-					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Red, lK, lV, lLeft, lRight),
-					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Red, rK, rV, rLeft, rRight));
-			}
-		}
-	} else {
-		return dict;
-	}
-};
-var $elm$core$Dict$moveRedRight = function (dict) {
-	if (((dict.$ === 'RBNode_elm_builtin') && (dict.d.$ === 'RBNode_elm_builtin')) && (dict.e.$ === 'RBNode_elm_builtin')) {
-		if ((dict.d.d.$ === 'RBNode_elm_builtin') && (dict.d.d.a.$ === 'Red')) {
-			var clr = dict.a;
-			var k = dict.b;
-			var v = dict.c;
-			var _v1 = dict.d;
-			var lClr = _v1.a;
-			var lK = _v1.b;
-			var lV = _v1.c;
-			var _v2 = _v1.d;
-			var _v3 = _v2.a;
-			var llK = _v2.b;
-			var llV = _v2.c;
-			var llLeft = _v2.d;
-			var llRight = _v2.e;
-			var lRight = _v1.e;
-			var _v4 = dict.e;
-			var rClr = _v4.a;
-			var rK = _v4.b;
-			var rV = _v4.c;
-			var rLeft = _v4.d;
-			var rRight = _v4.e;
-			return A5(
-				$elm$core$Dict$RBNode_elm_builtin,
-				$elm$core$Dict$Red,
-				lK,
-				lV,
-				A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Black, llK, llV, llLeft, llRight),
-				A5(
-					$elm$core$Dict$RBNode_elm_builtin,
-					$elm$core$Dict$Black,
-					k,
-					v,
-					lRight,
-					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Red, rK, rV, rLeft, rRight)));
-		} else {
-			var clr = dict.a;
-			var k = dict.b;
-			var v = dict.c;
-			var _v5 = dict.d;
-			var lClr = _v5.a;
-			var lK = _v5.b;
-			var lV = _v5.c;
-			var lLeft = _v5.d;
-			var lRight = _v5.e;
-			var _v6 = dict.e;
-			var rClr = _v6.a;
-			var rK = _v6.b;
-			var rV = _v6.c;
-			var rLeft = _v6.d;
-			var rRight = _v6.e;
-			if (clr.$ === 'Black') {
-				return A5(
-					$elm$core$Dict$RBNode_elm_builtin,
-					$elm$core$Dict$Black,
-					k,
-					v,
-					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Red, lK, lV, lLeft, lRight),
-					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Red, rK, rV, rLeft, rRight));
-			} else {
-				return A5(
-					$elm$core$Dict$RBNode_elm_builtin,
-					$elm$core$Dict$Black,
-					k,
-					v,
-					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Red, lK, lV, lLeft, lRight),
-					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Red, rK, rV, rLeft, rRight));
-			}
-		}
-	} else {
-		return dict;
-	}
-};
-var $elm$core$Dict$removeHelpPrepEQGT = F7(
-	function (targetKey, dict, color, key, value, left, right) {
-		if ((left.$ === 'RBNode_elm_builtin') && (left.a.$ === 'Red')) {
-			var _v1 = left.a;
-			var lK = left.b;
-			var lV = left.c;
-			var lLeft = left.d;
-			var lRight = left.e;
-			return A5(
-				$elm$core$Dict$RBNode_elm_builtin,
-				color,
-				lK,
-				lV,
-				lLeft,
-				A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Red, key, value, lRight, right));
-		} else {
-			_v2$2:
-			while (true) {
-				if ((right.$ === 'RBNode_elm_builtin') && (right.a.$ === 'Black')) {
-					if (right.d.$ === 'RBNode_elm_builtin') {
-						if (right.d.a.$ === 'Black') {
-							var _v3 = right.a;
-							var _v4 = right.d;
-							var _v5 = _v4.a;
-							return $elm$core$Dict$moveRedRight(dict);
-						} else {
-							break _v2$2;
-						}
-					} else {
-						var _v6 = right.a;
-						var _v7 = right.d;
-						return $elm$core$Dict$moveRedRight(dict);
-					}
-				} else {
-					break _v2$2;
-				}
-			}
-			return dict;
-		}
-	});
-var $elm$core$Dict$removeMin = function (dict) {
-	if ((dict.$ === 'RBNode_elm_builtin') && (dict.d.$ === 'RBNode_elm_builtin')) {
-		var color = dict.a;
-		var key = dict.b;
-		var value = dict.c;
-		var left = dict.d;
-		var lColor = left.a;
-		var lLeft = left.d;
-		var right = dict.e;
-		if (lColor.$ === 'Black') {
-			if ((lLeft.$ === 'RBNode_elm_builtin') && (lLeft.a.$ === 'Red')) {
-				var _v3 = lLeft.a;
-				return A5(
-					$elm$core$Dict$RBNode_elm_builtin,
-					color,
-					key,
-					value,
-					$elm$core$Dict$removeMin(left),
-					right);
-			} else {
-				var _v4 = $elm$core$Dict$moveRedLeft(dict);
-				if (_v4.$ === 'RBNode_elm_builtin') {
-					var nColor = _v4.a;
-					var nKey = _v4.b;
-					var nValue = _v4.c;
-					var nLeft = _v4.d;
-					var nRight = _v4.e;
-					return A5(
-						$elm$core$Dict$balance,
-						nColor,
-						nKey,
-						nValue,
-						$elm$core$Dict$removeMin(nLeft),
-						nRight);
-				} else {
-					return $elm$core$Dict$RBEmpty_elm_builtin;
-				}
-			}
-		} else {
-			return A5(
-				$elm$core$Dict$RBNode_elm_builtin,
-				color,
-				key,
-				value,
-				$elm$core$Dict$removeMin(left),
-				right);
-		}
-	} else {
-		return $elm$core$Dict$RBEmpty_elm_builtin;
-	}
-};
-var $elm$core$Dict$removeHelp = F2(
-	function (targetKey, dict) {
-		if (dict.$ === 'RBEmpty_elm_builtin') {
-			return $elm$core$Dict$RBEmpty_elm_builtin;
-		} else {
-			var color = dict.a;
-			var key = dict.b;
-			var value = dict.c;
-			var left = dict.d;
-			var right = dict.e;
-			if (_Utils_cmp(targetKey, key) < 0) {
-				if ((left.$ === 'RBNode_elm_builtin') && (left.a.$ === 'Black')) {
-					var _v4 = left.a;
-					var lLeft = left.d;
-					if ((lLeft.$ === 'RBNode_elm_builtin') && (lLeft.a.$ === 'Red')) {
-						var _v6 = lLeft.a;
-						return A5(
-							$elm$core$Dict$RBNode_elm_builtin,
-							color,
-							key,
-							value,
-							A2($elm$core$Dict$removeHelp, targetKey, left),
-							right);
-					} else {
-						var _v7 = $elm$core$Dict$moveRedLeft(dict);
-						if (_v7.$ === 'RBNode_elm_builtin') {
-							var nColor = _v7.a;
-							var nKey = _v7.b;
-							var nValue = _v7.c;
-							var nLeft = _v7.d;
-							var nRight = _v7.e;
-							return A5(
-								$elm$core$Dict$balance,
-								nColor,
-								nKey,
-								nValue,
-								A2($elm$core$Dict$removeHelp, targetKey, nLeft),
-								nRight);
-						} else {
-							return $elm$core$Dict$RBEmpty_elm_builtin;
-						}
-					}
-				} else {
-					return A5(
-						$elm$core$Dict$RBNode_elm_builtin,
-						color,
-						key,
-						value,
-						A2($elm$core$Dict$removeHelp, targetKey, left),
-						right);
-				}
-			} else {
-				return A2(
-					$elm$core$Dict$removeHelpEQGT,
-					targetKey,
-					A7($elm$core$Dict$removeHelpPrepEQGT, targetKey, dict, color, key, value, left, right));
-			}
-		}
-	});
-var $elm$core$Dict$removeHelpEQGT = F2(
-	function (targetKey, dict) {
-		if (dict.$ === 'RBNode_elm_builtin') {
-			var color = dict.a;
-			var key = dict.b;
-			var value = dict.c;
-			var left = dict.d;
-			var right = dict.e;
-			if (_Utils_eq(targetKey, key)) {
-				var _v1 = $elm$core$Dict$getMin(right);
-				if (_v1.$ === 'RBNode_elm_builtin') {
-					var minKey = _v1.b;
-					var minValue = _v1.c;
-					return A5(
-						$elm$core$Dict$balance,
-						color,
-						minKey,
-						minValue,
-						left,
-						$elm$core$Dict$removeMin(right));
-				} else {
-					return $elm$core$Dict$RBEmpty_elm_builtin;
-				}
-			} else {
-				return A5(
-					$elm$core$Dict$balance,
-					color,
-					key,
-					value,
-					left,
-					A2($elm$core$Dict$removeHelp, targetKey, right));
-			}
-		} else {
-			return $elm$core$Dict$RBEmpty_elm_builtin;
-		}
-	});
-var $elm$core$Dict$remove = F2(
-	function (key, dict) {
-		var _v0 = A2($elm$core$Dict$removeHelp, key, dict);
-		if ((_v0.$ === 'RBNode_elm_builtin') && (_v0.a.$ === 'Red')) {
-			var _v1 = _v0.a;
-			var k = _v0.b;
-			var v = _v0.c;
-			var l = _v0.d;
-			var r = _v0.e;
-			return A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Black, k, v, l, r);
-		} else {
-			var x = _v0;
-			return x;
-		}
-	});
-var $elm$core$Dict$update = F3(
-	function (targetKey, alter, dictionary) {
-		var _v0 = alter(
-			A2($elm$core$Dict$get, targetKey, dictionary));
-		if (_v0.$ === 'Just') {
-			var value = _v0.a;
-			return A3($elm$core$Dict$insert, targetKey, value, dictionary);
-		} else {
-			return A2($elm$core$Dict$remove, targetKey, dictionary);
-		}
-	});
-var $elm$core$Basics$composeR = F3(
-	function (f, g, x) {
-		return g(
-			f(x));
-	});
-var $elm$http$Http$expectStringResponse = F2(
-	function (toMsg, toResult) {
-		return A3(
-			_Http_expect,
-			'',
-			$elm$core$Basics$identity,
-			A2($elm$core$Basics$composeR, toResult, toMsg));
-	});
-var $elm$core$Result$mapError = F2(
-	function (f, result) {
-		if (result.$ === 'Ok') {
-			var v = result.a;
-			return $elm$core$Result$Ok(v);
-		} else {
-			var e = result.a;
-			return $elm$core$Result$Err(
-				f(e));
-		}
-	});
-var $elm$http$Http$BadBody = function (a) {
-	return {$: 'BadBody', a: a};
-};
-var $elm$http$Http$BadStatus = function (a) {
-	return {$: 'BadStatus', a: a};
-};
-var $elm$http$Http$BadUrl = function (a) {
-	return {$: 'BadUrl', a: a};
-};
-var $elm$http$Http$NetworkError = {$: 'NetworkError'};
-var $elm$http$Http$Timeout = {$: 'Timeout'};
-var $elm$http$Http$resolve = F2(
-	function (toResult, response) {
-		switch (response.$) {
-			case 'BadUrl_':
-				var url = response.a;
-				return $elm$core$Result$Err(
-					$elm$http$Http$BadUrl(url));
-			case 'Timeout_':
-				return $elm$core$Result$Err($elm$http$Http$Timeout);
-			case 'NetworkError_':
-				return $elm$core$Result$Err($elm$http$Http$NetworkError);
-			case 'BadStatus_':
-				var metadata = response.a;
-				return $elm$core$Result$Err(
-					$elm$http$Http$BadStatus(metadata.statusCode));
-			default:
-				var body = response.b;
-				return A2(
-					$elm$core$Result$mapError,
-					$elm$http$Http$BadBody,
-					toResult(body));
-		}
-	});
-var $elm$http$Http$expectJson = F2(
-	function (toMsg, decoder) {
-		return A2(
-			$elm$http$Http$expectStringResponse,
-			toMsg,
-			$elm$http$Http$resolve(
-				function (string) {
-					return A2(
-						$elm$core$Result$mapError,
-						$elm$json$Json$Decode$errorToString,
-						A2($elm$json$Json$Decode$decodeString, decoder, string));
-				}));
-	});
-var $elm$http$Http$jsonBody = function (value) {
-	return A2(
-		_Http_pair,
-		'application/json',
-		A2($elm$json$Json$Encode$encode, 0, value));
-};
-var $author$project$Save$NoteSaveResponseMsg = function (a) {
-	return {$: 'NoteSaveResponseMsg', a: a};
-};
-var $krisajenkins$remotedata$RemoteData$Failure = function (a) {
-	return {$: 'Failure', a: a};
-};
-var $krisajenkins$remotedata$RemoteData$Success = function (a) {
-	return {$: 'Success', a: a};
-};
-var $krisajenkins$remotedata$RemoteData$fromResult = function (result) {
-	if (result.$ === 'Err') {
-		var e = result.a;
-		return $krisajenkins$remotedata$RemoteData$Failure(e);
-	} else {
-		var x = result.a;
-		return $krisajenkins$remotedata$RemoteData$Success(x);
-	}
-};
-var $author$project$Save$processHttpResult = F2(
-	function (toMsg, httpResult) {
-		var result = $krisajenkins$remotedata$RemoteData$fromResult(httpResult);
-		return toMsg(result);
-	});
-var $author$project$Save$processSaveNoteResults = $author$project$Save$processHttpResult($author$project$Save$NoteSaveResponseMsg);
-var $elm$http$Http$Request = function (a) {
-	return {$: 'Request', a: a};
-};
-var $elm$http$Http$State = F2(
-	function (reqs, subs) {
-		return {reqs: reqs, subs: subs};
-	});
-var $elm$http$Http$init = $elm$core$Task$succeed(
-	A2($elm$http$Http$State, $elm$core$Dict$empty, _List_Nil));
-var $elm$core$Process$kill = _Scheduler_kill;
-var $elm$core$Process$spawn = _Scheduler_spawn;
-var $elm$http$Http$updateReqs = F3(
-	function (router, cmds, reqs) {
-		updateReqs:
-		while (true) {
-			if (!cmds.b) {
-				return $elm$core$Task$succeed(reqs);
-			} else {
-				var cmd = cmds.a;
-				var otherCmds = cmds.b;
-				if (cmd.$ === 'Cancel') {
-					var tracker = cmd.a;
-					var _v2 = A2($elm$core$Dict$get, tracker, reqs);
-					if (_v2.$ === 'Nothing') {
-						var $temp$router = router,
-							$temp$cmds = otherCmds,
-							$temp$reqs = reqs;
-						router = $temp$router;
-						cmds = $temp$cmds;
-						reqs = $temp$reqs;
-						continue updateReqs;
-					} else {
-						var pid = _v2.a;
-						return A2(
-							$elm$core$Task$andThen,
-							function (_v3) {
-								return A3(
-									$elm$http$Http$updateReqs,
-									router,
-									otherCmds,
-									A2($elm$core$Dict$remove, tracker, reqs));
-							},
-							$elm$core$Process$kill(pid));
-					}
-				} else {
-					var req = cmd.a;
-					return A2(
-						$elm$core$Task$andThen,
-						function (pid) {
-							var _v4 = req.tracker;
-							if (_v4.$ === 'Nothing') {
-								return A3($elm$http$Http$updateReqs, router, otherCmds, reqs);
-							} else {
-								var tracker = _v4.a;
-								return A3(
-									$elm$http$Http$updateReqs,
-									router,
-									otherCmds,
-									A3($elm$core$Dict$insert, tracker, pid, reqs));
-							}
-						},
-						$elm$core$Process$spawn(
-							A3(
-								_Http_toTask,
-								router,
-								$elm$core$Platform$sendToApp(router),
-								req)));
-				}
-			}
-		}
-	});
-var $elm$http$Http$onEffects = F4(
-	function (router, cmds, subs, state) {
-		return A2(
-			$elm$core$Task$andThen,
-			function (reqs) {
-				return $elm$core$Task$succeed(
-					A2($elm$http$Http$State, reqs, subs));
-			},
-			A3($elm$http$Http$updateReqs, router, cmds, state.reqs));
-	});
-var $elm$core$List$maybeCons = F3(
-	function (f, mx, xs) {
-		var _v0 = f(mx);
-		if (_v0.$ === 'Just') {
-			var x = _v0.a;
-			return A2($elm$core$List$cons, x, xs);
-		} else {
-			return xs;
-		}
-	});
-var $elm$core$List$filterMap = F2(
-	function (f, xs) {
-		return A3(
-			$elm$core$List$foldr,
-			$elm$core$List$maybeCons(f),
-			_List_Nil,
-			xs);
-	});
-var $elm$http$Http$maybeSend = F4(
-	function (router, desiredTracker, progress, _v0) {
-		var actualTracker = _v0.a;
-		var toMsg = _v0.b;
-		return _Utils_eq(desiredTracker, actualTracker) ? $elm$core$Maybe$Just(
-			A2(
-				$elm$core$Platform$sendToApp,
-				router,
-				toMsg(progress))) : $elm$core$Maybe$Nothing;
-	});
-var $elm$http$Http$onSelfMsg = F3(
-	function (router, _v0, state) {
-		var tracker = _v0.a;
-		var progress = _v0.b;
-		return A2(
-			$elm$core$Task$andThen,
-			function (_v1) {
-				return $elm$core$Task$succeed(state);
-			},
-			$elm$core$Task$sequence(
-				A2(
-					$elm$core$List$filterMap,
-					A3($elm$http$Http$maybeSend, router, tracker, progress),
-					state.subs)));
-	});
-var $elm$http$Http$Cancel = function (a) {
-	return {$: 'Cancel', a: a};
-};
-var $elm$http$Http$cmdMap = F2(
-	function (func, cmd) {
-		if (cmd.$ === 'Cancel') {
-			var tracker = cmd.a;
-			return $elm$http$Http$Cancel(tracker);
-		} else {
-			var r = cmd.a;
-			return $elm$http$Http$Request(
-				{
-					allowCookiesFromOtherDomains: r.allowCookiesFromOtherDomains,
-					body: r.body,
-					expect: A2(_Http_mapExpect, func, r.expect),
-					headers: r.headers,
-					method: r.method,
-					timeout: r.timeout,
-					tracker: r.tracker,
-					url: r.url
-				});
-		}
-	});
-var $elm$http$Http$MySub = F2(
-	function (a, b) {
-		return {$: 'MySub', a: a, b: b};
-	});
-var $elm$http$Http$subMap = F2(
-	function (func, _v0) {
-		var tracker = _v0.a;
-		var toMsg = _v0.b;
-		return A2(
-			$elm$http$Http$MySub,
-			tracker,
-			A2($elm$core$Basics$composeR, toMsg, func));
-	});
-_Platform_effectManagers['Http'] = _Platform_createManager($elm$http$Http$init, $elm$http$Http$onEffects, $elm$http$Http$onSelfMsg, $elm$http$Http$cmdMap, $elm$http$Http$subMap);
-var $elm$http$Http$command = _Platform_leaf('Http');
-var $elm$http$Http$subscription = _Platform_leaf('Http');
-var $elm$http$Http$request = function (r) {
-	return $elm$http$Http$command(
-		$elm$http$Http$Request(
-			{allowCookiesFromOtherDomains: false, body: r.body, expect: r.expect, headers: r.headers, method: r.method, timeout: r.timeout, tracker: r.tracker, url: r.url}));
-};
-var $author$project$Save$performSaveNote = F2(
-	function (note, apiKey) {
-		return $elm$http$Http$request(
-			{
-				body: $elm$http$Http$jsonBody(
-					$author$project$Save$encodeSaveNote(note)),
-				expect: A2($elm$http$Http$expectJson, $author$project$Save$processSaveNoteResults, $author$project$Save$decoderNoteIdVersion),
-				headers: _List_fromArray(
-					[
-						$author$project$ApiKey$apiKeyHeader(apiKey)
-					]),
-				method: 'POST',
-				timeout: $elm$core$Maybe$Nothing,
-				tracker: $elm$core$Maybe$Nothing,
-				url: '/note'
-			});
-	});
-var $author$project$Save$SaveMessage = {$: 'SaveMessage'};
-var $author$project$Save$sendSaveMessage = function (model) {
-	return $author$project$Save$scribMessage(
-		A2($author$project$Save$encode, $author$project$Save$SaveMessage, model));
-};
-var $author$project$Save$saveNote = function (model) {
-	var _v0 = model.remoteSaveStatus;
-	if (_v0.$ === 'Loading') {
-		return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
-	} else {
-		var _v1 = model.note;
-		if (_v1.$ === 'BrandNewNote') {
-			return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
-		} else {
-			var content = _v1.a;
-			var _v2 = A2(
-				$author$project$Save$performOrGotoConfig,
-				model,
-				_Utils_Tuple2(
-					_Utils_update(
-						model,
-						{remoteSaveStatus: $krisajenkins$remotedata$RemoteData$Loading}),
-					$author$project$Save$performSaveNote(content)));
-			var newModel = _v2.a;
-			var remoteSaveCmd = _v2.b;
-			return _Utils_Tuple2(
-				newModel,
-				$elm$core$Platform$Cmd$batch(
-					_List_fromArray(
-						[
-							remoteSaveCmd,
-							$author$project$Save$sendSaveMessage(newModel)
-						])));
-		}
-	}
-};
 var $author$project$Save$update = F2(
 	function (msg, model) {
-		switch (msg.$) {
-			case 'NoteSavedMsg':
-				return $author$project$Save$saveNote(model);
-			case 'NoteEditedMsg':
-				var newNoteText = msg.a;
-				var updatedModel = function () {
-					var _v1 = model.note;
-					if (_v1.$ === 'BrandNewNote') {
-						return _Utils_update(
-							model,
-							{
-								note: $author$project$Save$HavingContent(
-									$author$project$Save$NoteWithoutId(newNoteText)),
-								noteContentStatus: $author$project$Save$NeedsToSave
-							});
-					} else {
-						if (_v1.a.$ === 'NoteWithoutId') {
-							return _Utils_update(
-								model,
-								{
-									note: $author$project$Save$HavingContent(
-										$author$project$Save$NoteWithoutId(newNoteText)),
-									noteContentStatus: $author$project$Save$NeedsToSave
-								});
-						} else {
-							var noteId = _v1.a.a.noteId;
-							var noteVersion = _v1.a.a.noteVersion;
-							return _Utils_update(
-								model,
-								{
-									note: $author$project$Save$HavingContent(
-										$author$project$Save$NoteWithId(
-											{noteId: noteId, noteText: newNoteText, noteVersion: noteVersion})),
-									noteContentStatus: $author$project$Save$NeedsToSave
-								});
-						}
-					}
-				}();
-				return _Utils_Tuple2(
-					updatedModel,
-					$author$project$Save$scribMessage(
-						A2($author$project$Save$encode, $author$project$Save$PreviewMessage, updatedModel)));
-			case 'NewNoteMsg':
-				var updatedModel = _Utils_update(
-					$author$project$Save$defaultModel,
-					{apiKey: model.apiKey, dataSource: $author$project$Save$UserCreated});
-				return _Utils_Tuple2(
-					updatedModel,
-					$author$project$Save$scribMessage(
-						A2($author$project$Save$encode, $author$project$Save$PreviewMessage, updatedModel)));
-			case 'ViewNoteMsg':
-				return _Utils_Tuple2(
-					model,
-					$elm$browser$Browser$Navigation$load('view.html'));
-			default:
-				var noteResponse = msg.a;
-				var updatedNote = function () {
-					var _v2 = model.note;
-					if (_v2.$ === 'BrandNewNote') {
-						return model.note;
-					} else {
-						var content = _v2.a;
-						return $author$project$Save$HavingContent(
-							A2($author$project$Save$noteFromRemoteSave, content, noteResponse));
-					}
-				}();
-				var updatedModel = _Utils_update(
-					model,
-					{
-						note: updatedNote,
-						noteContentStatus: $author$project$Save$contentStatusFromRemoteSave(noteResponse),
-						remoteSaveStatus: noteResponse
-					});
-				return _Utils_Tuple2(
-					updatedModel,
-					$author$project$Save$sendSaveMessage(updatedModel));
-		}
+		return $author$project$ElmCommon$onlyModel(model);
 	});
 var $elm$json$Json$Decode$value = _Json_decodeValue;
 var $elm$html$Html$Attributes$stringProperty = F2(
@@ -6745,20 +5514,10 @@ var $elm$html$Html$Events$onClick = function (msg) {
 		$elm$json$Json$Decode$succeed(msg));
 };
 var $author$project$Save$NoteSavedMsg = {$: 'NoteSavedMsg'};
-var $elm$core$Basics$not = _Basics_not;
 var $author$project$Save$hasContent = function (note) {
-	if (note.$ === 'BrandNewNote') {
-		return false;
-	} else {
-		if (note.a.$ === 'NoteWithoutId') {
-			var noteText = note.a.a;
-			return !$elm$core$String$isEmpty(noteText);
-		} else {
-			var noteText = note.a.a.noteText;
-			return !$elm$core$String$isEmpty(noteText);
-		}
-	}
+	return false;
 };
+var $elm$core$Basics$not = _Basics_not;
 var $author$project$Save$viewSaveButton = function (model) {
 	var showSpinner = function () {
 		var _v0 = model.remoteSaveStatus;
@@ -6846,6 +5605,9 @@ var $author$project$Save$viewControls = function (model) {
 var $author$project$Save$NoteEditedMsg = function (a) {
 	return {$: 'NoteEditedMsg', a: a};
 };
+var $author$project$Save$getNoteText = function (note) {
+	return '';
+};
 var $elm$html$Html$Events$alwaysStop = function (x) {
 	return _Utils_Tuple2(x, true);
 };
@@ -6858,6 +5620,11 @@ var $elm$html$Html$Events$stopPropagationOn = F2(
 			$elm$virtual_dom$VirtualDom$on,
 			event,
 			$elm$virtual_dom$VirtualDom$MayStopPropagation(decoder));
+	});
+var $elm$json$Json$Decode$field = _Json_decodeField;
+var $elm$json$Json$Decode$at = F2(
+	function (fields, decoder) {
+		return A3($elm$core$List$foldr, $elm$json$Json$Decode$field, decoder, fields);
 	});
 var $elm$html$Html$Events$targetValue = A2(
 	$elm$json$Json$Decode$at,
@@ -6897,26 +5664,34 @@ var $author$project$Save$viewNotesTextArea = function (note) {
 			]),
 		_List_Nil);
 };
-var $author$project$ElmCommon$addFailureAlert = function (textValue) {
+var $author$project$ElmCommon$ErrorMessage = function (errorMessage) {
+	return {errorMessage: errorMessage};
+};
+var $author$project$ElmCommon$SuccessMessage = function (successMessage) {
+	return {successMessage: successMessage};
+};
+var $author$project$ElmCommon$addInlineErrorFlash = function (_v0) {
+	var errorMessage = _v0.errorMessage;
 	return A2(
 		$elm$html$Html$div,
 		$author$project$ElmCommon$addClasses(
 			_List_fromArray(
-				['px-1', 'py-1', 'has-background-danger', 'has-text-white', 'autohide'])),
+				['px-1', 'py-1', 'has-background-danger', 'has-text-white'])),
 		_List_fromArray(
 			[
-				$elm$html$Html$text(textValue)
+				$elm$html$Html$text(errorMessage)
 			]));
 };
-var $author$project$ElmCommon$addSuccessAlert = function (textValue) {
+var $author$project$ElmCommon$addInlineSuccessFlash = function (_v0) {
+	var successMessage = _v0.successMessage;
 	return A2(
 		$elm$html$Html$div,
 		$author$project$ElmCommon$addClasses(
 			_List_fromArray(
-				['px-1', 'py-1', 'has-background-primary', 'has-text-white', 'autohide'])),
+				['px-1', 'py-1', 'has-background-primary', 'has-text-white'])),
 		_List_fromArray(
 			[
-				$elm$html$Html$text(textValue)
+				$elm$html$Html$text(successMessage)
 			]));
 };
 var $author$project$Save$fromHttpError = function (error) {
@@ -6949,10 +5724,12 @@ var $author$project$Save$viewNotificationsArea = function (remoteSaveStatus) {
 	switch (remoteSaveStatus.$) {
 		case 'Failure':
 			var e = remoteSaveStatus.a;
-			return $author$project$ElmCommon$addFailureAlert(
-				'Save failed: ' + $author$project$Save$fromHttpError(e));
+			return $author$project$ElmCommon$addInlineErrorFlash(
+				$author$project$ElmCommon$ErrorMessage(
+					'Save failed: ' + $author$project$Save$fromHttpError(e)));
 		case 'Success':
-			return $author$project$ElmCommon$addSuccessAlert('Saved note');
+			return $author$project$ElmCommon$addInlineSuccessFlash(
+				$author$project$ElmCommon$SuccessMessage('Saved note'));
 		default:
 			return $author$project$ElmCommon$hideAlertSpace;
 	}

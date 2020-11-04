@@ -22,18 +22,15 @@
     });
 
     app.ports.scribMessage.subscribe(function(action){
-      portActions(action, app.ports.jsMessage.send);
+      portActions(action /*,app.ports.jsMessage.send*/);
     });
 
 
     function initLoad(appKey) {
       const storedData     = localStorage.getItem(appKey);
-      //TODO: we shoudl try/catch here.
+      //TODO: we should try/catch here.
       const noteForEditing = storedData ? JSON.parse(storedData) : null;
       const apiKey         = localStorage.getItem(appApiKey);
-      // const result = noteForEditing["apiKey"] = apiKey; //{ "note" : noteForEditing, "apiKey" :  apiKey };
-      // console.log("initLoad1:" + JSON.stringify(noteForEditing));
-      // console.log("initLoad2:" + JSON.stringify(result));
       return { "note": noteForEditing.note , "apiKey": apiKey};
     }
   </script>
