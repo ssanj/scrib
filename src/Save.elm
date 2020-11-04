@@ -149,13 +149,9 @@ update msg model =
                 in { model | note = HavingContent <| NoteWithId note, noteContentStatus  = NeedsToSave }
        in onlyModel updatedModel  --(updatedModel, scribMessage (encode PreviewMessage updatedModel))
 
-    _ -> onlyModel model
+    NewNoteMsg -> onlyModel { defaultModel | dataSource =  UserCreated, apiKey = model.apiKey }
 
-  --  NewNoteMsg ->
-  --    let updatedModel = { defaultModel | dataSource =  UserCreated, apiKey = model.apiKey }
-  --    in (updatedModel, scribMessage (encode PreviewMessage updatedModel)) -- TODO: we should be clearing the preview here not rendering it.
-
-  --  ViewNoteMsg -> (model, Browser.Navigation.load "view.html")
+    ViewNoteMsg -> (model, Browser.Navigation.load "view.html")
 
   --  (NoteSaveResponseMsg noteResponse) ->
   --    let updatedNote =
@@ -164,6 +160,9 @@ update msg model =
   --            (HavingContent content) -> HavingContent <| noteFromRemoteSave content noteResponse
   --        updatedModel = {model | remoteSaveStatus = noteResponse, note = updatedNote, noteContentStatus = contentStatusFromRemoteSave noteResponse }
   --    in (updatedModel, sendSaveMessage updatedModel)
+    _ -> onlyModel model
+
+
 
 --contentStatusFromRemoteSave : RemoteNoteData -> ContentStatus
 --contentStatusFromRemoteSave remoteData =

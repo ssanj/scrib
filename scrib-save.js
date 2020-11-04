@@ -5538,6 +5538,7 @@ var $author$project$Save$NoteWithId = function (a) {
 var $author$project$Save$NoteWithoutId = function (a) {
 	return {$: 'NoteWithoutId', a: a};
 };
+var $author$project$Save$UserCreated = {$: 'UserCreated'};
 var $author$project$Note$updateNoteText = F2(
 	function (newText, _v0) {
 		var noteId = _v0.noteId;
@@ -5546,21 +5547,12 @@ var $author$project$Note$updateNoteText = F2(
 	});
 var $author$project$Save$update = F2(
 	function (msg, model) {
-		if (msg.$ === 'NoteEditedMsg') {
-			var newNoteText = msg.a;
-			var updatedModel = function () {
-				var _v1 = model.note;
-				if (_v1.$ === 'BrandNewNote') {
-					return _Utils_update(
-						model,
-						{
-							note: $author$project$Save$HavingContent(
-								$author$project$Save$NoteWithoutId(
-									$author$project$Note$NoteLight(newNoteText))),
-							noteContentStatus: $author$project$Save$NeedsToSave
-						});
-				} else {
-					if (_v1.a.$ === 'NoteWithoutId') {
+		switch (msg.$) {
+			case 'NoteEditedMsg':
+				var newNoteText = msg.a;
+				var updatedModel = function () {
+					var _v1 = model.note;
+					if (_v1.$ === 'BrandNewNote') {
 						return _Utils_update(
 							model,
 							{
@@ -5570,21 +5562,40 @@ var $author$project$Save$update = F2(
 								noteContentStatus: $author$project$Save$NeedsToSave
 							});
 					} else {
-						var fullNote = _v1.a.a;
-						var note = A2($author$project$Note$updateNoteText, newNoteText, fullNote);
-						return _Utils_update(
-							model,
-							{
-								note: $author$project$Save$HavingContent(
-									$author$project$Save$NoteWithId(note)),
-								noteContentStatus: $author$project$Save$NeedsToSave
-							});
+						if (_v1.a.$ === 'NoteWithoutId') {
+							return _Utils_update(
+								model,
+								{
+									note: $author$project$Save$HavingContent(
+										$author$project$Save$NoteWithoutId(
+											$author$project$Note$NoteLight(newNoteText))),
+									noteContentStatus: $author$project$Save$NeedsToSave
+								});
+						} else {
+							var fullNote = _v1.a.a;
+							var note = A2($author$project$Note$updateNoteText, newNoteText, fullNote);
+							return _Utils_update(
+								model,
+								{
+									note: $author$project$Save$HavingContent(
+										$author$project$Save$NoteWithId(note)),
+									noteContentStatus: $author$project$Save$NeedsToSave
+								});
+						}
 					}
-				}
-			}();
-			return $author$project$ElmCommon$onlyModel(updatedModel);
-		} else {
-			return $author$project$ElmCommon$onlyModel(model);
+				}();
+				return $author$project$ElmCommon$onlyModel(updatedModel);
+			case 'NewNoteMsg':
+				return $author$project$ElmCommon$onlyModel(
+					_Utils_update(
+						$author$project$Save$defaultModel,
+						{apiKey: model.apiKey, dataSource: $author$project$Save$UserCreated}));
+			case 'ViewNoteMsg':
+				return _Utils_Tuple2(
+					model,
+					$elm$browser$Browser$Navigation$load('view.html'));
+			default:
+				return $author$project$ElmCommon$onlyModel(model);
 		}
 	});
 var $elm$json$Json$Decode$value = _Json_decodeValue;
