@@ -5144,12 +5144,53 @@ var $elm$core$Task$perform = F2(
 				A2($elm$core$Task$map, toMessage, task)));
 	});
 var $elm$browser$Browser$element = _Browser_element;
+var $author$project$ApiKey$ApiKeyWithPayload = F2(
+	function (apiKey, payload) {
+		return {apiKey: apiKey, payload: payload};
+	});
+var $author$project$StorageKeys$JsonKey = function (a) {
+	return {$: 'JsonKey', a: a};
+};
+var $author$project$StorageKeys$apiKeyKey = $author$project$StorageKeys$JsonKey('apiKey');
 var $author$project$ApiKey$ApiKey = function (value) {
 	return {value: value};
 };
 var $elm$json$Json$Decode$string = _Json_decodeString;
 var $author$project$ApiKey$decodeApiKey = A2($elm$json$Json$Decode$map, $author$project$ApiKey$ApiKey, $elm$json$Json$Decode$string);
-var $author$project$Save$decodeLocalSave = $author$project$ApiKey$decodeApiKey;
+var $elm$json$Json$Decode$field = _Json_decodeField;
+var $author$project$StorageKeys$keyValue = function (_v0) {
+	var value = _v0.a;
+	return value;
+};
+var $elm$json$Json$Decode$oneOf = _Json_oneOf;
+var $elm$json$Json$Decode$maybe = function (decoder) {
+	return $elm$json$Json$Decode$oneOf(
+		_List_fromArray(
+			[
+				A2($elm$json$Json$Decode$map, $elm$core$Maybe$Just, decoder),
+				$elm$json$Json$Decode$succeed($elm$core$Maybe$Nothing)
+			]));
+};
+var $author$project$ApiKey$decodeApiKeyWithPayload = F2(
+	function (key, payloadDecoder) {
+		return A3(
+			$elm$json$Json$Decode$map2,
+			$author$project$ApiKey$ApiKeyWithPayload,
+			A2(
+				$elm$json$Json$Decode$field,
+				$author$project$StorageKeys$keyValue($author$project$StorageKeys$apiKeyKey),
+				$author$project$ApiKey$decodeApiKey),
+			$elm$json$Json$Decode$maybe(
+				A2(
+					$elm$json$Json$Decode$field,
+					$author$project$StorageKeys$keyValue(key),
+					payloadDecoder)));
+	});
+var $author$project$StorageKeys$noteKey = $author$project$StorageKeys$JsonKey('note');
+var $author$project$Save$decodeLocalSave = A2(
+	$author$project$ApiKey$decodeApiKeyWithPayload,
+	$author$project$StorageKeys$noteKey,
+	$elm$json$Json$Decode$succeed(_Utils_Tuple0));
 var $elm$json$Json$Decode$decodeValue = _Json_run;
 var $author$project$ElmCommon$foldResult = F3(
 	function (failure, success, result) {
@@ -5365,7 +5406,8 @@ var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
 var $author$project$ElmCommon$onlyModel = function (model) {
 	return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 };
-var $author$project$Save$handleInitSuccess = function (apiKey) {
+var $author$project$Save$handleInitSuccess = function (_v0) {
+	var apiKey = _v0.apiKey;
 	var model = _Utils_update(
 		$author$project$Save$defaultModel,
 		{
@@ -5621,7 +5663,6 @@ var $elm$html$Html$Events$stopPropagationOn = F2(
 			event,
 			$elm$virtual_dom$VirtualDom$MayStopPropagation(decoder));
 	});
-var $elm$json$Json$Decode$field = _Json_decodeField;
 var $elm$json$Json$Decode$at = F2(
 	function (fields, decoder) {
 		return A3($elm$core$List$foldr, $elm$json$Json$Decode$field, decoder, fields);

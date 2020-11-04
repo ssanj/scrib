@@ -94,15 +94,16 @@ logMessage message =
   in scribMessage <| P.encodeJsCommand logCommand E.string
 
 
-decodeLocalSave : D.Decoder ApiKey
-decodeLocalSave = decodeApiKey
+decodeLocalSave : D.Decoder (ApiKeyWithPayload ())
+decodeLocalSave = decodeApiKeyWithPayload noteKey (D.succeed ())
 
-handleInitSuccess : ApiKey -> (Model, Cmd Msg)
-handleInitSuccess apiKey =
+handleInitSuccess : ApiKeyWithPayload () -> (Model, Cmd Msg)
+handleInitSuccess { apiKey } =
     let model =
             { defaultModel | note = BrandNewNote, apiKey = Just apiKey, dataSource = LocalLoad }
     in onlyModel model
 
+-- TODO: Should we have a FATAL error instead of logging to the console and redirecting to config?
 handleInitFailure : D.Error -> (Model, Cmd Msg)
 handleInitFailure err = (
                         defaultModel
