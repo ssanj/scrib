@@ -278,6 +278,7 @@ fromHttpError error =
     (Http.BadStatus status) -> "bad status: " ++ String.fromInt status
     (Http.BadBody body)     -> "bad body: " ++ body
 
+
 -- UPDATE HELPERS
 
 
@@ -434,7 +435,6 @@ saveEditingNoteToLocalStorage responseKey note =
       saveSelectedNoteValue   = P.JsStorageValue storageArea Save note
       saveSelectedNoteCommand = P.WithStorage saveSelectedNoteValue (Just responseKey)
   in scribMessage <| P.encodeJsCommand saveSelectedNoteCommand encodeSaveNote
-
 
 
 -- SUBSCRIPTION HELPERS
