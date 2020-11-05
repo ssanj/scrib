@@ -5460,18 +5460,25 @@ var $author$project$ApiKey$decodeApiKeyWithPayload = F2(
 					$author$project$StorageKeys$keyValue(key),
 					payloadDecoder)));
 	});
-var $author$project$Note$NoteFull = F3(
-	function (noteText, noteId, noteVersion) {
-		return {noteId: noteId, noteText: noteText, noteVersion: noteVersion};
+var $author$project$Note$NoteFull = F2(
+	function (a, b) {
+		return {$: 'NoteFull', a: a, b: b};
+	});
+var $author$project$Note$NoteIdVersion = F2(
+	function (noteId, noteVersion) {
+		return {noteId: noteId, noteVersion: noteVersion};
 	});
 var $elm$json$Json$Decode$int = _Json_decodeInt;
-var $elm$json$Json$Decode$map3 = _Json_map3;
-var $author$project$Note$decodeFullNote = A4(
-	$elm$json$Json$Decode$map3,
-	$author$project$Note$NoteFull,
-	A2($elm$json$Json$Decode$field, 'noteText', $elm$json$Json$Decode$string),
+var $author$project$Note$decoderNoteIdVersion = A3(
+	$elm$json$Json$Decode$map2,
+	$author$project$Note$NoteIdVersion,
 	A2($elm$json$Json$Decode$field, 'noteId', $elm$json$Json$Decode$int),
 	A2($elm$json$Json$Decode$field, 'noteVersion', $elm$json$Json$Decode$int));
+var $author$project$Note$decodeFullNote = A3(
+	$elm$json$Json$Decode$map2,
+	$author$project$Note$NoteFull,
+	A2($elm$json$Json$Decode$field, 'noteText', $elm$json$Json$Decode$string),
+	$author$project$Note$decoderNoteIdVersion);
 var $elm$json$Json$Decode$list = _Json_decodeList;
 var $author$project$Note$decodeFullNotes = $elm$json$Json$Decode$list($author$project$Note$decodeFullNote);
 var $author$project$StorageKeys$topNotesKey = $author$project$StorageKeys$JsonKey('top_notes');
@@ -6883,9 +6890,9 @@ var $author$project$View$handleJSError = F2(
 var $author$project$StorageKeys$Save = {$: 'Save'};
 var $elm$json$Json$Encode$int = _Json_wrap;
 var $author$project$Note$encodeFullNote = function (_v0) {
-	var noteText = _v0.noteText;
-	var noteId = _v0.noteId;
-	var noteVersion = _v0.noteVersion;
+	var noteText = _v0.a;
+	var noteId = _v0.b.noteId;
+	var noteVersion = _v0.b.noteVersion;
 	return $elm$json$Json$Encode$object(
 		_List_fromArray(
 			[
@@ -7289,6 +7296,10 @@ var $author$project$View$NoteEdited = function (a) {
 	return {$: 'NoteEdited', a: a};
 };
 var $elm$html$Html$div = _VirtualDom_node('div');
+var $author$project$Note$getNoteFullText = function (_v0) {
+	var noteText = _v0.a;
+	return noteText;
+};
 var $elm$html$Html$hr = _VirtualDom_node('hr');
 var $elm$html$Html$Attributes$id = $elm$html$Html$Attributes$stringProperty('id');
 var $author$project$View$markdownViewId = 'markdown-view';
@@ -7320,7 +7331,7 @@ var $elm_explorations$markdown$Markdown$defaultOptions = {
 };
 var $elm_explorations$markdown$Markdown$toHtmlWith = _Markdown_toHtml;
 var $elm_explorations$markdown$Markdown$toHtml = $elm_explorations$markdown$Markdown$toHtmlWith($elm_explorations$markdown$Markdown$defaultOptions);
-var $author$project$View$viewMarkdownPreview = function (note) {
+var $author$project$View$viewMarkdownPreview = function (fullNote) {
 	return A2(
 		$elm$html$Html$div,
 		_List_Nil,
@@ -7343,7 +7354,10 @@ var $author$project$View$viewMarkdownPreview = function (note) {
 							]),
 						_List_fromArray(
 							[
-								A2($elm_explorations$markdown$Markdown$toHtml, _List_Nil, note.noteText)
+								A2(
+								$elm_explorations$markdown$Markdown$toHtml,
+								_List_Nil,
+								$author$project$Note$getNoteFullText(fullNote))
 							])),
 						A2(
 						$elm$html$Html$button,
@@ -7352,7 +7366,7 @@ var $author$project$View$viewMarkdownPreview = function (note) {
 								$elm$html$Html$Attributes$class('button'),
 								$elm$html$Html$Attributes$class('is-info'),
 								$elm$html$Html$Events$onClick(
-								$author$project$View$NoteEdited(note))
+								$author$project$View$NoteEdited(fullNote))
 							]),
 						_List_fromArray(
 							[
@@ -7728,18 +7742,14 @@ var $elm$core$String$replace = F3(
 			A2($elm$core$String$split, before, string));
 	});
 var $author$project$View$removeHeading = A2($elm$core$String$replace, '# ', '');
-var $author$project$View$createNoteItem = function (_v0) {
-	var noteText = _v0.noteText;
-	var noteId = _v0.noteId;
-	var noteVersion = _v0.noteVersion;
+var $author$project$View$createNoteItem = function (fullNote) {
 	return A2(
 		$elm$html$Html$a,
 		_List_fromArray(
 			[
 				$elm$html$Html$Attributes$class('panel-block'),
 				$elm$html$Html$Events$onClick(
-				$author$project$View$NoteSelected(
-					{noteId: noteId, noteText: noteText, noteVersion: noteVersion}))
+				$author$project$View$NoteSelected(fullNote))
 			]),
 		_List_fromArray(
 			[
@@ -7763,7 +7773,8 @@ var $author$project$View$createNoteItem = function (_v0) {
 					])),
 				$elm$html$Html$text(
 				$author$project$View$removeHeading(
-					$author$project$View$onlyHeading(noteText)))
+					$author$project$View$onlyHeading(
+						$author$project$Note$getNoteFullText(fullNote))))
 			]));
 };
 var $author$project$View$viewNotesList = function (notes) {

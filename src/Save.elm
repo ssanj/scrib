@@ -224,13 +224,13 @@ defaultNote = NoteWithoutId <| SC.mkLightNote ""
 getNoteVersion : NoteWithContent -> Maybe Int
 getNoteVersion note =
   case note of
-    NoteWithId scNote -> Just <| SC.getNoteVersionNoteFull scNote
+    NoteWithId scNote -> Just <| SC.getNoteFullVersion scNote
     NoteWithoutId _   -> Nothing
 
 getNoteId : NoteWithContent -> Maybe Int
 getNoteId note =
   case note of
-    NoteWithId scNote -> Just <| SC.getNoteIdNoteFull scNote
+    NoteWithId scNote -> Just <| SC.getNoteFullId scNote
     NoteWithoutId _   -> Nothing
 
 getNoteText : NoteWithContent -> String

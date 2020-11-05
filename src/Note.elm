@@ -11,16 +11,12 @@ module Note exposing
   , mkLightNote
   , mkFullNote
 
-    -- FOLDS
-
-  --, foldNote
-
     -- GETTERS
 
   , getNoteLightText
   , getNoteFullText
-  , getNoteIdNoteFull
-  , getNoteVersionNoteFull
+  , getNoteFullId
+  , getNoteFullVersion
 
     -- UPDATES
 
@@ -110,11 +106,11 @@ getNoteFullText (NoteFull noteText _) = noteText
 --    (Note (NoteFull _ { noteVersion })) -> Just noteVersion
 --    _                                   -> Nothing
 
-getNoteIdNoteFull : NoteFull -> Int
-getNoteIdNoteFull (NoteFull _ { noteId }) = noteId
+getNoteFullId : NoteFull -> Int
+getNoteFullId (NoteFull _ { noteId }) = noteId
 
-getNoteVersionNoteFull : NoteFull -> Int
-getNoteVersionNoteFull (NoteFull _ { noteVersion }) = noteVersion
+getNoteFullVersion : NoteFull -> Int
+getNoteFullVersion (NoteFull _ { noteVersion }) = noteVersion
 
 
 -- UPDATES

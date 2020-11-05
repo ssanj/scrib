@@ -5460,39 +5460,46 @@ var $author$project$ApiKey$decodeApiKeyWithPayload = F2(
 					$author$project$StorageKeys$keyValue(key),
 					payloadDecoder)));
 	});
-var $author$project$Note$Note = function (a) {
-	return {$: 'Note', a: a};
+var $author$project$Save$NoteWithId = function (a) {
+	return {$: 'NoteWithId', a: a};
 };
-var $author$project$Note$NoteText = function (a) {
-	return {$: 'NoteText', a: a};
+var $author$project$Save$NoteWithoutId = function (a) {
+	return {$: 'NoteWithoutId', a: a};
 };
-var $author$project$Note$NoteFull = F3(
-	function (noteText, noteId, noteVersion) {
-		return {noteId: noteId, noteText: noteText, noteVersion: noteVersion};
+var $author$project$Note$NoteFull = F2(
+	function (a, b) {
+		return {$: 'NoteFull', a: a, b: b};
+	});
+var $author$project$Note$NoteIdVersion = F2(
+	function (noteId, noteVersion) {
+		return {noteId: noteId, noteVersion: noteVersion};
 	});
 var $elm$json$Json$Decode$int = _Json_decodeInt;
-var $elm$json$Json$Decode$map3 = _Json_map3;
-var $author$project$Note$decodeFullNote = A4(
-	$elm$json$Json$Decode$map3,
-	$author$project$Note$NoteFull,
-	A2($elm$json$Json$Decode$field, 'noteText', $elm$json$Json$Decode$string),
+var $author$project$Note$decoderNoteIdVersion = A3(
+	$elm$json$Json$Decode$map2,
+	$author$project$Note$NoteIdVersion,
 	A2($elm$json$Json$Decode$field, 'noteId', $elm$json$Json$Decode$int),
 	A2($elm$json$Json$Decode$field, 'noteVersion', $elm$json$Json$Decode$int));
-var $author$project$Note$NoteLight = function (noteText) {
-	return {noteText: noteText};
+var $author$project$Note$decodeFullNote = A3(
+	$elm$json$Json$Decode$map2,
+	$author$project$Note$NoteFull,
+	A2($elm$json$Json$Decode$field, 'noteText', $elm$json$Json$Decode$string),
+	$author$project$Note$decoderNoteIdVersion);
+var $author$project$Note$NoteLight = function (a) {
+	return {$: 'NoteLight', a: a};
 };
 var $author$project$Note$decodeLightNote = A2(
 	$elm$json$Json$Decode$map,
 	$author$project$Note$NoteLight,
 	A2($elm$json$Json$Decode$field, 'noteText', $elm$json$Json$Decode$string));
-var $author$project$Note$decodeNote = $elm$json$Json$Decode$oneOf(
+var $author$project$Save$decodeNoteWithContent = $elm$json$Json$Decode$oneOf(
 	_List_fromArray(
 		[
-			A2($elm$json$Json$Decode$map, $author$project$Note$Note, $author$project$Note$decodeFullNote),
-			A2($elm$json$Json$Decode$map, $author$project$Note$NoteText, $author$project$Note$decodeLightNote)
+			A2($elm$json$Json$Decode$map, $author$project$Save$NoteWithId, $author$project$Note$decodeFullNote),
+			A2($elm$json$Json$Decode$map, $author$project$Save$NoteWithoutId, $author$project$Note$decodeLightNote)
 		]));
 var $author$project$StorageKeys$noteKey = $author$project$StorageKeys$JsonKey('note');
-var $author$project$Save$decodeLocalSave = A2($author$project$ApiKey$decodeApiKeyWithPayload, $author$project$StorageKeys$noteKey, $author$project$Note$decodeNote);
+var $author$project$Save$decodeLocalSave = A2($author$project$ApiKey$decodeApiKeyWithPayload, $author$project$StorageKeys$noteKey, $author$project$Save$decodeNoteWithContent);
 var $elm$json$Json$Decode$decodeValue = _Json_run;
 var $author$project$ElmCommon$foldResult = F3(
 	function (failure, success, result) {
@@ -5512,9 +5519,6 @@ var $author$project$Save$Model = F5(
 	});
 var $krisajenkins$remotedata$RemoteData$NotAsked = {$: 'NotAsked'};
 var $author$project$Save$UpToDate = {$: 'UpToDate'};
-var $author$project$Save$NoteWithoutId = function (a) {
-	return {$: 'NoteWithoutId', a: a};
-};
 var $author$project$Note$mkLightNote = $author$project$Note$NoteLight;
 var $author$project$Save$defaultNote = $author$project$Save$NoteWithoutId(
 	$author$project$Note$mkLightNote(''));
@@ -5709,18 +5713,6 @@ var $author$project$Save$handleInitFailure = function (err) {
 				])));
 };
 var $author$project$Save$LocalLoad = {$: 'LocalLoad'};
-var $author$project$Save$NoteWithId = function (a) {
-	return {$: 'NoteWithId', a: a};
-};
-var $author$project$Save$createNote = function (scNote) {
-	if (scNote.$ === 'Note') {
-		var noteFull = scNote.a;
-		return $author$project$Save$NoteWithId(noteFull);
-	} else {
-		var noteLight = scNote.a;
-		return $author$project$Save$NoteWithoutId(noteLight);
-	}
-};
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
 var $author$project$ElmCommon$onlyModel = function (model) {
 	return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
@@ -5732,7 +5724,7 @@ var $author$project$Save$handleInitSuccess = function (_v0) {
 		$author$project$FP$maybe,
 		$author$project$Save$NoteWithoutId(
 			$author$project$Note$mkLightNote('')),
-		$author$project$Save$createNote,
+		$elm$core$Basics$identity,
 		payload);
 	var model = _Utils_update(
 		$author$project$Save$defaultModel,
@@ -5859,18 +5851,19 @@ var $author$project$Save$contentStatusFromRemoteSave = function (remoteData) {
 	return $krisajenkins$remotedata$RemoteData$isSuccess(remoteData) ? $author$project$Save$UpToDate : $author$project$Save$NeedsToSave;
 };
 var $author$project$Note$updateNoteIdVersion = F2(
-	function (_v0, _v1) {
-		var noteId = _v0.noteId;
-		var noteVersion = _v0.noteVersion;
-		var noteText = _v1.noteText;
-		return {noteId: noteId, noteText: noteText, noteVersion: noteVersion};
+	function (idVersion, _v0) {
+		var noteText = _v0.a;
+		return A2($author$project$Note$NoteFull, noteText, idVersion);
 	});
 var $author$project$Note$updateNoteVersion = F2(
-	function (_v0, noteFull) {
+	function (_v0, _v1) {
 		var noteVersion = _v0.noteVersion;
-		return _Utils_update(
-			noteFull,
-			{noteVersion: noteVersion});
+		var noteText = _v1.a;
+		var noteId = _v1.b.noteId;
+		return A2(
+			$author$project$Note$NoteFull,
+			noteText,
+			{noteId: noteId, noteVersion: noteVersion});
 	});
 var $author$project$Save$noteFromRemoteSave = F2(
 	function (existingNote, remoteData) {
@@ -5929,20 +5922,11 @@ var $elm$http$Http$header = $elm$http$Http$Header;
 var $author$project$ApiKey$apiKeyHeader = function (apiKey) {
 	return A2($elm$http$Http$header, 'X-API-KEY', apiKey.value);
 };
-var $author$project$Note$NoteIdVersion = F2(
-	function (noteId, noteVersion) {
-		return {noteId: noteId, noteVersion: noteVersion};
-	});
-var $author$project$Note$decoderNoteIdVersion = A3(
-	$elm$json$Json$Decode$map2,
-	$author$project$Note$NoteIdVersion,
-	A2($elm$json$Json$Decode$field, 'noteId', $elm$json$Json$Decode$int),
-	A2($elm$json$Json$Decode$field, 'noteVersion', $elm$json$Json$Decode$int));
 var $elm$json$Json$Encode$int = _Json_wrap;
 var $author$project$Note$encodeFullNote = function (_v0) {
-	var noteText = _v0.noteText;
-	var noteId = _v0.noteId;
-	var noteVersion = _v0.noteVersion;
+	var noteText = _v0.a;
+	var noteId = _v0.b.noteId;
+	var noteVersion = _v0.b.noteVersion;
 	return $elm$json$Json$Encode$object(
 		_List_fromArray(
 			[
@@ -5958,7 +5942,7 @@ var $author$project$Note$encodeFullNote = function (_v0) {
 			]));
 };
 var $author$project$Note$encodeLightNote = function (_v0) {
-	var noteText = _v0.noteText;
+	var noteText = _v0.a;
 	return $elm$json$Json$Encode$object(
 		_List_fromArray(
 			[
@@ -5969,14 +5953,11 @@ var $author$project$Note$encodeLightNote = function (_v0) {
 };
 var $author$project$Save$encodeSaveNote = function (note) {
 	if (note.$ === 'NoteWithoutId') {
-		var noteText = note.a;
-		return $author$project$Note$encodeLightNote(noteText);
+		var lightNote = note.a;
+		return $author$project$Note$encodeLightNote(lightNote);
 	} else {
-		var noteId = note.a.noteId;
-		var noteText = note.a.noteText;
-		var noteVersion = note.a.noteVersion;
-		return $author$project$Note$encodeFullNote(
-			{noteId: noteId, noteText: noteText, noteVersion: noteVersion});
+		var fullNote = note.a;
+		return $author$project$Note$encodeFullNote(fullNote);
 	}
 };
 var $elm$json$Json$Decode$decodeString = _Json_runOnString;
@@ -6855,12 +6836,12 @@ var $author$project$Save$remoteNoteIdVersionSavedToLocalStorageResponseKey = $au
 var $author$project$Save$saveRemoteUpdateToLocalStorage = function (note) {
 	return A2($author$project$Save$saveEditingNoteToLocalStorage, $author$project$Save$remoteNoteIdVersionSavedToLocalStorageResponseKey, note);
 };
-var $author$project$Note$updateNoteText = F2(
+var $author$project$Note$updateNoteFullText = F2(
 	function (newText, _v0) {
-		var noteId = _v0.noteId;
-		var noteVersion = _v0.noteVersion;
-		return {noteId: noteId, noteText: newText, noteVersion: noteVersion};
+		var idVersion = _v0.b;
+		return A2($author$project$Note$NoteFull, newText, idVersion);
 	});
+var $author$project$Note$updateNoteLightText = $author$project$Note$mkLightNote;
 var $author$project$Save$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
@@ -6875,12 +6856,12 @@ var $author$project$Save$update = F2(
 							model,
 							{
 								note: $author$project$Save$NoteWithoutId(
-									$author$project$Note$NoteLight(newNoteText)),
+									$author$project$Note$updateNoteLightText(newNoteText)),
 								noteContentStatus: $author$project$Save$NeedsToSave
 							});
 					} else {
 						var fullNote = _v1.a;
-						var note = A2($author$project$Note$updateNoteText, newNoteText, fullNote);
+						var note = A2($author$project$Note$updateNoteFullText, newNoteText, fullNote);
 						return _Utils_update(
 							model,
 							{
@@ -6939,11 +6920,11 @@ var $elm$html$Html$Attributes$stringProperty = F2(
 	});
 var $elm$html$Html$Attributes$class = $elm$html$Html$Attributes$stringProperty('className');
 var $author$project$Note$getNoteFullText = function (_v0) {
-	var noteText = _v0.noteText;
+	var noteText = _v0.a;
 	return noteText;
 };
 var $author$project$Note$getNoteLightText = function (_v0) {
-	var noteText = _v0.noteText;
+	var noteText = _v0.a;
 	return noteText;
 };
 var $elm$html$Html$div = _VirtualDom_node('div');
