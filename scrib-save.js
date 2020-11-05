@@ -5505,7 +5505,6 @@ var $author$project$ElmCommon$foldResult = F3(
 		}
 	});
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
-var $author$project$Save$BrandNewNote = {$: 'BrandNewNote'};
 var $author$project$Save$InitNote = {$: 'InitNote'};
 var $author$project$Save$Model = F5(
 	function (note, dataSource, remoteSaveStatus, noteContentStatus, apiKey) {
@@ -5513,7 +5512,13 @@ var $author$project$Save$Model = F5(
 	});
 var $krisajenkins$remotedata$RemoteData$NotAsked = {$: 'NotAsked'};
 var $author$project$Save$UpToDate = {$: 'UpToDate'};
-var $author$project$Save$defaultModel = A5($author$project$Save$Model, $author$project$Save$BrandNewNote, $author$project$Save$InitNote, $krisajenkins$remotedata$RemoteData$NotAsked, $author$project$Save$UpToDate, $elm$core$Maybe$Nothing);
+var $author$project$Save$NoteWithoutId = function (a) {
+	return {$: 'NoteWithoutId', a: a};
+};
+var $author$project$Note$mkLightNote = $author$project$Note$NoteLight;
+var $author$project$Save$defaultNote = $author$project$Save$NoteWithoutId(
+	$author$project$Note$mkLightNote(''));
+var $author$project$Save$defaultModel = A5($author$project$Save$Model, $author$project$Save$defaultNote, $author$project$Save$InitNote, $krisajenkins$remotedata$RemoteData$NotAsked, $author$project$Save$UpToDate, $elm$core$Maybe$Nothing);
 var $elm$browser$Browser$Navigation$load = _Browser_load;
 var $author$project$Ports$LogConsole = function (a) {
 	return {$: 'LogConsole', a: a};
@@ -5703,20 +5708,9 @@ var $author$project$Save$handleInitFailure = function (err) {
 					'Decode of init data failed due to: ' + $elm$json$Json$Decode$errorToString(err))
 				])));
 };
-var $author$project$Save$HavingContent = function (a) {
-	return {$: 'HavingContent', a: a};
-};
 var $author$project$Save$LocalLoad = {$: 'LocalLoad'};
-var $elm$core$Basics$composeL = F3(
-	function (g, f, x) {
-		return g(
-			f(x));
-	});
 var $author$project$Save$NoteWithId = function (a) {
 	return {$: 'NoteWithId', a: a};
-};
-var $author$project$Save$NoteWithoutId = function (a) {
-	return {$: 'NoteWithoutId', a: a};
 };
 var $author$project$Save$createNote = function (scNote) {
 	if (scNote.$ === 'Note') {
@@ -5736,8 +5730,9 @@ var $author$project$Save$handleInitSuccess = function (_v0) {
 	var payload = _v0.payload;
 	var note = A3(
 		$author$project$FP$maybe,
-		$author$project$Save$BrandNewNote,
-		A2($elm$core$Basics$composeL, $author$project$Save$HavingContent, $author$project$Save$createNote),
+		$author$project$Save$NoteWithoutId(
+			$author$project$Note$mkLightNote('')),
+		$author$project$Save$createNote,
 		payload);
 	var model = _Utils_update(
 		$author$project$Save$defaultModel,
@@ -6851,25 +6846,14 @@ var $author$project$Save$saveNote = function (model) {
 	if (_v0.$ === 'Loading') {
 		return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 	} else {
-		var _v1 = model.note;
-		if (_v1.$ === 'BrandNewNote') {
-			return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
-		} else {
-			var content = _v1.a;
-			return _Utils_Tuple2(
-				model,
-				A2($author$project$Save$saveEditingNoteToLocalStorage, $author$project$Save$noteSavedToLocalStorageResponseKey, content));
-		}
+		return _Utils_Tuple2(
+			model,
+			A2($author$project$Save$saveEditingNoteToLocalStorage, $author$project$Save$noteSavedToLocalStorageResponseKey, model.note));
 	}
 };
 var $author$project$Save$remoteNoteIdVersionSavedToLocalStorageResponseKey = $author$project$Ports$ResponseKey('RemoteNoteIdVersionSavedToLocalStorage');
 var $author$project$Save$saveRemoteUpdateToLocalStorage = function (note) {
-	if (note.$ === 'BrandNewNote') {
-		return $elm$core$Platform$Cmd$none;
-	} else {
-		var content = note.a;
-		return A2($author$project$Save$saveEditingNoteToLocalStorage, $author$project$Save$remoteNoteIdVersionSavedToLocalStorageResponseKey, content);
-	}
+	return A2($author$project$Save$saveEditingNoteToLocalStorage, $author$project$Save$remoteNoteIdVersionSavedToLocalStorageResponseKey, note);
 };
 var $author$project$Note$updateNoteText = F2(
 	function (newText, _v0) {
@@ -6886,36 +6870,23 @@ var $author$project$Save$update = F2(
 				var newNoteText = msg.a;
 				var updatedModel = function () {
 					var _v1 = model.note;
-					if (_v1.$ === 'BrandNewNote') {
+					if (_v1.$ === 'NoteWithoutId') {
 						return _Utils_update(
 							model,
 							{
-								note: $author$project$Save$HavingContent(
-									$author$project$Save$NoteWithoutId(
-										$author$project$Note$NoteLight(newNoteText))),
+								note: $author$project$Save$NoteWithoutId(
+									$author$project$Note$NoteLight(newNoteText)),
 								noteContentStatus: $author$project$Save$NeedsToSave
 							});
 					} else {
-						if (_v1.a.$ === 'NoteWithoutId') {
-							return _Utils_update(
-								model,
-								{
-									note: $author$project$Save$HavingContent(
-										$author$project$Save$NoteWithoutId(
-											$author$project$Note$NoteLight(newNoteText))),
-									noteContentStatus: $author$project$Save$NeedsToSave
-								});
-						} else {
-							var fullNote = _v1.a.a;
-							var note = A2($author$project$Note$updateNoteText, newNoteText, fullNote);
-							return _Utils_update(
-								model,
-								{
-									note: $author$project$Save$HavingContent(
-										$author$project$Save$NoteWithId(note)),
-									noteContentStatus: $author$project$Save$NeedsToSave
-								});
-						}
+						var fullNote = _v1.a;
+						var note = A2($author$project$Note$updateNoteText, newNoteText, fullNote);
+						return _Utils_update(
+							model,
+							{
+								note: $author$project$Save$NoteWithId(note),
+								noteContentStatus: $author$project$Save$NeedsToSave
+							});
 					}
 				}();
 				return $author$project$ElmCommon$onlyModel(updatedModel);
@@ -6930,16 +6901,7 @@ var $author$project$Save$update = F2(
 					$elm$browser$Browser$Navigation$load('view.html'));
 			case 'NoteSaveResponseMsg':
 				var noteResponse = msg.a;
-				var updatedNote = function () {
-					var _v2 = model.note;
-					if (_v2.$ === 'BrandNewNote') {
-						return model.note;
-					} else {
-						var content = _v2.a;
-						return $author$project$Save$HavingContent(
-							A2($author$project$Save$noteFromRemoteSave, content, noteResponse));
-					}
-				}();
+				var updatedNote = A2($author$project$Save$noteFromRemoteSave, model.note, noteResponse);
 				var updatedModel = _Utils_update(
 					model,
 					{
@@ -6951,20 +6913,14 @@ var $author$project$Save$update = F2(
 					updatedModel,
 					$author$project$Save$saveRemoteUpdateToLocalStorage(updatedModel.note));
 			case 'NoteSavedToLocalStorage':
-				var _v3 = model.note;
-				if (_v3.$ === 'BrandNewNote') {
-					return $author$project$ElmCommon$onlyModel(model);
-				} else {
-					var content = _v3.a;
-					return A2(
-						$author$project$Save$performOrGotoConfig,
-						model,
-						_Utils_Tuple2(
-							_Utils_update(
-								model,
-								{remoteSaveStatus: $krisajenkins$remotedata$RemoteData$Loading}),
-							$author$project$Save$performSaveNote(content)));
-				}
+				return A2(
+					$author$project$Save$performOrGotoConfig,
+					model,
+					_Utils_Tuple2(
+						_Utils_update(
+							model,
+							{remoteSaveStatus: $krisajenkins$remotedata$RemoteData$Loading}),
+						$author$project$Save$performSaveNote(model.note)));
 			case 'RemoteNoteIdVersionSavedToLocalStorage':
 				return $author$project$ElmCommon$onlyModel(model);
 			default:
@@ -7056,18 +7012,14 @@ var $author$project$Save$viewMarkdownPreview = function (noteText) {
 			]));
 };
 var $author$project$Save$createMarkdownPreview = function (note) {
-	if (note.$ === 'BrandNewNote') {
-		return $author$project$Save$viewMarkdownInstructions;
+	if (note.$ === 'NoteWithoutId') {
+		var scNote = note.a;
+		var noteText = $author$project$Note$getNoteLightText(scNote);
+		return $elm$core$String$isEmpty(noteText) ? $author$project$Save$viewMarkdownInstructions : $author$project$Save$viewMarkdownPreview(noteText);
 	} else {
-		if (note.a.$ === 'NoteWithoutId') {
-			var scNote = note.a.a;
-			var noteText = $author$project$Note$getNoteLightText(scNote);
-			return $elm$core$String$isEmpty(noteText) ? $author$project$Save$viewMarkdownInstructions : $author$project$Save$viewMarkdownPreview(noteText);
-		} else {
-			var scNote = note.a.a;
-			var noteText = $author$project$Note$getNoteFullText(scNote);
-			return $elm$core$String$isEmpty(noteText) ? $author$project$Save$viewMarkdownInstructions : $author$project$Save$viewMarkdownPreview(noteText);
-		}
+		var scNote = note.a;
+		var noteText = $author$project$Note$getNoteFullText(scNote);
+		return $elm$core$String$isEmpty(noteText) ? $author$project$Save$viewMarkdownInstructions : $author$project$Save$viewMarkdownPreview(noteText);
 	}
 };
 var $elm$html$Html$section = _VirtualDom_node('section');
@@ -7172,18 +7124,14 @@ var $elm$html$Html$Events$onClick = function (msg) {
 var $author$project$Save$NoteSavedMsg = {$: 'NoteSavedMsg'};
 var $elm$core$Basics$not = _Basics_not;
 var $author$project$Save$hasContent = function (note) {
-	if (note.$ === 'BrandNewNote') {
-		return false;
+	if (note.$ === 'NoteWithoutId') {
+		var noteText = note.a;
+		return !$elm$core$String$isEmpty(
+			$author$project$Note$getNoteLightText(noteText));
 	} else {
-		if (note.a.$ === 'NoteWithoutId') {
-			var noteText = note.a.a;
-			return !$elm$core$String$isEmpty(
-				$author$project$Note$getNoteLightText(noteText));
-		} else {
-			var noteText = note.a.a;
-			return !$elm$core$String$isEmpty(
-				$author$project$Note$getNoteFullText(noteText));
-		}
+		var noteText = note.a;
+		return !$elm$core$String$isEmpty(
+			$author$project$Note$getNoteFullText(noteText));
 	}
 };
 var $author$project$Save$viewSaveButton = function (model) {
@@ -7274,16 +7222,12 @@ var $author$project$Save$NoteEditedMsg = function (a) {
 	return {$: 'NoteEditedMsg', a: a};
 };
 var $author$project$Save$getNoteText = function (note) {
-	if (note.$ === 'BrandNewNote') {
-		return '';
+	if (note.$ === 'NoteWithId') {
+		var scNote = note.a;
+		return $author$project$Note$getNoteFullText(scNote);
 	} else {
-		if (note.a.$ === 'NoteWithId') {
-			var scNote = note.a.a;
-			return $author$project$Note$getNoteFullText(scNote);
-		} else {
-			var scNote = note.a.a;
-			return $author$project$Note$getNoteLightText(scNote);
-		}
+		var scNote = note.a;
+		return $author$project$Note$getNoteLightText(scNote);
 	}
 };
 var $elm$html$Html$Events$alwaysStop = function (x) {

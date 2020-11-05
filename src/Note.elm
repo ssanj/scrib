@@ -23,6 +23,9 @@ type alias NoteIdVersion = { noteId : Int, noteVersion : Int }
 type Note = Note NoteFull
           | NoteText NoteLight
 
+mkLightNote: String -> NoteLight
+mkLightNote = NoteLight
+
 getNoteLightText : NoteLight -> String
 getNoteLightText { noteText } = noteText
 

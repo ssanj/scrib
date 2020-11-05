@@ -36,18 +36,12 @@ type alias RemoteNoteData = WebData SC.NoteIdVersion
 type NoteWithContent = NoteWithoutId SC.NoteLight
                      | NoteWithId SC.NoteFull
 
--- What information do we have about the note?
-type Note = BrandNewNote
-          | HavingContent NoteWithContent
-
 type ContentStatus = NeedsToSave
                    | UpToDate
 
-type alias LocalEdit = { apiKey: ApiKey, note: Note }
-
 type alias Model =
   {
-    note: Note
+    note: NoteWithContent
   , dataSource: DataSource
   , remoteSaveStatus: RemoteNoteData
   , noteContentStatus: ContentStatus
@@ -101,11 +95,10 @@ update msg model =
     (NoteEditedMsg newNoteText) ->
        let updatedModel =
             case model.note of
-              BrandNewNote                          -> { model | note = HavingContent <| NoteWithoutId <| SC.NoteLight newNoteText,     noteContentStatus  = NeedsToSave }
-              (HavingContent (NoteWithoutId _))     -> { model | note = HavingContent <| NoteWithoutId <| SC.NoteLight newNoteText,     noteContentStatus  = NeedsToSave }
-              (HavingContent (NoteWithId fullNote))   ->
+              (NoteWithoutId _)     -> { model | note = NoteWithoutId <| SC.NoteLight newNoteText,     noteContentStatus  = NeedsToSave }
+              (NoteWithId fullNote) ->
                 let note =  SC.updateNoteText newNoteText fullNote
-                in { model | note = HavingContent <| NoteWithId note, noteContentStatus  = NeedsToSave }
+                in { model | note = NoteWithId note, noteContentStatus  = NeedsToSave }
        in onlyModel updatedModel
 
     NewNoteMsg -> onlyModel { defaultModel | dataSource =  UserCreated, apiKey = model.apiKey }
@@ -113,17 +106,11 @@ update msg model =
     ViewNoteMsg -> (model, Browser.Navigation.load "view.html")
 
     (NoteSaveResponseMsg noteResponse) ->
-      let updatedNote =
-            case model.note of
-              BrandNewNote            -> model.note -- illegal, you shouldn't be able to save a new note (without content)
-              (HavingContent content) -> HavingContent <| noteFromRemoteSave content noteResponse
+      let updatedNote  = noteFromRemoteSave model.note noteResponse
           updatedModel = {model | remoteSaveStatus = noteResponse, note = updatedNote, noteContentStatus = contentStatusFromRemoteSave noteResponse }
       in (updatedModel, saveRemoteUpdateToLocalStorage updatedModel.note)
 
-    NoteSavedToLocalStorage ->
-      case model.note of
-        BrandNewNote -> onlyModel model
-        (HavingContent content) -> performOrGotoConfig model ({model | remoteSaveStatus = Loading }, performSaveNote content)
+    NoteSavedToLocalStorage -> performOrGotoConfig model ({model | remoteSaveStatus = Loading }, performSaveNote model.note)
 
     RemoteNoteIdVersionSavedToLocalStorage -> onlyModel model
 
@@ -179,7 +166,7 @@ decodeLocalSave = decodeApiKeyWithPayload noteKey SC.decodeNote
 
 handleInitSuccess : ApiKeyWithPayload SC.Note -> (Model, Cmd Msg)
 handleInitSuccess { apiKey, payload } =
-    let note  = maybe BrandNewNote (HavingContent << createNote) payload
+    let note  = maybe (NoteWithoutId <| SC.mkLightNote "") createNote payload
         model =
             { defaultModel | note = note, apiKey = Just apiKey, dataSource = LocalLoad }
     in onlyModel model
@@ -201,9 +188,6 @@ handleInitFailure err = (
                         , logMessage ("Decode of init data failed due to: " ++ D.errorToString err)
                         ]
                       )
-
-defaultModel: Model
-defaultModel = Model BrandNewNote InitNote NotAsked UpToDate Nothing
 
 
 -- REMOTE CALLS
@@ -235,34 +219,35 @@ performOrGotoConfig oldModel apiKeyCommand =
 
 -- MODEL HELPERS
 
+defaultModel: Model
+defaultModel = Model defaultNote InitNote NotAsked UpToDate Nothing
 
-getNoteVersion : Note -> Maybe Int
+defaultNote : NoteWithContent
+defaultNote = NoteWithoutId <| SC.mkLightNote ""
+
+getNoteVersion : NoteWithContent -> Maybe Int
 getNoteVersion note =
   case note of
-    BrandNewNote                        -> Nothing
-    (HavingContent (NoteWithId scNote)) -> Just <| SC.getNoteVersionNoteFull scNote
-    (HavingContent (NoteWithoutId _))   -> Nothing
+    NoteWithId scNote -> Just <| SC.getNoteVersionNoteFull scNote
+    NoteWithoutId _   -> Nothing
 
-getNoteId : Note -> Maybe Int
+getNoteId : NoteWithContent -> Maybe Int
 getNoteId note =
   case note of
-    BrandNewNote                        -> Nothing
-    (HavingContent (NoteWithId scNote)) -> Just <| SC.getNoteIdNoteFull scNote
-    (HavingContent (NoteWithoutId _))   -> Nothing
+    NoteWithId scNote -> Just <| SC.getNoteIdNoteFull scNote
+    NoteWithoutId _   -> Nothing
 
-getNoteText : Note -> String
+getNoteText : NoteWithContent -> String
 getNoteText note =
   case note of
-    BrandNewNote                          -> ""
-    (HavingContent (NoteWithId scNote))    -> SC.getNoteFullText scNote
-    (HavingContent (NoteWithoutId scNote)) -> SC.getNoteLightText scNote
+    NoteWithId scNote    -> SC.getNoteFullText scNote
+    NoteWithoutId scNote -> SC.getNoteLightText scNote
 
-hasContent: Note -> Bool
+hasContent: NoteWithContent -> Bool
 hasContent note =
   case note of
-    BrandNewNote                             -> False
-    (HavingContent (NoteWithoutId noteText)) -> not (String.isEmpty <| SC.getNoteLightText noteText)
-    (HavingContent (NoteWithId noteText))    -> not (String.isEmpty <| SC.getNoteFullText noteText)
+    NoteWithoutId noteText -> not (String.isEmpty <| SC.getNoteLightText noteText)
+    NoteWithId noteText    -> not (String.isEmpty <| SC.getNoteFullText noteText)
 
 
 -- REMOTE HELPERS
@@ -304,10 +289,7 @@ saveNote: Model -> (Model, Cmd Msg)
 saveNote model =
   case model.remoteSaveStatus of
     Loading       -> (model, Cmd.none) -- still saving from a previous save...
-    _             ->
-      case model.note of
-        BrandNewNote -> (model, Cmd.none)
-        HavingContent content -> (model, saveEditingNoteToLocalStorage noteSavedToLocalStorageResponseKey content)
+    _             -> (model, saveEditingNoteToLocalStorage noteSavedToLocalStorageResponseKey model.note)
 
 
 -- VIEW HELPERS
@@ -339,7 +321,7 @@ viewNotificationsArea remoteSaveStatus =
     _           -> hideAlertSpace
 
 
-viewNotesTextArea: Note -> Html Msg
+viewNotesTextArea: NoteWithContent -> Html Msg
 viewNotesTextArea note =
   textarea
     [id "note-content", class "textarea", rows 10, placeholder "e.g. My awesome idea", onInput NoteEditedMsg, value <| getNoteText note]
@@ -399,18 +381,16 @@ viewSaveButton model =
       [text "Save"]
 
 
-createMarkdownPreview : Note -> Html Msg
+createMarkdownPreview : NoteWithContent -> Html Msg
 createMarkdownPreview note =
   case note of
-    BrandNewNote                           -> viewMarkdownInstructions
-
-    (HavingContent (NoteWithoutId scNote)) ->
+    (NoteWithoutId scNote) ->
       let noteText = SC.getNoteLightText scNote
       in
         if String.isEmpty noteText then viewMarkdownInstructions
         else viewMarkdownPreview noteText
 
-    (HavingContent (NoteWithId scNote))    ->
+    (NoteWithId scNote)    ->
       let noteText = SC.getNoteFullText scNote
       in
         if String.isEmpty noteText then viewMarkdownInstructions
@@ -448,11 +428,9 @@ noteSavedToLocalStorageResponseKey = P.ResponseKey "NoteSavedToLocalStorage"
 remoteNoteIdVersionSavedToLocalStorageResponseKey : P.ResponseKey
 remoteNoteIdVersionSavedToLocalStorageResponseKey = P.ResponseKey "RemoteNoteIdVersionSavedToLocalStorage"
 
-saveRemoteUpdateToLocalStorage : Note -> Cmd Msg
+saveRemoteUpdateToLocalStorage : NoteWithContent -> Cmd Msg
 saveRemoteUpdateToLocalStorage note =
-  case note of
-    BrandNewNote -> Cmd.none
-    HavingContent content -> saveEditingNoteToLocalStorage remoteNoteIdVersionSavedToLocalStorageResponseKey content
+  saveEditingNoteToLocalStorage remoteNoteIdVersionSavedToLocalStorageResponseKey note
 
 saveEditingNoteToLocalStorage : P.ResponseKey -> NoteWithContent -> Cmd Msg
 saveEditingNoteToLocalStorage responseKey note =
