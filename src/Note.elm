@@ -2,8 +2,7 @@ module Note exposing
   (
     -- DATA TYPES
 
-    Note
-  , NoteLight
+    NoteLight
   , NoteFull
   , NoteIdVersion
 
@@ -14,7 +13,7 @@ module Note exposing
 
     -- FOLDS
 
-  , foldNote
+  --, foldNote
 
     -- GETTERS
 
@@ -39,7 +38,9 @@ module Note exposing
     -- DECODERS
 
   , decoderNoteIdVersion
-  , decodeNote
+  --, decodeNote
+  , decodeLightNote
+  , decodeFullNote
   , decodeFullNotes
    )
 
@@ -54,9 +55,6 @@ import Json.Decode as D
 type NoteFull = NoteFull String NoteIdVersion
 
 type NoteLight = NoteLight String
-
-type Note = Note NoteFull
-          | NoteText NoteLight
 
 
 -- MODEL OPEN
@@ -78,11 +76,11 @@ mkFullNote  noteText idVersion = NoteFull noteText idVersion
 -- FOLDS
 
 
-foldNote : (NoteLight -> a) -> (NoteFull -> a ) -> Note -> a
-foldNote onNoteLight onNoteFull note =
-  case note of
-    Note noteFull      -> onNoteFull noteFull
-    NoteText noteLight -> onNoteLight noteLight
+--foldNote : (NoteLight -> a) -> (NoteFull -> a ) -> Note -> a
+--foldNote onNoteLight onNoteFull note =
+--  case note of
+--    Note noteFull      -> onNoteFull noteFull
+--    NoteText noteLight -> onNoteLight noteLight
 
 
 -- GETTERS
@@ -94,23 +92,23 @@ getNoteLightText (NoteLight noteText) = noteText
 getNoteFullText : NoteFull -> String
 getNoteFullText (NoteFull noteText _) = noteText
 
-getNoteText : Note -> String
-getNoteText note =
-  case note of
-    (Note (NoteFull noteText _)) -> noteText
-    (NoteText (NoteLight noteText))  -> noteText
+--getNoteText : Note -> String
+--getNoteText note =
+--  case note of
+--    (Note (NoteFull noteText _)) -> noteText
+--    (NoteText (NoteLight noteText))  -> noteText
 
-getNoteId : Note -> Maybe Int
-getNoteId note =
-  case note of
-    (Note (NoteFull _ { noteId })) -> Just noteId
-    _                 -> Nothing
+--getNoteId : Note -> Maybe Int
+--getNoteId note =
+--  case note of
+--    (Note (NoteFull _ { noteId })) -> Just noteId
+--    _                 -> Nothing
 
-getNoteVersion : Note -> Maybe Int
-getNoteVersion note =
-  case note of
-    (Note (NoteFull _ { noteVersion })) -> Just noteVersion
-    _                                   -> Nothing
+--getNoteVersion : Note -> Maybe Int
+--getNoteVersion note =
+--  case note of
+--    (Note (NoteFull _ { noteVersion })) -> Just noteVersion
+--    _                                   -> Nothing
 
 getNoteIdNoteFull : NoteFull -> Int
 getNoteIdNoteFull (NoteFull _ { noteId }) = noteId
@@ -180,13 +178,13 @@ decodeFullNote =
 decodeLightNote: D.Decoder NoteLight
 decodeLightNote = D.map NoteLight (D.field "noteText" D.string)
 
-decodeNote : D.Decoder Note
-decodeNote =
-  D.oneOf
-    [
-      D.map Note decodeFullNote
-    , D.map NoteText decodeLightNote
-    ]
+--decodeNote : D.Decoder Note
+--decodeNote =
+--  D.oneOf
+--    [
+--      D.map Note decodeFullNote
+--    , D.map NoteText decodeLightNote
+--    ]
 
 decoderNoteIdVersion : D.Decoder NoteIdVersion
 decoderNoteIdVersion =

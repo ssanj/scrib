@@ -161,19 +161,16 @@ logMessage message =
   in scribMessage <| P.encodeJsCommand logCommand E.string
 
 
-decodeLocalSave : D.Decoder (ApiKeyWithPayload SC.Note)
-decodeLocalSave = decodeApiKeyWithPayload noteKey SC.decodeNote
+decodeLocalSave : D.Decoder (ApiKeyWithPayload NoteWithContent)
+decodeLocalSave = decodeApiKeyWithPayload noteKey decodeNoteWithContent
 
-handleInitSuccess : ApiKeyWithPayload SC.Note -> (Model, Cmd Msg)
+handleInitSuccess : ApiKeyWithPayload NoteWithContent -> (Model, Cmd Msg)
 handleInitSuccess { apiKey, payload } =
-    let note  = maybe (NoteWithoutId <| SC.mkLightNote "") createNote payload
+    let note  = maybe (NoteWithoutId <| SC.mkLightNote "") identity payload
         model =
             { defaultModel | note = note, apiKey = Just apiKey, dataSource = LocalLoad }
     in onlyModel model
 
-
-createNote : SC.Note -> NoteWithContent
-createNote = SC.foldNote NoteWithoutId NoteWithId
 
 
 -- TODO: Should we have a FATAL error instead of logging to the console and redirecting to config?
@@ -463,3 +460,14 @@ encodeSaveNote note =
     NoteWithoutId lightNote -> SC.encodeLightNote lightNote
     NoteWithId fullNote     -> SC.encodeFullNote fullNote
 
+
+-- DECODERS
+
+
+decodeNoteWithContent : D.Decoder NoteWithContent
+decodeNoteWithContent =
+  D.oneOf
+  [
+    D.map NoteWithId SC.decodeFullNote
+  , D.map NoteWithoutId SC.decodeLightNote
+  ]
