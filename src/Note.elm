@@ -1,82 +1,154 @@
-module Note exposing (..)
+module Note exposing
+  (
+    -- DATA TYPES
+
+    Note
+  , NoteLight
+  , NoteFull
+  , NoteIdVersion
+
+    -- CONSTRUCTORS
+
+  , mkLightNote
+  , mkFullNote
+
+    -- FOLDS
+
+  , foldNote
+
+    -- GETTERS
+
+  , getNoteLightText
+  , getNoteFullText
+  , getNoteIdNoteFull
+  , getNoteVersionNoteFull
+
+    -- UPDATES
+
+  , updateNoteIdVersion
+  , updateNoteVersion
+  , updateNoteLightText
+  , updateNoteFullText
+
+    -- ENCODERS
+
+  , encodeLightNote
+  , encodeFullNote
+  , encodeFullNotes
+
+    -- DECODERS
+
+  , decoderNoteIdVersion
+  , decodeNote
+  , decodeFullNotes
+   )
 
 import ElmCommon exposing (Encoder)
 import Json.Encode as E
 import Json.Decode as D
 
-type alias NoteFull =
-  {
-    noteText: String
-  , noteId: Int
-  , noteVersion: Int
-  }
 
-type alias NoteLight =
-  {
-    noteText: String
-  }
+-- MODEL OPAQUE
 
-type alias NoteIdVersion = { noteId : Int, noteVersion : Int }
 
--- TODO: Make the types in this class opaque
+type NoteFull = NoteFull String NoteIdVersion
+
+type NoteLight = NoteLight String
 
 type Note = Note NoteFull
           | NoteText NoteLight
 
-mkLightNote: String -> NoteLight
+
+-- MODEL OPEN
+
+
+type alias NoteIdVersion = { noteId : Int, noteVersion : Int }
+
+
+-- CONSTRUCTORS
+
+
+mkLightNote : String -> NoteLight
 mkLightNote = NoteLight
 
+mkFullNote : String -> NoteIdVersion -> NoteFull
+mkFullNote  noteText idVersion = NoteFull noteText idVersion
+
+
+-- FOLDS
+
+
+foldNote : (NoteLight -> a) -> (NoteFull -> a ) -> Note -> a
+foldNote onNoteLight onNoteFull note =
+  case note of
+    Note noteFull      -> onNoteFull noteFull
+    NoteText noteLight -> onNoteLight noteLight
+
+
+-- GETTERS
+
+
 getNoteLightText : NoteLight -> String
-getNoteLightText { noteText } = noteText
+getNoteLightText (NoteLight noteText) = noteText
 
 getNoteFullText : NoteFull -> String
-getNoteFullText { noteText } = noteText
+getNoteFullText (NoteFull noteText _) = noteText
 
 getNoteText : Note -> String
 getNoteText note =
   case note of
-    (Note { noteText })     -> noteText
-    (NoteText { noteText }) -> noteText
+    (Note (NoteFull noteText _)) -> noteText
+    (NoteText (NoteLight noteText))  -> noteText
 
 getNoteId : Note -> Maybe Int
 getNoteId note =
   case note of
-    (Note { noteId }) -> Just noteId
+    (Note (NoteFull _ { noteId })) -> Just noteId
     _                 -> Nothing
 
 getNoteVersion : Note -> Maybe Int
 getNoteVersion note =
   case note of
-    (Note { noteVersion }) -> Just noteVersion
-    _                      -> Nothing
+    (Note (NoteFull _ { noteVersion })) -> Just noteVersion
+    _                                   -> Nothing
 
 getNoteIdNoteFull : NoteFull -> Int
-getNoteIdNoteFull { noteId } = noteId
+getNoteIdNoteFull (NoteFull _ { noteId }) = noteId
 
 getNoteVersionNoteFull : NoteFull -> Int
-getNoteVersionNoteFull { noteVersion } = noteVersion
+getNoteVersionNoteFull (NoteFull _ { noteVersion }) = noteVersion
 
 
-updateNoteText : String -> NoteFull -> NoteFull
-updateNoteText newText { noteId, noteVersion } = { noteId = noteId, noteVersion = noteVersion, noteText = newText }
+-- UPDATES
+
+
+updateNoteLightText : String -> NoteLight
+updateNoteLightText = mkLightNote
+
+updateNoteFullText : String -> NoteFull -> NoteFull
+updateNoteFullText newText (NoteFull _ idVersion) = NoteFull newText idVersion
 
 updateNoteIdVersion : NoteIdVersion -> NoteLight -> NoteFull
-updateNoteIdVersion { noteId, noteVersion } { noteText } = { noteId = noteId, noteVersion = noteVersion, noteText = noteText }
+updateNoteIdVersion idVersion (NoteLight noteText) = NoteFull noteText idVersion
 
 updateNoteVersion : NoteIdVersion -> NoteFull -> NoteFull
-updateNoteVersion { noteVersion } noteFull =  { noteFull | noteVersion = noteVersion }
+updateNoteVersion { noteVersion } (NoteFull noteText {noteId}) =  NoteFull noteText { noteId = noteId, noteVersion = noteVersion }
 
-encodeNote: Note -> E.Value
-encodeNote note =
-  case note of
-    (Note noteFull)      -> encodeFullNote noteFull
-    (NoteText noteLight) -> encodeLightNote noteLight
+
+-- ENCODERS
+
+
+--encodeNote: Note -> E.Value
+--encodeNote note =
+--  case note of
+--    (Note noteFull)      -> encodeFullNote noteFull
+--    (NoteText noteLight) -> encodeLightNote noteLight
 
 encodeFullNotes: Encoder (List NoteFull)
 encodeFullNotes = E.list encodeFullNote
 
 encodeFullNote: Encoder NoteFull
-encodeFullNote {noteText, noteId, noteVersion} =
+encodeFullNote (NoteFull noteText {noteId, noteVersion}) =
   E.object
    [
       ("noteText", E.string noteText)
@@ -85,22 +157,25 @@ encodeFullNote {noteText, noteId, noteVersion} =
    ]
 
 encodeLightNote: Encoder NoteLight
-encodeLightNote {noteText} =
+encodeLightNote  (NoteLight noteText) =
   E.object
    [
       ("noteText", E.string noteText)
    ]
+
+
+-- DECODERS
+
 
 decodeFullNotes: D.Decoder (List NoteFull)
 decodeFullNotes = D.list decodeFullNote
 
 decodeFullNote: D.Decoder NoteFull
 decodeFullNote =
-  D.map3
+  D.map2
     NoteFull
     (D.field "noteText" D.string)
-    (D.field "noteId" D.int)
-    (D.field "noteVersion" D.int)
+    decoderNoteIdVersion
 
 decodeLightNote: D.Decoder NoteLight
 decodeLightNote = D.map NoteLight (D.field "noteText" D.string)

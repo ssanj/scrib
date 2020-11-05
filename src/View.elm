@@ -436,13 +436,13 @@ createMarkdownPreview: Maybe SC.NoteFull -> Html Msg
 createMarkdownPreview = maybe viewMarkdownPreviewDefault viewMarkdownPreview
 
 createNoteItem: SC.NoteFull -> Html Msg
-createNoteItem {noteText, noteId, noteVersion } =
-  a [class "panel-block", onClick (NoteSelected { noteText = noteText, noteId = noteId, noteVersion = noteVersion })]
+createNoteItem fullNote =
+  a [class "panel-block", onClick (NoteSelected fullNote)]
   [ span [class "panel-icon"]
     [ i [ class "fas", class "fa-book", attribute "aria-hidden" "true"]
       []
     ]
-  , text <| removeHeading <| onlyHeading noteText
+  , text <| removeHeading <| onlyHeading (SC.getNoteFullText fullNote)
    ]
 
 onlyHeading : String -> String
@@ -452,14 +452,14 @@ removeHeading : String -> String
 removeHeading = String.replace "# " ""
 
 viewMarkdownPreview : SC.NoteFull -> Html Msg
-viewMarkdownPreview note =
+viewMarkdownPreview fullNote =
   div []
     [ hr []
       []
     , div [ id "preview" ]
       [ div [ id markdownViewId ]
-        [Markdown.toHtml [] (note.noteText)]
-      , button [ class "button", class "is-info", onClick (NoteEdited note) ]
+        [Markdown.toHtml [] (SC.getNoteFullText fullNote)]
+      , button [ class "button", class "is-info", onClick (NoteEdited fullNote) ]
         [ text "Edit" ]
       ]
     ]

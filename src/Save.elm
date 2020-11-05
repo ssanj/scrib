@@ -95,9 +95,9 @@ update msg model =
     (NoteEditedMsg newNoteText) ->
        let updatedModel =
             case model.note of
-              (NoteWithoutId _)     -> { model | note = NoteWithoutId <| SC.NoteLight newNoteText,     noteContentStatus  = NeedsToSave }
+              (NoteWithoutId _)     -> { model | note = NoteWithoutId <| SC.updateNoteLightText newNoteText,     noteContentStatus  = NeedsToSave }
               (NoteWithId fullNote) ->
-                let note =  SC.updateNoteText newNoteText fullNote
+                let note =  SC.updateNoteFullText newNoteText fullNote
                 in { model | note = NoteWithId note, noteContentStatus  = NeedsToSave }
        in onlyModel updatedModel
 
@@ -173,10 +173,8 @@ handleInitSuccess { apiKey, payload } =
 
 
 createNote : SC.Note -> NoteWithContent
-createNote scNote =
-  case scNote of
-    (SC.Note noteFull)      -> NoteWithId noteFull
-    (SC.NoteText noteLight) -> NoteWithoutId noteLight
+createNote = SC.foldNote NoteWithoutId NoteWithId
+
 
 -- TODO: Should we have a FATAL error instead of logging to the console and redirecting to config?
 handleInitFailure : D.Error -> (Model, Cmd Msg)
@@ -224,6 +222,7 @@ defaultModel = Model defaultNote InitNote NotAsked UpToDate Nothing
 
 defaultNote : NoteWithContent
 defaultNote = NoteWithoutId <| SC.mkLightNote ""
+
 
 getNoteVersion : NoteWithContent -> Maybe Int
 getNoteVersion note =
@@ -461,6 +460,6 @@ subscriptionFailure m = JSNotificationError ("subscriptionFailure: " ++ m)
 encodeSaveNote: NoteWithContent -> E.Value
 encodeSaveNote note =
   case note of
-    (NoteWithoutId noteText)                       -> SC.encodeLightNote noteText
-    (NoteWithId { noteId, noteText, noteVersion }) -> SC.encodeFullNote { noteId = noteId, noteText = noteText, noteVersion = noteVersion }
+    NoteWithoutId lightNote -> SC.encodeLightNote lightNote
+    NoteWithId fullNote     -> SC.encodeFullNote fullNote
 
