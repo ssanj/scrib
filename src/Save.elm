@@ -70,6 +70,9 @@ type Msg = NoteSavedMsg
          | JSNotificationError String
          | InlineSuccessMessageTimedOut
          | InlineInfoTimedOut
+         | TesterMsg Seconds Msg
+
+-- TODO: Remove TesterMsg once we are done testing
 
 -- MAIN
 
@@ -109,6 +112,7 @@ update msg model =
     (JSNotificationError error)            -> handleJSError model error
     InlineSuccessMessageTimedOut           -> handleSuccessMessageTimeout model
     InlineInfoTimedOut                     -> handleInfoMessageTimeout model
+    TesterMsg timeout realMessage          -> handleTesterMessage model timeout realMessage
 
     --InlineInfoTimedOut -> handleInlineTimeout model
 
@@ -120,6 +124,10 @@ update msg model =
 --timeoutInlineSuccessMessage = addTimeoutForInlineMessage inlineInfoSuccessTimeout InlineInfoTimedOut
 
 -- VIEW
+
+handleTesterMessage : Model -> Seconds -> Msg -> (Model, Cmd Msg)
+handleTesterMessage model timeout realMsg =
+  (model, addTimeoutForInlineMessage timeout realMsg)
 
 
 view : Model -> Html Msg
@@ -284,7 +292,7 @@ inlineInfoSuccessTimeout = Seconds 1
 --    ((NoteWithId fullNote), _)                      -> existingNote -- if we didn't succeed then don't update the existing note
 
 processSaveNoteResults: Result Http.Error SC.NoteIdVersion -> Msg
-processSaveNoteResults = processHttpResult NoteSaveResponseMsg
+processSaveNoteResults = processHttpResult (TesterMsg (Seconds 2) << NoteSaveResponseMsg)
 
 processHttpResult: (RemoteNoteData -> Msg) -> Result Http.Error SC.NoteIdVersion -> Msg
 processHttpResult toMsg httpResult   =
@@ -322,8 +330,8 @@ handleRemoteSave model =
         {
           model |
             remoteSaveStatus = Loading
-        , doing = SavingNoteRemotely
-        , infoMessage = Just <| InformationMessage "Saving Remotely"
+        ,   doing            = SavingNoteRemotely
+        ,   infoMessage      = Just <| InformationMessage "Saving Remotely"
         }
   in performOrGotoConfig model (updatedModel, performRemoteSaveNote model.note)
 
@@ -337,6 +345,7 @@ handleNoteIdVersionSavedToLocalStorage model =
           model |
             successMessage = Nothing
           , infoMessage    = Just <| InformationMessage "Updated Note Saved Locally"
+          , doing          = Idle
         }
   in (newModel, addTimeoutForInlineMessage inlineInfoSuccessTimeout InlineInfoTimedOut)
 
@@ -377,7 +386,7 @@ handleNoteSaveResponse model remoteData =
               model |
                 note              = newNote
               , remoteSaveStatus  = remoteData
-              , doing             = Idle
+              , doing             = SavingNoteLocally
               , noteContentStatus = UpToDate
               , successMessage    = Just <| SuccessMessage "Saved Note"
             }
@@ -463,19 +472,23 @@ viewControls model =
       p [class "control"]
         [
           viewSaveButton (model.doing) (model.note)
-        , button [
-            id "new-note"
-          , onClick NewNoteMsg
-          , classList
-              [ ("button", True), ("is-text", True) ]
-          ]
-            [ text "New Note"]
-        ]
+        , viewNewNoteButton
         , button [ id "view-notes-button", class "button", class "is-text", onClick ViewNoteMsg ]
             [ text "View Notes" ]
         , modifiedTag model.noteContentStatus
-
+        ]
     ]
+
+viewNewNoteButton : Html Msg
+viewNewNoteButton =
+  button
+    [
+      id "new-note"
+    , onClick NewNoteMsg
+    , classList
+        [ ("button", True), ("is-text", True) ]
+    ]
+    [ text "New Note"]
 
 modifiedTag : ContentStatus -> Html a
 modifiedTag contentStatus =
@@ -496,7 +509,7 @@ viewSaveButton doing note =
         case doing of
           SavingNoteRemotely -> True
           SavingNoteLocally  -> True
-          _       -> False
+          Idle               -> False
   in button [
        id "save-note"
        , onClick NoteSavedMsg
@@ -576,7 +589,7 @@ saveEditingNoteToLocalStorage responseKey note =
 subscriptionSuccess : S.JsResponse E.Value -> Msg
 subscriptionSuccess (S.JsResponse (P.ResponseKey key) result) =
   case (key) of
-    "NoteSavedToLocalStorage"                -> NoteSavedToLocalStorage
+    "NoteSavedToLocalStorage"                -> TesterMsg (Seconds 2) NoteSavedToLocalStorage
     "RemoteNoteIdVersionSavedToLocalStorage" -> RemoteNoteIdVersionSavedToLocalStorage
     otherKey                                 -> subscriptionFailure <| ("Unhandled JS notification: " ++ otherKey)
 

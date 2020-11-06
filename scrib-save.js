@@ -5816,12 +5816,22 @@ var $author$project$Save$subscriptionFailure = function (m) {
 };
 var $author$project$Save$NoteSavedToLocalStorage = {$: 'NoteSavedToLocalStorage'};
 var $author$project$Save$RemoteNoteIdVersionSavedToLocalStorage = {$: 'RemoteNoteIdVersionSavedToLocalStorage'};
+var $author$project$ElmCommon$Seconds = function (seconds) {
+	return {seconds: seconds};
+};
+var $author$project$Save$TesterMsg = F2(
+	function (a, b) {
+		return {$: 'TesterMsg', a: a, b: b};
+	});
 var $author$project$Save$subscriptionSuccess = function (_v0) {
 	var key = _v0.a.a;
 	var result = _v0.b;
 	switch (key) {
 		case 'NoteSavedToLocalStorage':
-			return $author$project$Save$NoteSavedToLocalStorage;
+			return A2(
+				$author$project$Save$TesterMsg,
+				$author$project$ElmCommon$Seconds(2),
+				$author$project$Save$NoteSavedToLocalStorage);
 		case 'RemoteNoteIdVersionSavedToLocalStorage':
 			return $author$project$Save$RemoteNoteIdVersionSavedToLocalStorage;
 		default:
@@ -5907,14 +5917,12 @@ var $author$project$Notifications$addTimeoutForInlineMessage = F2(
 			$author$project$FP$const(msg),
 			sleepTask);
 	});
-var $author$project$ElmCommon$Seconds = function (seconds) {
-	return {seconds: seconds};
-};
 var $author$project$Save$inlineInfoSuccessTimeout = $author$project$ElmCommon$Seconds(1);
 var $author$project$Save$handleNoteIdVersionSavedToLocalStorage = function (model) {
 	var newModel = _Utils_update(
 		model,
 		{
+			doing: $author$project$Save$Idle,
 			infoMessage: $elm$core$Maybe$Just(
 				$author$project$ElmCommon$InformationMessage('Updated Note Saved Locally')),
 			successMessage: $elm$core$Maybe$Nothing
@@ -5923,6 +5931,7 @@ var $author$project$Save$handleNoteIdVersionSavedToLocalStorage = function (mode
 		newModel,
 		A2($author$project$Notifications$addTimeoutForInlineMessage, $author$project$Save$inlineInfoSuccessTimeout, $author$project$Save$InlineInfoTimedOut));
 };
+var $author$project$Save$SavingNoteLocally = {$: 'SavingNoteLocally'};
 var $author$project$Save$SavingNoteRemotely = {$: 'SavingNoteRemotely'};
 var $author$project$ElmCommon$SuccessMessage = function (successMessage) {
 	return {successMessage: successMessage};
@@ -6037,7 +6046,7 @@ var $author$project$Save$handleNoteSaveResponse = F2(
 					_Utils_update(
 						model,
 						{
-							doing: $author$project$Save$Idle,
+							doing: $author$project$Save$SavingNoteLocally,
 							note: newNote,
 							noteContentStatus: $author$project$Save$UpToDate,
 							remoteSaveStatus: remoteData,
@@ -6719,6 +6728,11 @@ var $elm$http$Http$jsonBody = function (value) {
 var $author$project$Save$NoteSaveResponseMsg = function (a) {
 	return {$: 'NoteSaveResponseMsg', a: a};
 };
+var $elm$core$Basics$composeL = F3(
+	function (g, f, x) {
+		return g(
+			f(x));
+	});
 var $krisajenkins$remotedata$RemoteData$Failure = function (a) {
 	return {$: 'Failure', a: a};
 };
@@ -6739,7 +6753,12 @@ var $author$project$Save$processHttpResult = F2(
 		var result = $krisajenkins$remotedata$RemoteData$fromResult(httpResult);
 		return toMsg(result);
 	});
-var $author$project$Save$processSaveNoteResults = $author$project$Save$processHttpResult($author$project$Save$NoteSaveResponseMsg);
+var $author$project$Save$processSaveNoteResults = $author$project$Save$processHttpResult(
+	A2(
+		$elm$core$Basics$composeL,
+		$author$project$Save$TesterMsg(
+			$author$project$ElmCommon$Seconds(2)),
+		$author$project$Save$NoteSaveResponseMsg));
 var $elm$http$Http$Request = function (a) {
 	return {$: 'Request', a: a};
 };
@@ -6941,7 +6960,6 @@ var $author$project$Save$handleRemoteSave = function (model) {
 			updatedModel,
 			$author$project$Save$performRemoteSaveNote(model.note)));
 };
-var $author$project$Save$SavingNoteLocally = {$: 'SavingNoteLocally'};
 var $author$project$Save$noteSavedToLocalStorageResponseKey = $author$project$Ports$ResponseKey('NoteSavedToLocalStorage');
 var $author$project$Save$handleSavingNote = function (model) {
 	var saveNoteToLocalCmd = A2($author$project$Save$saveEditingNoteToLocalStorage, $author$project$Save$noteSavedToLocalStorageResponseKey, model.note);
@@ -6961,6 +6979,12 @@ var $author$project$Save$handleSuccessMessageTimeout = function (model) {
 			model,
 			{successMessage: $elm$core$Maybe$Nothing}));
 };
+var $author$project$Save$handleTesterMessage = F3(
+	function (model, timeout, realMsg) {
+		return _Utils_Tuple2(
+			model,
+			A2($author$project$Notifications$addTimeoutForInlineMessage, timeout, realMsg));
+	});
 var $author$project$Save$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
@@ -6985,8 +7009,12 @@ var $author$project$Save$update = F2(
 				return A2($author$project$Save$handleJSError, model, error);
 			case 'InlineSuccessMessageTimedOut':
 				return $author$project$Save$handleSuccessMessageTimeout(model);
-			default:
+			case 'InlineInfoTimedOut':
 				return $author$project$Save$handleInfoMessageTimeout(model);
+			default:
+				var timeout = msg.a;
+				var realMessage = msg.b;
+				return A3($author$project$Save$handleTesterMessage, model, timeout, realMessage);
 		}
 	});
 var $elm$html$Html$Attributes$stringProperty = F2(
@@ -7108,34 +7136,8 @@ var $author$project$Save$viewHeadings = _List_fromArray(
 			]))
 	]);
 var $author$project$ElmCommon$plainDiv = $elm$html$Html$div(_List_Nil);
-var $author$project$Save$NewNoteMsg = {$: 'NewNoteMsg'};
 var $author$project$Save$ViewNoteMsg = {$: 'ViewNoteMsg'};
 var $elm$html$Html$button = _VirtualDom_node('button');
-var $elm$core$List$filter = F2(
-	function (isGood, list) {
-		return A3(
-			$elm$core$List$foldr,
-			F2(
-				function (x, xs) {
-					return isGood(x) ? A2($elm$core$List$cons, x, xs) : xs;
-				}),
-			_List_Nil,
-			list);
-	});
-var $elm$core$Tuple$second = function (_v0) {
-	var y = _v0.b;
-	return y;
-};
-var $elm$html$Html$Attributes$classList = function (classes) {
-	return $elm$html$Html$Attributes$class(
-		A2(
-			$elm$core$String$join,
-			' ',
-			A2(
-				$elm$core$List$map,
-				$elm$core$Tuple$first,
-				A2($elm$core$List$filter, $elm$core$Tuple$second, classes))));
-};
 var $author$project$ElmCommon$addClasses = function (classes) {
 	return A2($elm$core$List$map, $elm$html$Html$Attributes$class, classes);
 };
@@ -7180,6 +7182,49 @@ var $elm$html$Html$Events$onClick = function (msg) {
 		'click',
 		$elm$json$Json$Decode$succeed(msg));
 };
+var $author$project$Save$NewNoteMsg = {$: 'NewNoteMsg'};
+var $elm$core$List$filter = F2(
+	function (isGood, list) {
+		return A3(
+			$elm$core$List$foldr,
+			F2(
+				function (x, xs) {
+					return isGood(x) ? A2($elm$core$List$cons, x, xs) : xs;
+				}),
+			_List_Nil,
+			list);
+	});
+var $elm$core$Tuple$second = function (_v0) {
+	var y = _v0.b;
+	return y;
+};
+var $elm$html$Html$Attributes$classList = function (classes) {
+	return $elm$html$Html$Attributes$class(
+		A2(
+			$elm$core$String$join,
+			' ',
+			A2(
+				$elm$core$List$map,
+				$elm$core$Tuple$first,
+				A2($elm$core$List$filter, $elm$core$Tuple$second, classes))));
+};
+var $author$project$Save$viewNewNoteButton = A2(
+	$elm$html$Html$button,
+	_List_fromArray(
+		[
+			$elm$html$Html$Attributes$id('new-note'),
+			$elm$html$Html$Events$onClick($author$project$Save$NewNoteMsg),
+			$elm$html$Html$Attributes$classList(
+			_List_fromArray(
+				[
+					_Utils_Tuple2('button', true),
+					_Utils_Tuple2('is-text', true)
+				]))
+		]),
+	_List_fromArray(
+		[
+			$elm$html$Html$text('New Note')
+		]));
 var $author$project$Save$NoteSavedMsg = {$: 'NoteSavedMsg'};
 var $elm$core$Basics$not = _Basics_not;
 var $author$project$Save$hasContent = function (note) {
@@ -7246,38 +7291,22 @@ var $author$project$Save$viewControls = function (model) {
 				_List_fromArray(
 					[
 						A2($author$project$Save$viewSaveButton, model.doing, model.note),
+						$author$project$Save$viewNewNoteButton,
 						A2(
 						$elm$html$Html$button,
 						_List_fromArray(
 							[
-								$elm$html$Html$Attributes$id('new-note'),
-								$elm$html$Html$Events$onClick($author$project$Save$NewNoteMsg),
-								$elm$html$Html$Attributes$classList(
-								_List_fromArray(
-									[
-										_Utils_Tuple2('button', true),
-										_Utils_Tuple2('is-text', true)
-									]))
+								$elm$html$Html$Attributes$id('view-notes-button'),
+								$elm$html$Html$Attributes$class('button'),
+								$elm$html$Html$Attributes$class('is-text'),
+								$elm$html$Html$Events$onClick($author$project$Save$ViewNoteMsg)
 							]),
 						_List_fromArray(
 							[
-								$elm$html$Html$text('New Note')
-							]))
-					])),
-				A2(
-				$elm$html$Html$button,
-				_List_fromArray(
-					[
-						$elm$html$Html$Attributes$id('view-notes-button'),
-						$elm$html$Html$Attributes$class('button'),
-						$elm$html$Html$Attributes$class('is-text'),
-						$elm$html$Html$Events$onClick($author$project$Save$ViewNoteMsg)
-					]),
-				_List_fromArray(
-					[
-						$elm$html$Html$text('View Notes')
-					])),
-				$author$project$Save$modifiedTag(model.noteContentStatus)
+								$elm$html$Html$text('View Notes')
+							])),
+						$author$project$Save$modifiedTag(model.noteContentStatus)
+					]))
 			]));
 };
 var $author$project$ElmCommon$addInlineInfoFlash = function (_v0) {
