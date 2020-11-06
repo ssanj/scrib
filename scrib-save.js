@@ -5870,6 +5870,12 @@ var $author$project$Save$handleGoingToView = function (model) {
 		model,
 		$elm$browser$Browser$Navigation$load('view.html'));
 };
+var $author$project$Save$handleInfoMessageTimeout = function (model) {
+	return $author$project$ElmCommon$onlyModel(
+		_Utils_update(
+			model,
+			{infoMessage: $elm$core$Maybe$Nothing}));
+};
 var $author$project$Save$handleJSError = F2(
 	function (model, error) {
 		return _Utils_Tuple2(
@@ -5883,7 +5889,40 @@ var $author$project$Save$handleNewNote = function (model) {
 			$author$project$Save$defaultModel,
 			{apiKey: model.apiKey, dataSource: $author$project$Save$UserCreated, doing: $author$project$Save$Idle, remoteSaveStatus: $krisajenkins$remotedata$RemoteData$NotAsked}));
 };
-var $author$project$Save$handleNoteIdVersionSavedToLocalStorage = $author$project$ElmCommon$onlyModel;
+var $author$project$ElmCommon$InformationMessage = function (infoMessage) {
+	return {infoMessage: infoMessage};
+};
+var $author$project$Save$InlineInfoTimedOut = {$: 'InlineInfoTimedOut'};
+var $author$project$FP$const = F2(
+	function (a, _v0) {
+		return a;
+	});
+var $elm$core$Process$sleep = _Process_sleep;
+var $author$project$Notifications$addTimeoutForInlineMessage = F2(
+	function (_v0, msg) {
+		var seconds = _v0.seconds;
+		var sleepTask = $elm$core$Process$sleep(seconds * 1000);
+		return A2(
+			$elm$core$Task$perform,
+			$author$project$FP$const(msg),
+			sleepTask);
+	});
+var $author$project$ElmCommon$Seconds = function (seconds) {
+	return {seconds: seconds};
+};
+var $author$project$Save$inlineInfoSuccessTimeout = $author$project$ElmCommon$Seconds(1);
+var $author$project$Save$handleNoteIdVersionSavedToLocalStorage = function (model) {
+	var newModel = _Utils_update(
+		model,
+		{
+			infoMessage: $elm$core$Maybe$Just(
+				$author$project$ElmCommon$InformationMessage('Updated Note Saved Locally')),
+			successMessage: $elm$core$Maybe$Nothing
+		});
+	return _Utils_Tuple2(
+		newModel,
+		A2($author$project$Notifications$addTimeoutForInlineMessage, $author$project$Save$inlineInfoSuccessTimeout, $author$project$Save$InlineInfoTimedOut));
+};
 var $author$project$Save$SavingNoteRemotely = {$: 'SavingNoteRemotely'};
 var $author$project$ElmCommon$SuccessMessage = function (successMessage) {
 	return {successMessage: successMessage};
@@ -6023,9 +6062,6 @@ var $author$project$Save$handleNoteSaveResponse = F2(
 						{doing: $author$project$Save$SavingNoteRemotely, remoteSaveStatus: remoteData}));
 		}
 	});
-var $author$project$ElmCommon$InformationMessage = function (infoMessage) {
-	return {infoMessage: infoMessage};
-};
 var $krisajenkins$remotedata$RemoteData$Loading = {$: 'Loading'};
 var $author$project$ApiKey$performApiKey = F3(
 	function (maybeApiKey, _v0, _v1) {
@@ -6919,7 +6955,12 @@ var $author$project$Save$handleSavingNote = function (model) {
 		});
 	return _Utils_Tuple2(newModel, saveNoteToLocalCmd);
 };
-var $author$project$Save$handleSuccessMessageTimeout = $author$project$ElmCommon$onlyModel;
+var $author$project$Save$handleSuccessMessageTimeout = function (model) {
+	return $author$project$ElmCommon$onlyModel(
+		_Utils_update(
+			model,
+			{successMessage: $elm$core$Maybe$Nothing}));
+};
 var $author$project$Save$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
@@ -6942,8 +6983,10 @@ var $author$project$Save$update = F2(
 			case 'JSNotificationError':
 				var error = msg.a;
 				return A2($author$project$Save$handleJSError, model, error);
-			default:
+			case 'InlineSuccessMessageTimedOut':
 				return $author$project$Save$handleSuccessMessageTimeout(model);
+			default:
+				return $author$project$Save$handleInfoMessageTimeout(model);
 		}
 	});
 var $elm$html$Html$Attributes$stringProperty = F2(
@@ -7150,37 +7193,40 @@ var $author$project$Save$hasContent = function (note) {
 			$author$project$Note$getNoteFullText(noteText));
 	}
 };
-var $author$project$Save$viewSaveButton = function (model) {
-	var showSpinner = function () {
-		var _v0 = model.remoteSaveStatus;
-		if (_v0.$ === 'Loading') {
-			return true;
-		} else {
-			return false;
-		}
-	}();
-	return A2(
-		$elm$html$Html$button,
-		_List_fromArray(
-			[
-				$elm$html$Html$Attributes$id('save-note'),
-				$elm$html$Html$Events$onClick($author$project$Save$NoteSavedMsg),
-				$elm$html$Html$Attributes$classList(
-				_List_fromArray(
-					[
-						_Utils_Tuple2('button', true),
-						_Utils_Tuple2('is-success', true),
-						_Utils_Tuple2(
-						'is-static',
-						!$author$project$Save$hasContent(model.note)),
-						_Utils_Tuple2('is-loading', showSpinner)
-					]))
-			]),
-		_List_fromArray(
-			[
-				$elm$html$Html$text('Save')
-			]));
-};
+var $author$project$Save$viewSaveButton = F2(
+	function (doing, note) {
+		var showSpinner = function () {
+			switch (doing.$) {
+				case 'SavingNoteRemotely':
+					return true;
+				case 'SavingNoteLocally':
+					return true;
+				default:
+					return false;
+			}
+		}();
+		return A2(
+			$elm$html$Html$button,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$id('save-note'),
+					$elm$html$Html$Events$onClick($author$project$Save$NoteSavedMsg),
+					$elm$html$Html$Attributes$classList(
+					_List_fromArray(
+						[
+							_Utils_Tuple2('button', true),
+							_Utils_Tuple2('is-success', true),
+							_Utils_Tuple2(
+							'is-static',
+							!$author$project$Save$hasContent(note)),
+							_Utils_Tuple2('is-loading', showSpinner)
+						]))
+				]),
+			_List_fromArray(
+				[
+					$elm$html$Html$text('Save')
+				]));
+	});
 var $author$project$Save$viewControls = function (model) {
 	return A2(
 		$elm$html$Html$div,
@@ -7199,7 +7245,7 @@ var $author$project$Save$viewControls = function (model) {
 					]),
 				_List_fromArray(
 					[
-						$author$project$Save$viewSaveButton(model),
+						A2($author$project$Save$viewSaveButton, model.doing, model.note),
 						A2(
 						$elm$html$Html$button,
 						_List_fromArray(

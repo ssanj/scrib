@@ -69,7 +69,7 @@ type Msg = NoteSavedMsg
          | RemoteNoteIdVersionSavedToLocalStorage
          | JSNotificationError String
          | InlineSuccessMessageTimedOut
-         --| InlineInfoTimedOut
+         | InlineInfoTimedOut
 
 -- MAIN
 
@@ -108,6 +108,7 @@ update msg model =
     RemoteNoteIdVersionSavedToLocalStorage -> handleNoteIdVersionSavedToLocalStorage model
     (JSNotificationError error)            -> handleJSError model error
     InlineSuccessMessageTimedOut           -> handleSuccessMessageTimeout model
+    InlineInfoTimedOut                     -> handleInfoMessageTimeout model
 
     --InlineInfoTimedOut -> handleInlineTimeout model
 
@@ -330,7 +331,14 @@ handleJSError : Model -> String -> (Model, Cmd Msg)
 handleJSError model error = (model, logMessage error)
 
 handleNoteIdVersionSavedToLocalStorage : Model -> (Model, Cmd Msg)
-handleNoteIdVersionSavedToLocalStorage = onlyModel
+handleNoteIdVersionSavedToLocalStorage model =
+  let newModel =
+        {
+          model |
+            successMessage = Nothing
+          , infoMessage    = Just <| InformationMessage "Updated Note Saved Locally"
+        }
+  in (newModel, addTimeoutForInlineMessage inlineInfoSuccessTimeout InlineInfoTimedOut)
 
 handleEditingNote : Model -> String -> (Model, Cmd Msg)
 handleEditingNote model newNoteText =
@@ -392,7 +400,10 @@ handleNoteSaveResponse model remoteData =
 
 
 handleSuccessMessageTimeout : Model -> (Model, Cmd Msg)
-handleSuccessMessageTimeout = onlyModel
+handleSuccessMessageTimeout model = onlyModel { model | successMessage = Nothing }
+
+handleInfoMessageTimeout : Model -> (Model, Cmd Msg)
+handleInfoMessageTimeout model = onlyModel { model | infoMessage = Nothing }
 
 -- VIEW HELPERS
 
@@ -451,7 +462,7 @@ viewControls model =
     [
       p [class "control"]
         [
-          viewSaveButton model
+          viewSaveButton (model.doing) (model.note)
         , button [
             id "new-note"
           , onClick NewNoteMsg
@@ -478,11 +489,13 @@ modifiedTag contentStatus =
           (addClasses ["tag", "is-info"])
           [ text "*" ]
 
-viewSaveButton: Model -> Html Msg
-viewSaveButton model =
+-- TODO: If we have any errors, we should not show spinner
+viewSaveButton: WhatAreWeDoing -> NoteWithContent -> Html Msg
+viewSaveButton doing note =
   let showSpinner =
-        case model.remoteSaveStatus of
-          Loading -> True
+        case doing of
+          SavingNoteRemotely -> True
+          SavingNoteLocally  -> True
           _       -> False
   in button [
        id "save-note"
@@ -491,7 +504,7 @@ viewSaveButton model =
            [
              ("button", True)
            , ("is-success", True)
-           , ("is-static", not (hasContent model.note))
+           , ("is-static", not (hasContent note))
            , ("is-loading", showSpinner)
            ]
      ]
