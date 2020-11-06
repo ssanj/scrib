@@ -33,6 +33,7 @@ type DataSource = LocalLoad
                 | UserCreated
 
 type WhatAreWeDoing = SavingNoteRemotely
+                    | SavingNoteLocally
                     | Idle
 
 type alias RemoteNoteData = WebData SC.NoteIdVersion
@@ -51,6 +52,7 @@ type alias Model =
   , noteContentStatus: ContentStatus
   , apiKey: Maybe ApiKey
   , successMessage : Maybe SuccessMessage
+  , infoMessage : Maybe InformationMessage
   , doing : WhatAreWeDoing
   }
 
@@ -66,6 +68,7 @@ type Msg = NoteSavedMsg
          | NoteSavedToLocalStorage
          | RemoteNoteIdVersionSavedToLocalStorage
          | JSNotificationError String
+         | InlineSuccessMessageTimedOut
          --| InlineInfoTimedOut
 
 -- MAIN
@@ -104,18 +107,13 @@ update msg model =
     NoteSavedToLocalStorage                -> handleRemoteSave model
     RemoteNoteIdVersionSavedToLocalStorage -> handleNoteIdVersionSavedToLocalStorage model
     (JSNotificationError error)            -> handleJSError model error
+    InlineSuccessMessageTimedOut           -> handleSuccessMessageTimeout model
 
     --InlineInfoTimedOut -> handleInlineTimeout model
-
---successMessageLens : Lens Model (Maybe SuccessMessage)
---successMessageLens = { getter = .successMessage, setter = \m newMessage -> { m | successMessage = newMessage } }
 
 --handleInlineTimeout : Model -> (Model, Cmd Msg)
 --handleInlineTimeout model = onlyModel <| onInlineTimeout successMessageLens model
 
---handleSuccessMessage : Model -> SuccessMessage -> (Model, Cmd Msg)
---handleSuccessMessage model message seconds =
---  addInlineMessage (getSetter successMessageLens) model message inlineInfoSuccessTimeout InlineInfoTimedOut
 
 --timeoutInlineSuccessMessage : Cmd Msg
 --timeoutInlineSuccessMessage = addTimeoutForInlineMessage inlineInfoSuccessTimeout InlineInfoTimedOut
@@ -191,8 +189,8 @@ handleInitFailure err = (
 -- REMOTE CALLS
 
 
-performSaveNote: NoteWithContent -> ApiKey -> Cmd Msg
-performSaveNote note apiKey =
+performRemoteSaveNote: NoteWithContent -> ApiKey -> Cmd Msg
+performRemoteSaveNote note apiKey =
   Http.request {
    method    = "POST"
   , headers  = [ apiKeyHeader apiKey ]
@@ -217,8 +215,19 @@ performOrGotoConfig oldModel apiKeyCommand =
 
 -- MODEL HELPERS
 
+
 defaultModel: Model
-defaultModel = Model defaultNote InitNote NotAsked UpToDate Nothing Nothing Idle
+defaultModel =
+  {
+    note              = defaultNote
+  , dataSource        = InitNote
+  , remoteSaveStatus  = NotAsked
+  , noteContentStatus = UpToDate
+  , apiKey            = Nothing
+  , successMessage    = Nothing
+  , infoMessage       = Nothing
+  , doing             = Idle
+  }
 
 defaultNote : NoteWithContent
 defaultNote = NoteWithoutId <| SC.mkLightNote ""
@@ -297,12 +306,25 @@ fromHttpError error =
 handleSavingNote: Model -> (Model, Cmd Msg)
 handleSavingNote model =
   let saveNoteToLocalCmd = saveEditingNoteToLocalStorage noteSavedToLocalStorageResponseKey model.note
-      newModel           = { model | doing = SavingNoteRemotely, remoteSaveStatus = Loading }
+      newModel           =
+        {
+          model |
+            doing            = SavingNoteLocally
+          , remoteSaveStatus = NotAsked
+          , infoMessage      = Just <| InformationMessage "Saving Locally"
+        }
   in (newModel, saveNoteToLocalCmd)
 
 handleRemoteSave : Model -> (Model, Cmd Msg)
 handleRemoteSave model =
-  performOrGotoConfig model ({model | remoteSaveStatus = Loading, doing = SavingNoteRemotely }, performSaveNote model.note)
+  let updatedModel =
+        {
+          model |
+            remoteSaveStatus = Loading
+        , doing = SavingNoteRemotely
+        , infoMessage = Just <| InformationMessage "Saving Remotely"
+        }
+  in performOrGotoConfig model (updatedModel, performRemoteSaveNote model.note)
 
 handleJSError : Model -> String -> (Model, Cmd Msg)
 handleJSError model error = (model, logMessage error)
@@ -349,6 +371,7 @@ handleNoteSaveResponse model remoteData =
               , remoteSaveStatus  = remoteData
               , doing             = Idle
               , noteContentStatus = UpToDate
+              , successMessage    = Just <| SuccessMessage "Saved Note"
             }
             , saveRemoteUpdateToLocalStorage newNote
          )
@@ -368,6 +391,9 @@ handleNoteSaveResponse model remoteData =
     Loading                 -> onlyModel { model | remoteSaveStatus = remoteData, doing = SavingNoteRemotely }
 
 
+handleSuccessMessageTimeout : Model -> (Model, Cmd Msg)
+handleSuccessMessageTimeout = onlyModel
+
 -- VIEW HELPERS
 
 
@@ -383,7 +409,7 @@ viewNoteEditingArea : Model -> Html Msg
 viewNoteEditingArea model =
   plainDiv
     [
-      viewInlineInfoIfAny model.doing
+      viewInlineInfoIfAny model.infoMessage
     , viewInlineSuccessIfAny model.successMessage
     --, viewInlineErrorIfAny model.appErrors
     , viewNotesTextArea model.note
@@ -391,14 +417,18 @@ viewNoteEditingArea model =
     ]
 
 
-viewInlineInfoIfAny : WhatAreWeDoing -> Html a
-viewInlineInfoIfAny doing =
-  case doing of
-    Idle               -> emptyDiv
-    SavingNoteRemotely -> addInlineInfoFlash <| InformationMessage "Saving..."
+viewInlineInfoIfAny : Maybe InformationMessage -> Html a
+viewInlineInfoIfAny = maybe emptyDiv addInlineInfoFlash
 
 viewInlineSuccessIfAny : Maybe SuccessMessage -> Html a
 viewInlineSuccessIfAny = maybe emptyDiv addInlineSuccessFlash
+
+--successMessageLens : Lens Model (Maybe SuccessMessage)
+--successMessageLens = { getter = .successMessage, setter = \m newMessage -> { m | successMessage = newMessage } }
+
+--handleSuccessMessage : Model -> SuccessMessage -> (Model, Cmd Msg)
+--handleSuccessMessage model message seconds =
+--  addInlineMessage (getSetter successMessageLens) model message inlineInfoSuccessTimeout InlineSuccessMessageTimedOut
 
 --viewNotificationsArea: RemoteNoteData -> Html a
 --viewNotificationsArea remoteSaveStatus =

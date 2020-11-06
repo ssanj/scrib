@@ -5514,16 +5514,12 @@ var $author$project$ElmCommon$foldResult = F3(
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $author$project$Save$Idle = {$: 'Idle'};
 var $author$project$Save$InitNote = {$: 'InitNote'};
-var $author$project$Save$Model = F7(
-	function (note, dataSource, remoteSaveStatus, noteContentStatus, apiKey, successMessage, doing) {
-		return {apiKey: apiKey, dataSource: dataSource, doing: doing, note: note, noteContentStatus: noteContentStatus, remoteSaveStatus: remoteSaveStatus, successMessage: successMessage};
-	});
 var $krisajenkins$remotedata$RemoteData$NotAsked = {$: 'NotAsked'};
 var $author$project$Save$UpToDate = {$: 'UpToDate'};
 var $author$project$Note$mkLightNote = $author$project$Note$NoteLight;
 var $author$project$Save$defaultNote = $author$project$Save$NoteWithoutId(
 	$author$project$Note$mkLightNote(''));
-var $author$project$Save$defaultModel = A7($author$project$Save$Model, $author$project$Save$defaultNote, $author$project$Save$InitNote, $krisajenkins$remotedata$RemoteData$NotAsked, $author$project$Save$UpToDate, $elm$core$Maybe$Nothing, $elm$core$Maybe$Nothing, $author$project$Save$Idle);
+var $author$project$Save$defaultModel = {apiKey: $elm$core$Maybe$Nothing, dataSource: $author$project$Save$InitNote, doing: $author$project$Save$Idle, infoMessage: $elm$core$Maybe$Nothing, note: $author$project$Save$defaultNote, noteContentStatus: $author$project$Save$UpToDate, remoteSaveStatus: $krisajenkins$remotedata$RemoteData$NotAsked, successMessage: $elm$core$Maybe$Nothing};
 var $elm$browser$Browser$Navigation$load = _Browser_load;
 var $author$project$Ports$LogConsole = function (a) {
 	return {$: 'LogConsole', a: a};
@@ -5889,6 +5885,9 @@ var $author$project$Save$handleNewNote = function (model) {
 };
 var $author$project$Save$handleNoteIdVersionSavedToLocalStorage = $author$project$ElmCommon$onlyModel;
 var $author$project$Save$SavingNoteRemotely = {$: 'SavingNoteRemotely'};
+var $author$project$ElmCommon$SuccessMessage = function (successMessage) {
+	return {successMessage: successMessage};
+};
 var $author$project$Save$remoteNoteIdVersionSavedToLocalStorageResponseKey = $author$project$Ports$ResponseKey('RemoteNoteIdVersionSavedToLocalStorage');
 var $author$project$Ports$JsStorageValue = F3(
 	function (storageArea, storageAction, value) {
@@ -5998,7 +5997,14 @@ var $author$project$Save$handleNoteSaveResponse = F2(
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{doing: $author$project$Save$Idle, note: newNote, noteContentStatus: $author$project$Save$UpToDate, remoteSaveStatus: remoteData}),
+						{
+							doing: $author$project$Save$Idle,
+							note: newNote,
+							noteContentStatus: $author$project$Save$UpToDate,
+							remoteSaveStatus: remoteData,
+							successMessage: $elm$core$Maybe$Just(
+								$author$project$ElmCommon$SuccessMessage('Saved Note'))
+						}),
 					$author$project$Save$saveRemoteUpdateToLocalStorage(newNote));
 			case 'Failure':
 				return $author$project$ElmCommon$onlyModel(
@@ -6017,6 +6023,9 @@ var $author$project$Save$handleNoteSaveResponse = F2(
 						{doing: $author$project$Save$SavingNoteRemotely, remoteSaveStatus: remoteData}));
 		}
 	});
+var $author$project$ElmCommon$InformationMessage = function (infoMessage) {
+	return {infoMessage: infoMessage};
+};
 var $krisajenkins$remotedata$RemoteData$Loading = {$: 'Loading'};
 var $author$project$ApiKey$performApiKey = F3(
 	function (maybeApiKey, _v0, _v1) {
@@ -6863,7 +6872,7 @@ var $elm$http$Http$request = function (r) {
 		$elm$http$Http$Request(
 			{allowCookiesFromOtherDomains: false, body: r.body, expect: r.expect, headers: r.headers, method: r.method, timeout: r.timeout, tracker: r.tracker, url: r.url}));
 };
-var $author$project$Save$performSaveNote = F2(
+var $author$project$Save$performRemoteSaveNote = F2(
 	function (note, apiKey) {
 		return $elm$http$Http$request(
 			{
@@ -6881,23 +6890,36 @@ var $author$project$Save$performSaveNote = F2(
 			});
 	});
 var $author$project$Save$handleRemoteSave = function (model) {
+	var updatedModel = _Utils_update(
+		model,
+		{
+			doing: $author$project$Save$SavingNoteRemotely,
+			infoMessage: $elm$core$Maybe$Just(
+				$author$project$ElmCommon$InformationMessage('Saving Remotely')),
+			remoteSaveStatus: $krisajenkins$remotedata$RemoteData$Loading
+		});
 	return A2(
 		$author$project$Save$performOrGotoConfig,
 		model,
 		_Utils_Tuple2(
-			_Utils_update(
-				model,
-				{doing: $author$project$Save$SavingNoteRemotely, remoteSaveStatus: $krisajenkins$remotedata$RemoteData$Loading}),
-			$author$project$Save$performSaveNote(model.note)));
+			updatedModel,
+			$author$project$Save$performRemoteSaveNote(model.note)));
 };
+var $author$project$Save$SavingNoteLocally = {$: 'SavingNoteLocally'};
 var $author$project$Save$noteSavedToLocalStorageResponseKey = $author$project$Ports$ResponseKey('NoteSavedToLocalStorage');
 var $author$project$Save$handleSavingNote = function (model) {
 	var saveNoteToLocalCmd = A2($author$project$Save$saveEditingNoteToLocalStorage, $author$project$Save$noteSavedToLocalStorageResponseKey, model.note);
 	var newModel = _Utils_update(
 		model,
-		{doing: $author$project$Save$SavingNoteRemotely, remoteSaveStatus: $krisajenkins$remotedata$RemoteData$Loading});
+		{
+			doing: $author$project$Save$SavingNoteLocally,
+			infoMessage: $elm$core$Maybe$Just(
+				$author$project$ElmCommon$InformationMessage('Saving Locally')),
+			remoteSaveStatus: $krisajenkins$remotedata$RemoteData$NotAsked
+		});
 	return _Utils_Tuple2(newModel, saveNoteToLocalCmd);
 };
+var $author$project$Save$handleSuccessMessageTimeout = $author$project$ElmCommon$onlyModel;
 var $author$project$Save$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
@@ -6917,9 +6939,11 @@ var $author$project$Save$update = F2(
 				return $author$project$Save$handleRemoteSave(model);
 			case 'RemoteNoteIdVersionSavedToLocalStorage':
 				return $author$project$Save$handleNoteIdVersionSavedToLocalStorage(model);
-			default:
+			case 'JSNotificationError':
 				var error = msg.a;
 				return A2($author$project$Save$handleJSError, model, error);
+			default:
+				return $author$project$Save$handleSuccessMessageTimeout(model);
 		}
 	});
 var $elm$html$Html$Attributes$stringProperty = F2(
@@ -7210,9 +7234,6 @@ var $author$project$Save$viewControls = function (model) {
 				$author$project$Save$modifiedTag(model.noteContentStatus)
 			]));
 };
-var $author$project$ElmCommon$InformationMessage = function (infoMessage) {
-	return {infoMessage: infoMessage};
-};
 var $author$project$ElmCommon$addInlineInfoFlash = function (_v0) {
 	var infoMessage = _v0.infoMessage;
 	return A2(
@@ -7226,14 +7247,7 @@ var $author$project$ElmCommon$addInlineInfoFlash = function (_v0) {
 			]));
 };
 var $author$project$ElmCommon$emptyDiv = A2($elm$html$Html$div, _List_Nil, _List_Nil);
-var $author$project$Save$viewInlineInfoIfAny = function (doing) {
-	if (doing.$ === 'Idle') {
-		return $author$project$ElmCommon$emptyDiv;
-	} else {
-		return $author$project$ElmCommon$addInlineInfoFlash(
-			$author$project$ElmCommon$InformationMessage('Saving...'));
-	}
-};
+var $author$project$Save$viewInlineInfoIfAny = A2($author$project$FP$maybe, $author$project$ElmCommon$emptyDiv, $author$project$ElmCommon$addInlineInfoFlash);
 var $author$project$ElmCommon$addInlineSuccessFlash = function (_v0) {
 	var successMessage = _v0.successMessage;
 	return A2(
@@ -7318,7 +7332,7 @@ var $author$project$Save$viewNoteEditingArea = function (model) {
 	return $author$project$ElmCommon$plainDiv(
 		_List_fromArray(
 			[
-				$author$project$Save$viewInlineInfoIfAny(model.doing),
+				$author$project$Save$viewInlineInfoIfAny(model.infoMessage),
 				$author$project$Save$viewInlineSuccessIfAny(model.successMessage),
 				$author$project$Save$viewNotesTextArea(model.note),
 				$author$project$Save$viewControls(model)
