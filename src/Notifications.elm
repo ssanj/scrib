@@ -28,9 +28,14 @@ type ModalError = ModalError ErrorMessage
 
 type InlineError = InlineError ErrorMessage
 
+type alias Lens a b = { getter : a -> b, setter : a -> b -> a }
+
+type Setter a b = Setter (a -> b -> a)
 
 -- MODEL HELPERS
 
+getSetter : Lens a b -> Setter a b
+getSetter { setter } = Setter setter
 
 getInlineError : AppErrors -> Maybe InlineError
 getInlineError (AppErrors notifications) =
@@ -74,6 +79,10 @@ addInlineInfo setter model message timeout msg =
   let newModel = setter (Just message) model
   in (newModel, addTimeoutForInlineMessage timeout msg)
 
+addInlineMessage : Setter model (Maybe message) -> model -> message -> Seconds -> msg -> (model, Cmd msg)
+addInlineMessage (Setter setter) model message timeout msg =
+  let newModel = setter model (Just message)
+  in (newModel, addTimeoutForInlineMessage timeout msg)
 
 addModalErrorToAppErrors : AppErrors -> ErrorMessage -> AppErrors
 addModalErrorToAppErrors (AppErrors notifications) newErrorMessage =
@@ -131,6 +140,12 @@ onInlineInfoTimeout getter setter model =
   case getter model of
     (Just infoMessage) -> setter Nothing model
     Nothing            -> model
+
+onInlineTimeout : Lens a (Maybe b) -> a -> a
+onInlineTimeout { getter, setter } model =
+  case getter model of
+    (Just _) -> setter model Nothing
+    Nothing  -> model
 
 getErrors : AppErrors -> (Maybe InlineError, Maybe ModalErrors)
 getErrors appErrors =

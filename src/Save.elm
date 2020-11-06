@@ -5,6 +5,7 @@ import RemoteData      exposing (..)
 import Html.Attributes exposing (..)
 import ElmCommon       exposing (..)
 import StorageKeys     exposing (..)
+import Notifications   exposing (..)
 
 import ApiKey          exposing (ApiKey, ApiKeyWithPayload, decodeApiKey, apiKeyHeader, decodeApiKeyWithPayload, performApiKey)
 import Html.Events     exposing (onClick, onInput)
@@ -31,6 +32,9 @@ type DataSource = LocalLoad
                 | InitNote
                 | UserCreated
 
+type WhatAreWeDoing = SavingNoteRemotely
+                    | Idle
+
 type alias RemoteNoteData = WebData SC.NoteIdVersion
 
 type NoteWithContent = NoteWithoutId SC.NoteLight
@@ -46,8 +50,9 @@ type alias Model =
   , remoteSaveStatus: RemoteNoteData
   , noteContentStatus: ContentStatus
   , apiKey: Maybe ApiKey
+  , successMessage : Maybe SuccessMessage
+  , doing : WhatAreWeDoing
   }
-
 
 type PortType = SaveMessage
               | PreviewMessage
@@ -61,6 +66,7 @@ type Msg = NoteSavedMsg
          | NoteSavedToLocalStorage
          | RemoteNoteIdVersionSavedToLocalStorage
          | JSNotificationError String
+         --| InlineInfoTimedOut
 
 -- MAIN
 
@@ -90,32 +96,29 @@ init json =
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    NoteSavedMsg -> saveNote model
+    NoteSavedMsg                           -> handleSavingNote model
+    (NoteEditedMsg newNoteText)            -> handleEditingNote model newNoteText
+    NewNoteMsg                             -> handleNewNote model
+    ViewNoteMsg                            -> handleGoingToView model
+    (NoteSaveResponseMsg noteResponse)     -> handleNoteSaveResponse model noteResponse
+    NoteSavedToLocalStorage                -> handleRemoteSave model
+    RemoteNoteIdVersionSavedToLocalStorage -> handleNoteIdVersionSavedToLocalStorage model
+    (JSNotificationError error)            -> handleJSError model error
 
-    (NoteEditedMsg newNoteText) ->
-       let updatedModel =
-            case model.note of
-              (NoteWithoutId _)     -> { model | note = NoteWithoutId <| SC.updateNoteLightText newNoteText,     noteContentStatus  = NeedsToSave }
-              (NoteWithId fullNote) ->
-                let note =  SC.updateNoteFullText newNoteText fullNote
-                in { model | note = NoteWithId note, noteContentStatus  = NeedsToSave }
-       in onlyModel updatedModel
+    --InlineInfoTimedOut -> handleInlineTimeout model
 
-    NewNoteMsg -> onlyModel { defaultModel | dataSource =  UserCreated, apiKey = model.apiKey }
+--successMessageLens : Lens Model (Maybe SuccessMessage)
+--successMessageLens = { getter = .successMessage, setter = \m newMessage -> { m | successMessage = newMessage } }
 
-    ViewNoteMsg -> (model, Browser.Navigation.load "view.html")
+--handleInlineTimeout : Model -> (Model, Cmd Msg)
+--handleInlineTimeout model = onlyModel <| onInlineTimeout successMessageLens model
 
-    (NoteSaveResponseMsg noteResponse) ->
-      let updatedNote  = noteFromRemoteSave model.note noteResponse
-          updatedModel = {model | remoteSaveStatus = noteResponse, note = updatedNote, noteContentStatus = contentStatusFromRemoteSave noteResponse }
-      in (updatedModel, saveRemoteUpdateToLocalStorage updatedModel.note)
+--handleSuccessMessage : Model -> SuccessMessage -> (Model, Cmd Msg)
+--handleSuccessMessage model message seconds =
+--  addInlineMessage (getSetter successMessageLens) model message inlineInfoSuccessTimeout InlineInfoTimedOut
 
-    NoteSavedToLocalStorage -> performOrGotoConfig model ({model | remoteSaveStatus = Loading }, performSaveNote model.note)
-
-    RemoteNoteIdVersionSavedToLocalStorage -> onlyModel model
-
-    (JSNotificationError error) -> (model, logMessage error)
-
+--timeoutInlineSuccessMessage : Cmd Msg
+--timeoutInlineSuccessMessage = addTimeoutForInlineMessage inlineInfoSuccessTimeout InlineInfoTimedOut
 
 -- VIEW
 
@@ -215,7 +218,7 @@ performOrGotoConfig oldModel apiKeyCommand =
 -- MODEL HELPERS
 
 defaultModel: Model
-defaultModel = Model defaultNote InitNote NotAsked UpToDate Nothing
+defaultModel = Model defaultNote InitNote NotAsked UpToDate Nothing Nothing Idle
 
 defaultNote : NoteWithContent
 defaultNote = NoteWithoutId <| SC.mkLightNote ""
@@ -245,21 +248,30 @@ hasContent note =
     NoteWithoutId noteText -> not (String.isEmpty <| SC.getNoteLightText noteText)
     NoteWithId noteText    -> not (String.isEmpty <| SC.getNoteFullText noteText)
 
+-- TODO: Put the constants in one place
+inlineInfoSuccessTimeout : Seconds
+inlineInfoSuccessTimeout = Seconds 1
 
 -- REMOTE HELPERS
 
 
-contentStatusFromRemoteSave : RemoteNoteData -> ContentStatus
-contentStatusFromRemoteSave remoteData =
-  if RemoteData.isSuccess remoteData then UpToDate else NeedsToSave
+--contentStatusFromRemoteSave : RemoteNoteData -> ContentStatus
+--contentStatusFromRemoteSave remoteData =
+--  if RemoteData.isSuccess remoteData then UpToDate else NeedsToSave
 
-noteFromRemoteSave : NoteWithContent -> RemoteNoteData -> NoteWithContent
-noteFromRemoteSave existingNote remoteData =
-  case (existingNote, remoteData) of
-    (NoteWithoutId noteText, Success noteIdVersion) -> NoteWithId <| SC.updateNoteIdVersion noteIdVersion noteText
-    (NoteWithoutId _, _)                            -> existingNote -- if we didn't succeed in updating the note, then there's no id to save
-    ((NoteWithId fullNote), Success noteIdVersion)  -> NoteWithId <| SC.updateNoteVersion noteIdVersion fullNote -- if we already have an id, then there's nothing to update
-    ((NoteWithId fullNote), _)                      -> existingNote -- if we didn't succeed then don't update the existing note
+--processRemoteSave : Model -> RemoteNoteData -> Model
+--processRemoteSave model remoteData =
+--  case remoteData of
+--    Success _ -> { model | successMessage = Just <| SuccessMessage "Saved note" }
+    --_         -> model
+
+--noteFromRemoteSave : NoteWithContent -> RemoteNoteData -> NoteWithContent
+--noteFromRemoteSave existingNote remoteData =
+--  case (existingNote, remoteData) of
+--    (NoteWithoutId noteText, Success noteIdVersion) -> NoteWithId <| SC.updateNoteIdVersion noteIdVersion noteText
+--    (NoteWithoutId _, _)                            -> existingNote -- if we didn't succeed in updating the note, then there's no id to save
+--    ((NoteWithId fullNote), Success noteIdVersion)  -> NoteWithId <| SC.updateNoteVersion noteIdVersion fullNote -- if we already have an id, then there's nothing to update
+--    ((NoteWithId fullNote), _)                      -> existingNote -- if we didn't succeed then don't update the existing note
 
 processSaveNoteResults: Result Http.Error SC.NoteIdVersion -> Msg
 processSaveNoteResults = processHttpResult NoteSaveResponseMsg
@@ -282,11 +294,78 @@ fromHttpError error =
 -- UPDATE HELPERS
 
 
-saveNote: Model -> (Model, Cmd Msg)
-saveNote model =
-  case model.remoteSaveStatus of
-    Loading       -> (model, Cmd.none) -- still saving from a previous save...
-    _             -> (model, saveEditingNoteToLocalStorage noteSavedToLocalStorageResponseKey model.note)
+handleSavingNote: Model -> (Model, Cmd Msg)
+handleSavingNote model =
+  let saveNoteToLocalCmd = saveEditingNoteToLocalStorage noteSavedToLocalStorageResponseKey model.note
+      newModel           = { model | doing = SavingNoteRemotely, remoteSaveStatus = Loading }
+  in (newModel, saveNoteToLocalCmd)
+
+handleRemoteSave : Model -> (Model, Cmd Msg)
+handleRemoteSave model =
+  performOrGotoConfig model ({model | remoteSaveStatus = Loading, doing = SavingNoteRemotely }, performSaveNote model.note)
+
+handleJSError : Model -> String -> (Model, Cmd Msg)
+handleJSError model error = (model, logMessage error)
+
+handleNoteIdVersionSavedToLocalStorage : Model -> (Model, Cmd Msg)
+handleNoteIdVersionSavedToLocalStorage = onlyModel
+
+handleEditingNote : Model -> String -> (Model, Cmd Msg)
+handleEditingNote model newNoteText =
+  let updatedModel =
+        case model.note of
+          (NoteWithoutId _)     -> { model | note = NoteWithoutId <| SC.updateNoteLightText newNoteText, noteContentStatus  = NeedsToSave }
+          (NoteWithId fullNote) ->
+            let note =  SC.updateNoteFullText newNoteText fullNote
+            in { model | note = NoteWithId note, noteContentStatus  = NeedsToSave }
+  in onlyModel updatedModel
+
+handleNewNote : Model -> (Model, Cmd Msg)
+handleNewNote model =
+  onlyModel {
+    defaultModel |
+      dataSource       = UserCreated
+    , apiKey           = model.apiKey
+    , remoteSaveStatus = NotAsked
+    , doing            = Idle
+  }
+
+handleGoingToView : Model -> (Model, Cmd Msg)
+handleGoingToView model = (model, Browser.Navigation.load "view.html")
+
+-- RemoteNoteData should only give us a Success or Failure
+handleNoteSaveResponse : Model -> RemoteNoteData -> (Model, Cmd Msg)
+handleNoteSaveResponse model remoteData =
+  case remoteData of
+    (Success noteIdVersion) ->
+      let newNote =
+            case model.note of
+              NoteWithoutId noteText -> NoteWithId <| SC.updateNoteIdVersion noteIdVersion noteText
+              NoteWithId fullNote    -> NoteWithId <| SC.updateNoteVersion noteIdVersion fullNote
+      in (
+            {
+              model |
+                note              = newNote
+              , remoteSaveStatus  = remoteData
+              , doing             = Idle
+              , noteContentStatus = UpToDate
+            }
+            , saveRemoteUpdateToLocalStorage newNote
+         )
+
+    (Failure _)             ->
+      -- TODO: We should set AppErrors here
+      onlyModel
+        {
+          model |
+            remoteSaveStatus = remoteData
+          , doing = Idle
+          , noteContentStatus = NeedsToSave
+        }
+
+    -- these two don't make any sense at this point
+    NotAsked                -> onlyModel { model | remoteSaveStatus = remoteData, doing = Idle }
+    Loading                 -> onlyModel { model | remoteSaveStatus = remoteData, doing = SavingNoteRemotely }
 
 
 -- VIEW HELPERS
@@ -304,18 +383,29 @@ viewNoteEditingArea : Model -> Html Msg
 viewNoteEditingArea model =
   plainDiv
     [
-      viewNotificationsArea model.remoteSaveStatus
+      viewInlineInfoIfAny model.doing
+    , viewInlineSuccessIfAny model.successMessage
+    --, viewInlineErrorIfAny model.appErrors
     , viewNotesTextArea model.note
     , viewControls model -- TODO: Fix
     ]
 
 
-viewNotificationsArea: RemoteNoteData -> Html a
-viewNotificationsArea remoteSaveStatus =
-  case remoteSaveStatus of
-    Failure e   -> addInlineErrorFlash <| ErrorMessage <| "Save failed: " ++ fromHttpError e -- show error
-    (Success _) -> addInlineSuccessFlash <| SuccessMessage "Saved note"
-    _           -> hideAlertSpace
+viewInlineInfoIfAny : WhatAreWeDoing -> Html a
+viewInlineInfoIfAny doing =
+  case doing of
+    Idle               -> emptyDiv
+    SavingNoteRemotely -> addInlineInfoFlash <| InformationMessage "Saving..."
+
+viewInlineSuccessIfAny : Maybe SuccessMessage -> Html a
+viewInlineSuccessIfAny = maybe emptyDiv addInlineSuccessFlash
+
+--viewNotificationsArea: RemoteNoteData -> Html a
+--viewNotificationsArea remoteSaveStatus =
+--  case remoteSaveStatus of
+--    Failure e   -> addInlineErrorFlash <| ErrorMessage <| "Save failed: " ++ fromHttpError e -- show error
+--    (Success _) -> addInlineSuccessFlash <| SuccessMessage "Saved note"
+--    _           -> hideAlertSpace
 
 
 viewNotesTextArea: NoteWithContent -> Html Msg
