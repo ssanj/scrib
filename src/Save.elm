@@ -433,7 +433,7 @@ viewNoteEditingArea model =
     , viewInlineSuccessIfAny model.successMessage
     --, viewInlineErrorIfAny model.appErrors
     , viewNotesTextArea model.doing model.note
-    , viewControls model -- TODO: Fix
+    , viewControls model.doing model.note model.noteContentStatus
     ]
 
 
@@ -471,30 +471,39 @@ viewNotesTextArea doing note =
 
 
 
-viewControls: Model -> Html Msg
-viewControls model =
+viewControls: WhatAreWeDoing -> NoteWithContent -> ContentStatus -> Html Msg
+viewControls doing note contentStatus =
   div [class "field", class "is-grouped"]
     [
       p [class "control"]
         [
-          viewSaveButton (model.doing) (model.note)
-        , viewNewNoteButton
+          viewSaveButton doing note
+        , viewNewNoteButton doing
         , button [ id "view-notes-button", class "button", class "is-text", onClick ViewNoteMsg ]
             [ text "View Notes" ]
-        , modifiedTag model.noteContentStatus
+        , modifiedTag contentStatus
         ]
     ]
 
-viewNewNoteButton : Html Msg
-viewNewNoteButton =
-  button
-    [
-      id "new-note"
-    , onClick NewNoteMsg
-    , classList
-        [ ("button", True), ("is-text", True) ]
-    ]
-    [ text "New Note"]
+viewNewNoteButton : WhatAreWeDoing -> Html Msg
+viewNewNoteButton doing =
+  let enableButton =
+        case doing of
+          Idle  -> True
+          _     -> False
+  in
+    button
+      [
+        id "new-note"
+      , onClick NewNoteMsg
+      , classList
+          [
+            ("button", True)
+          , ("is-text", True)
+          , ("is-static", not enableButton)
+          ]
+      ]
+      [ text "New Note"]
 
 modifiedTag : ContentStatus -> Html a
 modifiedTag contentStatus =

@@ -7208,25 +7208,35 @@ var $elm$html$Html$Attributes$classList = function (classes) {
 				$elm$core$Tuple$first,
 				A2($elm$core$List$filter, $elm$core$Tuple$second, classes))));
 };
-var $author$project$Save$viewNewNoteButton = A2(
-	$elm$html$Html$button,
-	_List_fromArray(
-		[
-			$elm$html$Html$Attributes$id('new-note'),
-			$elm$html$Html$Events$onClick($author$project$Save$NewNoteMsg),
-			$elm$html$Html$Attributes$classList(
-			_List_fromArray(
-				[
-					_Utils_Tuple2('button', true),
-					_Utils_Tuple2('is-text', true)
-				]))
-		]),
-	_List_fromArray(
-		[
-			$elm$html$Html$text('New Note')
-		]));
-var $author$project$Save$NoteSavedMsg = {$: 'NoteSavedMsg'};
 var $elm$core$Basics$not = _Basics_not;
+var $author$project$Save$viewNewNoteButton = function (doing) {
+	var enableButton = function () {
+		if (doing.$ === 'Idle') {
+			return true;
+		} else {
+			return false;
+		}
+	}();
+	return A2(
+		$elm$html$Html$button,
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$id('new-note'),
+				$elm$html$Html$Events$onClick($author$project$Save$NewNoteMsg),
+				$elm$html$Html$Attributes$classList(
+				_List_fromArray(
+					[
+						_Utils_Tuple2('button', true),
+						_Utils_Tuple2('is-text', true),
+						_Utils_Tuple2('is-static', !enableButton)
+					]))
+			]),
+		_List_fromArray(
+			[
+				$elm$html$Html$text('New Note')
+			]));
+};
+var $author$project$Save$NoteSavedMsg = {$: 'NoteSavedMsg'};
 var $author$project$Save$hasContent = function (note) {
 	if (note.$ === 'NoteWithoutId') {
 		var noteText = note.a;
@@ -7272,43 +7282,44 @@ var $author$project$Save$viewSaveButton = F2(
 					$elm$html$Html$text('Save')
 				]));
 	});
-var $author$project$Save$viewControls = function (model) {
-	return A2(
-		$elm$html$Html$div,
-		_List_fromArray(
-			[
-				$elm$html$Html$Attributes$class('field'),
-				$elm$html$Html$Attributes$class('is-grouped')
-			]),
-		_List_fromArray(
-			[
-				A2(
-				$elm$html$Html$p,
-				_List_fromArray(
-					[
-						$elm$html$Html$Attributes$class('control')
-					]),
-				_List_fromArray(
-					[
-						A2($author$project$Save$viewSaveButton, model.doing, model.note),
-						$author$project$Save$viewNewNoteButton,
-						A2(
-						$elm$html$Html$button,
-						_List_fromArray(
-							[
-								$elm$html$Html$Attributes$id('view-notes-button'),
-								$elm$html$Html$Attributes$class('button'),
-								$elm$html$Html$Attributes$class('is-text'),
-								$elm$html$Html$Events$onClick($author$project$Save$ViewNoteMsg)
-							]),
-						_List_fromArray(
-							[
-								$elm$html$Html$text('View Notes')
-							])),
-						$author$project$Save$modifiedTag(model.noteContentStatus)
-					]))
-			]));
-};
+var $author$project$Save$viewControls = F3(
+	function (doing, note, contentStatus) {
+		return A2(
+			$elm$html$Html$div,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$class('field'),
+					$elm$html$Html$Attributes$class('is-grouped')
+				]),
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$p,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('control')
+						]),
+					_List_fromArray(
+						[
+							A2($author$project$Save$viewSaveButton, doing, note),
+							$author$project$Save$viewNewNoteButton(doing),
+							A2(
+							$elm$html$Html$button,
+							_List_fromArray(
+								[
+									$elm$html$Html$Attributes$id('view-notes-button'),
+									$elm$html$Html$Attributes$class('button'),
+									$elm$html$Html$Attributes$class('is-text'),
+									$elm$html$Html$Events$onClick($author$project$Save$ViewNoteMsg)
+								]),
+							_List_fromArray(
+								[
+									$elm$html$Html$text('View Notes')
+								])),
+							$author$project$Save$modifiedTag(contentStatus)
+						]))
+				]));
+	});
 var $author$project$ElmCommon$addInlineInfoFlash = function (_v0) {
 	var infoMessage = _v0.infoMessage;
 	return A2(
@@ -7435,7 +7446,7 @@ var $author$project$Save$viewNoteEditingArea = function (model) {
 				$author$project$Save$viewInlineInfoIfAny(model.infoMessage),
 				$author$project$Save$viewInlineSuccessIfAny(model.successMessage),
 				A2($author$project$Save$viewNotesTextArea, model.doing, model.note),
-				$author$project$Save$viewControls(model)
+				A3($author$project$Save$viewControls, model.doing, model.note, model.noteContentStatus)
 			]));
 };
 var $author$project$Save$view = function (model) {
