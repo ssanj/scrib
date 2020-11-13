@@ -7339,6 +7339,15 @@ var $author$project$Save$viewInlineSuccessIfAny = A2($author$project$FP$maybe, $
 var $author$project$Save$NoteEditedMsg = function (a) {
 	return {$: 'NoteEditedMsg', a: a};
 };
+var $elm$json$Json$Encode$bool = _Json_wrap;
+var $elm$html$Html$Attributes$boolProperty = F2(
+	function (key, bool) {
+		return A2(
+			_VirtualDom_property,
+			key,
+			$elm$json$Json$Encode$bool(bool));
+	});
+var $elm$html$Html$Attributes$disabled = $elm$html$Html$Attributes$boolProperty('disabled');
 var $author$project$Save$getNoteText = function (note) {
 	if (note.$ === 'NoteWithId') {
 		var scNote = note.a;
@@ -7388,28 +7397,44 @@ var $elm$html$Html$Attributes$rows = function (n) {
 };
 var $elm$html$Html$textarea = _VirtualDom_node('textarea');
 var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty('value');
-var $author$project$Save$viewNotesTextArea = function (note) {
-	return A2(
-		$elm$html$Html$textarea,
-		_List_fromArray(
-			[
-				$elm$html$Html$Attributes$id('note-content'),
-				$elm$html$Html$Attributes$class('textarea'),
-				$elm$html$Html$Attributes$rows(10),
-				$elm$html$Html$Attributes$placeholder('e.g. My awesome idea'),
-				$elm$html$Html$Events$onInput($author$project$Save$NoteEditedMsg),
-				$elm$html$Html$Attributes$value(
-				$author$project$Save$getNoteText(note))
-			]),
-		_List_Nil);
-};
+var $author$project$Save$viewNotesTextArea = F2(
+	function (doing, note) {
+		if (doing.$ === 'Idle') {
+			return A2(
+				$elm$html$Html$textarea,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$id('note-content'),
+						$elm$html$Html$Attributes$class('textarea'),
+						$elm$html$Html$Attributes$rows(10),
+						$elm$html$Html$Attributes$placeholder('e.g. My awesome idea'),
+						$elm$html$Html$Events$onInput($author$project$Save$NoteEditedMsg),
+						$elm$html$Html$Attributes$value(
+						$author$project$Save$getNoteText(note))
+					]),
+				_List_Nil);
+		} else {
+			return A2(
+				$elm$html$Html$textarea,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$id('note-content'),
+						$elm$html$Html$Attributes$class('textarea'),
+						$elm$html$Html$Attributes$rows(10),
+						$elm$html$Html$Attributes$disabled(true),
+						$elm$html$Html$Attributes$value(
+						$author$project$Save$getNoteText(note))
+					]),
+				_List_Nil);
+		}
+	});
 var $author$project$Save$viewNoteEditingArea = function (model) {
 	return $author$project$ElmCommon$plainDiv(
 		_List_fromArray(
 			[
 				$author$project$Save$viewInlineInfoIfAny(model.infoMessage),
 				$author$project$Save$viewInlineSuccessIfAny(model.successMessage),
-				$author$project$Save$viewNotesTextArea(model.note),
+				A2($author$project$Save$viewNotesTextArea, model.doing, model.note),
 				$author$project$Save$viewControls(model)
 			]));
 };

@@ -432,7 +432,7 @@ viewNoteEditingArea model =
       viewInlineInfoIfAny model.infoMessage
     , viewInlineSuccessIfAny model.successMessage
     --, viewInlineErrorIfAny model.appErrors
-    , viewNotesTextArea model.note
+    , viewNotesTextArea model.doing model.note
     , viewControls model -- TODO: Fix
     ]
 
@@ -458,11 +458,17 @@ viewInlineSuccessIfAny = maybe emptyDiv addInlineSuccessFlash
 --    _           -> hideAlertSpace
 
 
-viewNotesTextArea: NoteWithContent -> Html Msg
-viewNotesTextArea note =
-  textarea
-    [id "note-content", class "textarea", rows 10, placeholder "e.g. My awesome idea", onInput NoteEditedMsg, value <| getNoteText note]
-    []
+viewNotesTextArea: WhatAreWeDoing -> NoteWithContent -> Html Msg
+viewNotesTextArea doing note =
+  case doing of
+    Idle  ->
+      textarea
+        [id "note-content", class "textarea", rows 10, placeholder "e.g. My awesome idea", onInput NoteEditedMsg, value <| getNoteText note]
+        []
+    _ ->
+      textarea [id "note-content", class "textarea", rows 10, disabled  True, value <|  getNoteText note]
+        []
+
 
 
 viewControls: Model -> Html Msg
