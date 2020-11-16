@@ -5936,6 +5936,17 @@ var $author$project$Save$SavingNoteRemotely = {$: 'SavingNoteRemotely'};
 var $author$project$ElmCommon$SuccessMessage = function (successMessage) {
 	return {successMessage: successMessage};
 };
+var $author$project$Note$getNoteFullId = function (_v0) {
+	var noteId = _v0.b.noteId;
+	return noteId;
+};
+var $author$project$Note$isSameNoteId = F2(
+	function (note, _v0) {
+		var noteId = _v0.noteId;
+		return _Utils_eq(
+			$author$project$Note$getNoteFullId(note),
+			noteId);
+	});
 var $author$project$Save$remoteNoteIdVersionSavedToLocalStorageResponseKey = $author$project$Ports$ResponseKey('RemoteNoteIdVersionSavedToLocalStorage');
 var $author$project$Ports$JsStorageValue = F3(
 	function (storageArea, storageAction, value) {
@@ -6038,8 +6049,8 @@ var $author$project$Save$handleNoteSaveResponse = F2(
 							A2($author$project$Note$updateNoteIdVersion, noteIdVersion, noteText));
 					} else {
 						var fullNote = _v1.a;
-						return $author$project$Save$NoteWithId(
-							A2($author$project$Note$updateNoteVersion, noteIdVersion, fullNote));
+						return A2($author$project$Note$isSameNoteId, fullNote, noteIdVersion) ? $author$project$Save$NoteWithId(
+							A2($author$project$Note$updateNoteVersion, noteIdVersion, fullNote)) : model.note;
 					}
 				}();
 				return _Utils_Tuple2(
@@ -7208,7 +7219,6 @@ var $elm$html$Html$Attributes$classList = function (classes) {
 				$elm$core$Tuple$first,
 				A2($elm$core$List$filter, $elm$core$Tuple$second, classes))));
 };
-var $elm$core$Basics$not = _Basics_not;
 var $author$project$Save$viewNewNoteButton = function (doing) {
 	var enableButton = function () {
 		if (doing.$ === 'Idle') {
@@ -7228,7 +7238,7 @@ var $author$project$Save$viewNewNoteButton = function (doing) {
 					[
 						_Utils_Tuple2('button', true),
 						_Utils_Tuple2('is-text', true),
-						_Utils_Tuple2('is-static', !enableButton)
+						_Utils_Tuple2('is-static', enableButton)
 					]))
 			]),
 		_List_fromArray(
@@ -7237,6 +7247,7 @@ var $author$project$Save$viewNewNoteButton = function (doing) {
 			]));
 };
 var $author$project$Save$NoteSavedMsg = {$: 'NoteSavedMsg'};
+var $elm$core$Basics$not = _Basics_not;
 var $author$project$Save$hasContent = function (note) {
 	if (note.$ === 'NoteWithoutId') {
 		var noteText = note.a;

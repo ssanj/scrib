@@ -25,6 +25,12 @@ module Note exposing
   , updateNoteLightText
   , updateNoteFullText
 
+
+    -- COMPARATORS
+
+  , isSameNoteId
+
+
     -- ENCODERS
 
   , encodeLightNote
@@ -111,6 +117,9 @@ getNoteFullId (NoteFull _ { noteId }) = noteId
 
 getNoteFullVersion : NoteFull -> Int
 getNoteFullVersion (NoteFull _ { noteVersion }) = noteVersion
+
+isSameNoteId : NoteFull -> NoteIdVersion -> Bool
+isSameNoteId note { noteId } = (getNoteFullId note) == noteId
 
 
 -- UPDATES

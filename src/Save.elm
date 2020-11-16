@@ -380,7 +380,10 @@ handleNoteSaveResponse model remoteData =
       let newNote =
             case model.note of
               NoteWithoutId noteText -> NoteWithId <| SC.updateNoteIdVersion noteIdVersion noteText
-              NoteWithId fullNote    -> NoteWithId <| SC.updateNoteVersion noteIdVersion fullNote
+              NoteWithId fullNote    ->
+                if SC.isSameNoteId fullNote noteIdVersion then
+                  NoteWithId <| SC.updateNoteVersion noteIdVersion fullNote
+                else model.note
       in (
             {
               model |
@@ -500,7 +503,7 @@ viewNewNoteButton doing =
           [
             ("button", True)
           , ("is-text", True)
-          , ("is-static", not enableButton)
+          , ("is-static", enableButton)
           ]
       ]
       [ text "New Note"]
