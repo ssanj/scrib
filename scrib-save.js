@@ -7219,6 +7219,7 @@ var $elm$html$Html$Attributes$classList = function (classes) {
 				$elm$core$Tuple$first,
 				A2($elm$core$List$filter, $elm$core$Tuple$second, classes))));
 };
+var $elm$core$Basics$not = _Basics_not;
 var $author$project$Save$viewNewNoteButton = function (doing) {
 	var enableButton = function () {
 		if (doing.$ === 'Idle') {
@@ -7238,7 +7239,7 @@ var $author$project$Save$viewNewNoteButton = function (doing) {
 					[
 						_Utils_Tuple2('button', true),
 						_Utils_Tuple2('is-text', true),
-						_Utils_Tuple2('is-static', enableButton)
+						_Utils_Tuple2('is-static', !enableButton)
 					]))
 			]),
 		_List_fromArray(
@@ -7247,7 +7248,6 @@ var $author$project$Save$viewNewNoteButton = function (doing) {
 			]));
 };
 var $author$project$Save$NoteSavedMsg = {$: 'NoteSavedMsg'};
-var $elm$core$Basics$not = _Basics_not;
 var $author$project$Save$hasContent = function (note) {
 	if (note.$ === 'NoteWithoutId') {
 		var noteText = note.a;

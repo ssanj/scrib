@@ -377,24 +377,16 @@ handleNoteSaveResponse : Model -> RemoteNoteData -> (Model, Cmd Msg)
 handleNoteSaveResponse model remoteData =
   case remoteData of
     (Success noteIdVersion) ->
-      let newNote =
-            case model.note of
-              NoteWithoutId noteText -> NoteWithId <| SC.updateNoteIdVersion noteIdVersion noteText
-              NoteWithId fullNote    ->
-                if SC.isSameNoteId fullNote noteIdVersion then
-                  NoteWithId <| SC.updateNoteVersion noteIdVersion fullNote
-                else model.note
-      in (
-            {
-              model |
-                note              = newNote
-              , remoteSaveStatus  = remoteData
-              , doing             = SavingNoteLocally
-              , noteContentStatus = UpToDate
-              , successMessage    = Just <| SuccessMessage "Saved Note"
-            }
-            , saveRemoteUpdateToLocalStorage newNote
-         )
+      case model.note of
+        NoteWithoutId noteText ->
+          let newNote = NoteWithId <| SC.updateNoteIdVersion noteIdVersion noteText
+          in saveLocally newNote remoteData model
+
+        NoteWithId fullNote    ->
+          if SC.isSameNoteId fullNote noteIdVersion then
+            let newNote = NoteWithId <| SC.updateNoteVersion noteIdVersion fullNote
+            in saveLocally newNote remoteData model
+          else onlyModel model -- save completed for some other note, just keep doing what you were doing
 
     (Failure _)             ->
       -- TODO: We should set AppErrors here
@@ -410,6 +402,22 @@ handleNoteSaveResponse model remoteData =
     NotAsked                -> onlyModel { model | remoteSaveStatus = remoteData, doing = Idle }
     Loading                 -> onlyModel { model | remoteSaveStatus = remoteData, doing = SavingNoteRemotely }
 
+
+
+
+saveLocally : NoteWithContent -> RemoteNoteData -> Model -> (Model, Cmd Msg)
+saveLocally newNote remoteData model =
+  (
+    {
+      model |
+        note              = newNote
+      , remoteSaveStatus  = remoteData
+      , doing             = SavingNoteLocally
+      , noteContentStatus = UpToDate
+      , successMessage    = Just <| SuccessMessage "Saved Note"
+    }
+  , saveRemoteUpdateToLocalStorage newNote
+  )
 
 handleSuccessMessageTimeout : Model -> (Model, Cmd Msg)
 handleSuccessMessageTimeout model = onlyModel { model | successMessage = Nothing }
@@ -503,7 +511,7 @@ viewNewNoteButton doing =
           [
             ("button", True)
           , ("is-text", True)
-          , ("is-static", enableButton)
+          , ("is-static", not enableButton)
           ]
       ]
       [ text "New Note"]
