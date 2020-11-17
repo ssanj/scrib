@@ -54,7 +54,7 @@ type alias Model =
   , apiKey: Maybe ApiKey
   , successMessage : Maybe SuccessMessage
   , infoMessage : Maybe InformationMessage
-  , errorMessages: Maybe (N.Nonempty ErrorMessage)
+  , errorMessages: Maybe (N.Nonempty ModalError)
   , doing : WhatAreWeDoing
   }
 
@@ -73,6 +73,7 @@ type Msg = NoteSavedMsg
          | InlineSuccessMessageTimedOut
          | InlineInfoTimedOut
          | TesterMsg Seconds Msg
+         | ErrorModalClosed
 
 -- TODO: Remove TesterMsg once we are done testing
 
@@ -115,6 +116,7 @@ update msg model =
     InlineSuccessMessageTimedOut           -> handleSuccessMessageTimeout model
     InlineInfoTimedOut                     -> handleInfoMessageTimeout model
     TesterMsg timeout realMessage          -> handleTesterMessage model timeout realMessage
+    ErrorModalClosed                       -> onlyModel model
 
     --InlineInfoTimedOut -> handleInlineTimeout model
 
@@ -140,11 +142,16 @@ view model =
         (
           viewHeadings ++
           [
-            viewNoteEditingArea model
+            viewErrors model.errorMessages
+          , viewNoteEditingArea model
           , createMarkdownPreview model.note
           ]
         )
     ]
+
+
+viewErrors : Maybe (N.Nonempty ModalError) -> Html Msg
+viewErrors = maybe emptyDiv (\errors -> viewModalErrors errors ErrorModalClosed)
 
 
 -- PORTS
@@ -391,7 +398,7 @@ handleNoteSaveResponse model remoteData =
             remoteSaveStatus  = remoteData
           , doing             = Idle
           , noteContentStatus = NeedsToSave
-          , errorMessages     =  addErrorMessage (ErrorMessage <| fromHttpError x) model.errorMessages
+          , errorMessages     =  addErrorMessage (fromHttpError x) model.errorMessages
         }
 
     -- these two don't make any sense at this point
@@ -399,11 +406,11 @@ handleNoteSaveResponse model remoteData =
     Loading                 -> onlyModel { model | remoteSaveStatus = remoteData, doing = SavingNoteRemotely }
 
 
-addErrorMessage : ErrorMessage -> Maybe (N.Nonempty ErrorMessage) -> Maybe (N.Nonempty ErrorMessage)
+addErrorMessage : String -> Maybe (N.Nonempty ModalError) -> Maybe (N.Nonempty ModalError)
 addErrorMessage errorMessage maybeErrorMessages =
   case maybeErrorMessages of
-    Nothing     -> Just <| N.fromElement errorMessage
-    Just errors -> Just <| N.cons errorMessage errors
+    Nothing     -> Just <| N.fromElement <| createModalError errorMessage
+    Just errors -> Just <| N.cons (createModalError errorMessage) errors
 
 
 saveLocally : NoteWithContent -> RemoteNoteData -> Model -> (Model, Cmd Msg)

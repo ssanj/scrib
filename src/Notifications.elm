@@ -154,6 +154,12 @@ getErrors appErrors =
   in (maybeInlineError, maybeModalErrors)
 
 
+-- CONSTRUCTORS
+
+createModalError : String -> ModalError
+createModalError = ModalError << ErrorMessage
+
+
 -- VIEW HELPERS
 
 
