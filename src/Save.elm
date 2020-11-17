@@ -15,6 +15,7 @@ import Browser
 import Http
 import Browser.Navigation
 import Markdown
+import Dict exposing (Dict)
 
 import List.Nonempty as N
 import Json.Decode   as D
@@ -223,6 +224,41 @@ performRemoteSaveNote note apiKey =
   , tracker  = Nothing
   }
 
+type alias HttpMetaData e =
+  {
+    url : String
+  , statusCode : Int
+  , statusText : String
+  , statusJson : Result D.Error e
+  , headers : Dict String String
+  }
+
+type HttpResponse a e = HttpBadUrl String
+                      | HttpTimeout
+                      | HttpNetworkError
+                      | HttpBadStatus (HttpMetaData e)
+                      | HttpGoodStatus (HttpMetaData a)
+
+
+responseToHttpResponse : Http.Response String -> D.Decoder a -> D.Decoder e -> HttpResponse a e
+responseToHttpResponse response successDecoder errorDecoder =
+  case response of
+    Http.BadUrl_ url               -> HttpBadUrl url
+    Http.Timeout_                  -> HttpTimeout
+    Http.NetworkError_             -> HttpNetworkError
+    Http.BadStatus_ metadata body  -> HttpBadStatus  (toHttpMetaData metadata errorDecoder body)
+    Http.GoodStatus_ metadata body -> HttpGoodStatus (toHttpMetaData metadata successDecoder body)
+
+
+toHttpMetaData : Http.Metadata -> D.Decoder a -> String -> HttpMetaData a
+toHttpMetaData meta decoderOfA valueA =
+  {
+      url        = meta.url
+    , statusCode = meta.statusCode
+    , statusText = meta.statusText
+    , statusJson = D.decodeString decoderOfA valueA
+    , headers    = meta.headers
+  }
 
 -- PAGE REDIRECTS
 
