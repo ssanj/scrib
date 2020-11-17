@@ -22,6 +22,7 @@ import Json.Encode   as E
 import Note          as SC
 import Ports         as P
 import Subs          as S
+import List.Nonempty as N
 
 
 -- MODEL
@@ -53,6 +54,7 @@ type alias Model =
   , apiKey: Maybe ApiKey
   , successMessage : Maybe SuccessMessage
   , infoMessage : Maybe InformationMessage
+  , errorMessages: Maybe (N.Nonempty ErrorMessage)
   , doing : WhatAreWeDoing
   }
 
@@ -235,6 +237,7 @@ defaultModel =
   , apiKey            = Nothing
   , successMessage    = Nothing
   , infoMessage       = Nothing
+  , errorMessages     = Nothing
   , doing             = Idle
   }
 
@@ -299,14 +302,6 @@ processHttpResult toMsg httpResult   =
   let result  = RemoteData.fromResult httpResult
   in toMsg result
 
-fromHttpError: Http.Error -> String
-fromHttpError error =
-  case error of
-    (Http.BadUrl burl)      -> "bad url: " ++ burl
-    Http.Timeout            -> "timeout"
-    Http.NetworkError       -> "network error"
-    (Http.BadStatus status) -> "bad status: " ++ String.fromInt status
-    (Http.BadBody body)     -> "bad body: " ++ body
 
 
 -- UPDATE HELPERS
@@ -388,14 +383,15 @@ handleNoteSaveResponse model remoteData =
             in saveLocally newNote remoteData model
           else onlyModel model -- save completed for some other note, just keep doing what you were doing
 
-    (Failure _)             ->
+    (Failure x)             ->
       -- TODO: We should set AppErrors here
       onlyModel
         {
           model |
-            remoteSaveStatus = remoteData
-          , doing = Idle
+            remoteSaveStatus  = remoteData
+          , doing             = Idle
           , noteContentStatus = NeedsToSave
+          , errorMessages     =  addErrorMessage (ErrorMessage <| fromHttpError x) model.errorMessages
         }
 
     -- these two don't make any sense at this point
@@ -403,6 +399,11 @@ handleNoteSaveResponse model remoteData =
     Loading                 -> onlyModel { model | remoteSaveStatus = remoteData, doing = SavingNoteRemotely }
 
 
+addErrorMessage : ErrorMessage -> Maybe (N.Nonempty ErrorMessage) -> Maybe (N.Nonempty ErrorMessage)
+addErrorMessage errorMessage maybeErrorMessages =
+  case maybeErrorMessages of
+    Nothing     -> Just <| N.fromElement errorMessage
+    Just errors -> Just <| N.cons errorMessage errors
 
 
 saveLocally : NoteWithContent -> RemoteNoteData -> Model -> (Model, Cmd Msg)

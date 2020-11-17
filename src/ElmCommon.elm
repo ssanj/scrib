@@ -8,6 +8,7 @@ import Debug
 
 import List.Nonempty as N
 import Json.Decode   as D
+import Http          as Http
 
 import FP exposing (maybe, maybeToBool)
 
@@ -140,3 +141,15 @@ foldResult failure success result =
     (Ok value)  -> success value
     (Err error) -> failure error
 
+
+-- HTTP
+
+
+fromHttpError: Http.Error -> String
+fromHttpError error =
+  case error of
+    (Http.BadUrl burl)      -> "bad url: " ++ burl
+    Http.Timeout            -> "timeout"
+    Http.NetworkError       -> "network error"
+    (Http.BadStatus status) -> "bad status: " ++ String.fromInt status
+    (Http.BadBody body)     -> "bad body: " ++ body
