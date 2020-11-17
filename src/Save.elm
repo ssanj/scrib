@@ -45,6 +45,8 @@ type NoteWithContent = NoteWithoutId SC.NoteLight
 type ContentStatus = NeedsToSave
                    | UpToDate
 
+type alias SaveModelCommand = ModelCommand Model Msg
+
 type alias Model =
   {
     note: NoteWithContent
@@ -116,9 +118,11 @@ update msg model =
     InlineSuccessMessageTimedOut           -> handleSuccessMessageTimeout model
     InlineInfoTimedOut                     -> handleInfoMessageTimeout model
     TesterMsg timeout realMessage          -> handleTesterMessage model timeout realMessage
-    ErrorModalClosed                       -> onlyModel model
+    ErrorModalClosed                       -> handleErrorModalClose model
 
-    --InlineInfoTimedOut -> handleInlineTimeout model
+
+handleErrorModalClose : SaveModelCommand
+handleErrorModalClose model = onlyModel { model | errorMessages = Nothing }
 
 --handleInlineTimeout : Model -> (Model, Cmd Msg)
 --handleInlineTimeout model = onlyModel <| onInlineTimeout successMessageLens model
@@ -212,7 +216,7 @@ performRemoteSaveNote note apiKey =
   Http.request {
    method    = "POST"
   , headers  = [ apiKeyHeader apiKey ]
-  , url      = "/note"
+  , url      = "/xnote"
   , body     = Http.jsonBody <| encodeSaveNote note
   , expect   = Http.expectJson processSaveNoteResults SC.decoderNoteIdVersion
   , timeout  = Nothing

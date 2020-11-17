@@ -5519,7 +5519,7 @@ var $author$project$Save$UpToDate = {$: 'UpToDate'};
 var $author$project$Note$mkLightNote = $author$project$Note$NoteLight;
 var $author$project$Save$defaultNote = $author$project$Save$NoteWithoutId(
 	$author$project$Note$mkLightNote(''));
-var $author$project$Save$defaultModel = {apiKey: $elm$core$Maybe$Nothing, dataSource: $author$project$Save$InitNote, doing: $author$project$Save$Idle, infoMessage: $elm$core$Maybe$Nothing, note: $author$project$Save$defaultNote, noteContentStatus: $author$project$Save$UpToDate, remoteSaveStatus: $krisajenkins$remotedata$RemoteData$NotAsked, successMessage: $elm$core$Maybe$Nothing};
+var $author$project$Save$defaultModel = {apiKey: $elm$core$Maybe$Nothing, dataSource: $author$project$Save$InitNote, doing: $author$project$Save$Idle, errorMessages: $elm$core$Maybe$Nothing, infoMessage: $elm$core$Maybe$Nothing, note: $author$project$Save$defaultNote, noteContentStatus: $author$project$Save$UpToDate, remoteSaveStatus: $krisajenkins$remotedata$RemoteData$NotAsked, successMessage: $elm$core$Maybe$Nothing};
 var $elm$browser$Browser$Navigation$load = _Browser_load;
 var $author$project$Ports$LogConsole = function (a) {
 	return {$: 'LogConsole', a: a};
@@ -5875,6 +5875,12 @@ var $author$project$Save$handleEditingNote = F2(
 		}();
 		return $author$project$ElmCommon$onlyModel(updatedModel);
 	});
+var $author$project$Save$handleErrorModalClose = function (model) {
+	return $author$project$ElmCommon$onlyModel(
+		_Utils_update(
+			model,
+			{errorMessages: $elm$core$Maybe$Nothing}));
+};
 var $author$project$Save$handleGoingToView = function (model) {
 	return _Utils_Tuple2(
 		model,
@@ -5931,10 +5937,66 @@ var $author$project$Save$handleNoteIdVersionSavedToLocalStorage = function (mode
 		newModel,
 		A2($author$project$Notifications$addTimeoutForInlineMessage, $author$project$Save$inlineInfoSuccessTimeout, $author$project$Save$InlineInfoTimedOut));
 };
-var $author$project$Save$SavingNoteLocally = {$: 'SavingNoteLocally'};
 var $author$project$Save$SavingNoteRemotely = {$: 'SavingNoteRemotely'};
-var $author$project$ElmCommon$SuccessMessage = function (successMessage) {
-	return {successMessage: successMessage};
+var $mgold$elm_nonempty_list$List$Nonempty$Nonempty = F2(
+	function (a, b) {
+		return {$: 'Nonempty', a: a, b: b};
+	});
+var $mgold$elm_nonempty_list$List$Nonempty$cons = F2(
+	function (y, _v0) {
+		var x = _v0.a;
+		var xs = _v0.b;
+		return A2(
+			$mgold$elm_nonempty_list$List$Nonempty$Nonempty,
+			y,
+			A2($elm$core$List$cons, x, xs));
+	});
+var $author$project$ElmCommon$ErrorMessage = function (errorMessage) {
+	return {errorMessage: errorMessage};
+};
+var $author$project$Notifications$ModalError = function (a) {
+	return {$: 'ModalError', a: a};
+};
+var $elm$core$Basics$composeL = F3(
+	function (g, f, x) {
+		return g(
+			f(x));
+	});
+var $author$project$Notifications$createModalError = A2($elm$core$Basics$composeL, $author$project$Notifications$ModalError, $author$project$ElmCommon$ErrorMessage);
+var $mgold$elm_nonempty_list$List$Nonempty$fromElement = function (x) {
+	return A2($mgold$elm_nonempty_list$List$Nonempty$Nonempty, x, _List_Nil);
+};
+var $author$project$Save$addErrorMessage = F2(
+	function (errorMessage, maybeErrorMessages) {
+		if (maybeErrorMessages.$ === 'Nothing') {
+			return $elm$core$Maybe$Just(
+				$mgold$elm_nonempty_list$List$Nonempty$fromElement(
+					$author$project$Notifications$createModalError(errorMessage)));
+		} else {
+			var errors = maybeErrorMessages.a;
+			return $elm$core$Maybe$Just(
+				A2(
+					$mgold$elm_nonempty_list$List$Nonempty$cons,
+					$author$project$Notifications$createModalError(errorMessage),
+					errors));
+		}
+	});
+var $author$project$ElmCommon$fromHttpError = function (error) {
+	switch (error.$) {
+		case 'BadUrl':
+			var burl = error.a;
+			return 'bad url: ' + burl;
+		case 'Timeout':
+			return 'timeout';
+		case 'NetworkError':
+			return 'network error';
+		case 'BadStatus':
+			var status = error.a;
+			return 'bad status: ' + $elm$core$String$fromInt(status);
+		default:
+			var body = error.a;
+			return 'bad body: ' + body;
+	}
 };
 var $author$project$Note$getNoteFullId = function (_v0) {
 	var noteId = _v0.b.noteId;
@@ -5947,6 +6009,10 @@ var $author$project$Note$isSameNoteId = F2(
 			$author$project$Note$getNoteFullId(note),
 			noteId);
 	});
+var $author$project$Save$SavingNoteLocally = {$: 'SavingNoteLocally'};
+var $author$project$ElmCommon$SuccessMessage = function (successMessage) {
+	return {successMessage: successMessage};
+};
 var $author$project$Save$remoteNoteIdVersionSavedToLocalStorageResponseKey = $author$project$Ports$ResponseKey('RemoteNoteIdVersionSavedToLocalStorage');
 var $author$project$Ports$JsStorageValue = F3(
 	function (storageArea, storageAction, value) {
@@ -6021,6 +6087,21 @@ var $author$project$Save$saveEditingNoteToLocalStorage = F2(
 var $author$project$Save$saveRemoteUpdateToLocalStorage = function (note) {
 	return A2($author$project$Save$saveEditingNoteToLocalStorage, $author$project$Save$remoteNoteIdVersionSavedToLocalStorageResponseKey, note);
 };
+var $author$project$Save$saveLocally = F3(
+	function (newNote, remoteData, model) {
+		return _Utils_Tuple2(
+			_Utils_update(
+				model,
+				{
+					doing: $author$project$Save$SavingNoteLocally,
+					note: newNote,
+					noteContentStatus: $author$project$Save$UpToDate,
+					remoteSaveStatus: remoteData,
+					successMessage: $elm$core$Maybe$Just(
+						$author$project$ElmCommon$SuccessMessage('Saved Note'))
+				}),
+			$author$project$Save$saveRemoteUpdateToLocalStorage(newNote));
+	});
 var $author$project$Note$updateNoteIdVersion = F2(
 	function (idVersion, _v0) {
 		var noteText = _v0.a;
@@ -6041,35 +6122,36 @@ var $author$project$Save$handleNoteSaveResponse = F2(
 		switch (remoteData.$) {
 			case 'Success':
 				var noteIdVersion = remoteData.a;
-				var newNote = function () {
-					var _v1 = model.note;
-					if (_v1.$ === 'NoteWithoutId') {
-						var noteText = _v1.a;
-						return $author$project$Save$NoteWithId(
-							A2($author$project$Note$updateNoteIdVersion, noteIdVersion, noteText));
+				var _v1 = model.note;
+				if (_v1.$ === 'NoteWithoutId') {
+					var noteText = _v1.a;
+					var newNote = $author$project$Save$NoteWithId(
+						A2($author$project$Note$updateNoteIdVersion, noteIdVersion, noteText));
+					return A3($author$project$Save$saveLocally, newNote, remoteData, model);
+				} else {
+					var fullNote = _v1.a;
+					if (A2($author$project$Note$isSameNoteId, fullNote, noteIdVersion)) {
+						var newNote = $author$project$Save$NoteWithId(
+							A2($author$project$Note$updateNoteVersion, noteIdVersion, fullNote));
+						return A3($author$project$Save$saveLocally, newNote, remoteData, model);
 					} else {
-						var fullNote = _v1.a;
-						return A2($author$project$Note$isSameNoteId, fullNote, noteIdVersion) ? $author$project$Save$NoteWithId(
-							A2($author$project$Note$updateNoteVersion, noteIdVersion, fullNote)) : model.note;
+						return $author$project$ElmCommon$onlyModel(model);
 					}
-				}();
-				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{
-							doing: $author$project$Save$SavingNoteLocally,
-							note: newNote,
-							noteContentStatus: $author$project$Save$UpToDate,
-							remoteSaveStatus: remoteData,
-							successMessage: $elm$core$Maybe$Just(
-								$author$project$ElmCommon$SuccessMessage('Saved Note'))
-						}),
-					$author$project$Save$saveRemoteUpdateToLocalStorage(newNote));
+				}
 			case 'Failure':
+				var x = remoteData.a;
 				return $author$project$ElmCommon$onlyModel(
 					_Utils_update(
 						model,
-						{doing: $author$project$Save$Idle, noteContentStatus: $author$project$Save$NeedsToSave, remoteSaveStatus: remoteData}));
+						{
+							doing: $author$project$Save$Idle,
+							errorMessages: A2(
+								$author$project$Save$addErrorMessage,
+								$author$project$ElmCommon$fromHttpError(x),
+								model.errorMessages),
+							noteContentStatus: $author$project$Save$NeedsToSave,
+							remoteSaveStatus: remoteData
+						}));
 			case 'NotAsked':
 				return $author$project$ElmCommon$onlyModel(
 					_Utils_update(
@@ -6739,11 +6821,6 @@ var $elm$http$Http$jsonBody = function (value) {
 var $author$project$Save$NoteSaveResponseMsg = function (a) {
 	return {$: 'NoteSaveResponseMsg', a: a};
 };
-var $elm$core$Basics$composeL = F3(
-	function (g, f, x) {
-		return g(
-			f(x));
-	});
 var $krisajenkins$remotedata$RemoteData$Failure = function (a) {
 	return {$: 'Failure', a: a};
 };
@@ -6952,7 +7029,7 @@ var $author$project$Save$performRemoteSaveNote = F2(
 				method: 'POST',
 				timeout: $elm$core$Maybe$Nothing,
 				tracker: $elm$core$Maybe$Nothing,
-				url: '/note'
+				url: '/xnote'
 			});
 	});
 var $author$project$Save$handleRemoteSave = function (model) {
@@ -7022,10 +7099,12 @@ var $author$project$Save$update = F2(
 				return $author$project$Save$handleSuccessMessageTimeout(model);
 			case 'InlineInfoTimedOut':
 				return $author$project$Save$handleInfoMessageTimeout(model);
-			default:
+			case 'TesterMsg':
 				var timeout = msg.a;
 				var realMessage = msg.b;
 				return A3($author$project$Save$handleTesterMessage, model, timeout, realMessage);
+			default:
+				return $author$project$Save$handleErrorModalClose(model);
 		}
 	});
 var $elm$html$Html$Attributes$stringProperty = F2(
@@ -7121,8 +7200,184 @@ var $author$project$Save$createMarkdownPreview = function (note) {
 	}
 };
 var $elm$html$Html$section = _VirtualDom_node('section');
-var $elm$html$Html$h1 = _VirtualDom_node('h1');
+var $author$project$Save$ErrorModalClosed = {$: 'ErrorModalClosed'};
+var $author$project$ElmCommon$emptyDiv = A2($elm$html$Html$div, _List_Nil, _List_Nil);
+var $mgold$elm_nonempty_list$List$Nonempty$map = F2(
+	function (f, _v0) {
+		var x = _v0.a;
+		var xs = _v0.b;
+		return A2(
+			$mgold$elm_nonempty_list$List$Nonempty$Nonempty,
+			f(x),
+			A2($elm$core$List$map, f, xs));
+	});
+var $elm$html$Html$article = _VirtualDom_node('article');
+var $elm$virtual_dom$VirtualDom$attribute = F2(
+	function (key, value) {
+		return A2(
+			_VirtualDom_attribute,
+			_VirtualDom_noOnOrFormAction(key),
+			_VirtualDom_noJavaScriptOrHtmlUri(value));
+	});
+var $elm$html$Html$Attributes$attribute = $elm$virtual_dom$VirtualDom$attribute;
+var $elm$html$Html$button = _VirtualDom_node('button');
+var $elm$core$List$filter = F2(
+	function (isGood, list) {
+		return A3(
+			$elm$core$List$foldr,
+			F2(
+				function (x, xs) {
+					return isGood(x) ? A2($elm$core$List$cons, x, xs) : xs;
+				}),
+			_List_Nil,
+			list);
+	});
+var $elm$core$Tuple$second = function (_v0) {
+	var y = _v0.b;
+	return y;
+};
+var $elm$html$Html$Attributes$classList = function (classes) {
+	return $elm$html$Html$Attributes$class(
+		A2(
+			$elm$core$String$join,
+			' ',
+			A2(
+				$elm$core$List$map,
+				$elm$core$Tuple$first,
+				A2($elm$core$List$filter, $elm$core$Tuple$second, classes))));
+};
 var $elm$html$Html$p = _VirtualDom_node('p');
+var $author$project$ElmCommon$createErrorBlock = function (_v0) {
+	var errorMessage = _v0.errorMessage;
+	return A2(
+		$elm$html$Html$p,
+		_List_Nil,
+		_List_fromArray(
+			[
+				$elm$html$Html$text(errorMessage)
+			]));
+};
+var $elm$virtual_dom$VirtualDom$Normal = function (a) {
+	return {$: 'Normal', a: a};
+};
+var $elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
+var $elm$html$Html$Events$on = F2(
+	function (event, decoder) {
+		return A2(
+			$elm$virtual_dom$VirtualDom$on,
+			event,
+			$elm$virtual_dom$VirtualDom$Normal(decoder));
+	});
+var $elm$html$Html$Events$onClick = function (msg) {
+	return A2(
+		$elm$html$Html$Events$on,
+		'click',
+		$elm$json$Json$Decode$succeed(msg));
+};
+var $mgold$elm_nonempty_list$List$Nonempty$toList = function (_v0) {
+	var x = _v0.a;
+	var xs = _v0.b;
+	return A2($elm$core$List$cons, x, xs);
+};
+var $author$project$ElmCommon$openErrorModal = F2(
+	function (errorMessages, event) {
+		return A2(
+			$elm$html$Html$div,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$classList(
+					_List_fromArray(
+						[
+							_Utils_Tuple2('modal', true),
+							_Utils_Tuple2('is-active', true)
+						])),
+					$elm$html$Html$Attributes$id('error-modal')
+				]),
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$div,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('modal-background')
+						]),
+					_List_Nil),
+					A2(
+					$elm$html$Html$div,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('modal-content')
+						]),
+					_List_fromArray(
+						[
+							A2(
+							$elm$html$Html$div,
+							_List_fromArray(
+								[
+									$elm$html$Html$Attributes$class('box')
+								]),
+							_List_fromArray(
+								[
+									A2(
+									$elm$html$Html$article,
+									_List_fromArray(
+										[
+											$elm$html$Html$Attributes$class('media')
+										]),
+									_List_fromArray(
+										[
+											A2(
+											$elm$html$Html$div,
+											_List_fromArray(
+												[
+													$elm$html$Html$Attributes$class('media-content')
+												]),
+											_List_fromArray(
+												[
+													A2(
+													$elm$html$Html$div,
+													_List_fromArray(
+														[
+															$elm$html$Html$Attributes$class('content')
+														]),
+													$mgold$elm_nonempty_list$List$Nonempty$toList(
+														A2($mgold$elm_nonempty_list$List$Nonempty$map, $author$project$ElmCommon$createErrorBlock, errorMessages)))
+												]))
+										]))
+								]))
+						])),
+					A2(
+					$elm$html$Html$button,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$id('error-modal-close'),
+							A2($elm$html$Html$Attributes$attribute, 'aria-label', 'close'),
+							$elm$html$Html$Attributes$class('modal-close is-large'),
+							$elm$html$Html$Events$onClick(event)
+						]),
+					_List_Nil)
+				]));
+	});
+var $author$project$Notifications$viewModalErrors = F2(
+	function (errorMessages, msg) {
+		return A2(
+			$author$project$ElmCommon$openErrorModal,
+			A2(
+				$mgold$elm_nonempty_list$List$Nonempty$map,
+				function (_v0) {
+					var error = _v0.a;
+					return error;
+				},
+				errorMessages),
+			msg);
+	});
+var $author$project$Save$viewErrors = A2(
+	$author$project$FP$maybe,
+	$author$project$ElmCommon$emptyDiv,
+	function (errors) {
+		return A2($author$project$Notifications$viewModalErrors, errors, $author$project$Save$ErrorModalClosed);
+	});
+var $elm$html$Html$h1 = _VirtualDom_node('h1');
 var $author$project$Save$viewHeadings = _List_fromArray(
 	[
 		A2(
@@ -7148,7 +7403,6 @@ var $author$project$Save$viewHeadings = _List_fromArray(
 	]);
 var $author$project$ElmCommon$plainDiv = $elm$html$Html$div(_List_Nil);
 var $author$project$Save$ViewNoteMsg = {$: 'ViewNoteMsg'};
-var $elm$html$Html$button = _VirtualDom_node('button');
 var $author$project$ElmCommon$addClasses = function (classes) {
 	return A2($elm$core$List$map, $elm$html$Html$Attributes$class, classes);
 };
@@ -7176,49 +7430,7 @@ var $author$project$Save$modifiedTag = function (contentStatus) {
 				]));
 	}
 };
-var $elm$virtual_dom$VirtualDom$Normal = function (a) {
-	return {$: 'Normal', a: a};
-};
-var $elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
-var $elm$html$Html$Events$on = F2(
-	function (event, decoder) {
-		return A2(
-			$elm$virtual_dom$VirtualDom$on,
-			event,
-			$elm$virtual_dom$VirtualDom$Normal(decoder));
-	});
-var $elm$html$Html$Events$onClick = function (msg) {
-	return A2(
-		$elm$html$Html$Events$on,
-		'click',
-		$elm$json$Json$Decode$succeed(msg));
-};
 var $author$project$Save$NewNoteMsg = {$: 'NewNoteMsg'};
-var $elm$core$List$filter = F2(
-	function (isGood, list) {
-		return A3(
-			$elm$core$List$foldr,
-			F2(
-				function (x, xs) {
-					return isGood(x) ? A2($elm$core$List$cons, x, xs) : xs;
-				}),
-			_List_Nil,
-			list);
-	});
-var $elm$core$Tuple$second = function (_v0) {
-	var y = _v0.b;
-	return y;
-};
-var $elm$html$Html$Attributes$classList = function (classes) {
-	return $elm$html$Html$Attributes$class(
-		A2(
-			$elm$core$String$join,
-			' ',
-			A2(
-				$elm$core$List$map,
-				$elm$core$Tuple$first,
-				A2($elm$core$List$filter, $elm$core$Tuple$second, classes))));
-};
 var $elm$core$Basics$not = _Basics_not;
 var $author$project$Save$viewNewNoteButton = function (doing) {
 	var enableButton = function () {
@@ -7343,7 +7555,6 @@ var $author$project$ElmCommon$addInlineInfoFlash = function (_v0) {
 				$elm$html$Html$text(infoMessage)
 			]));
 };
-var $author$project$ElmCommon$emptyDiv = A2($elm$html$Html$div, _List_Nil, _List_Nil);
 var $author$project$Save$viewInlineInfoIfAny = A2($author$project$FP$maybe, $author$project$ElmCommon$emptyDiv, $author$project$ElmCommon$addInlineInfoFlash);
 var $author$project$ElmCommon$addInlineSuccessFlash = function (_v0) {
 	var successMessage = _v0.successMessage;
@@ -7479,6 +7690,7 @@ var $author$project$Save$view = function (model) {
 					$author$project$Save$viewHeadings,
 					_List_fromArray(
 						[
+							$author$project$Save$viewErrors(model.errorMessages),
 							$author$project$Save$viewNoteEditingArea(model),
 							$author$project$Save$createMarkdownPreview(model.note)
 						])))

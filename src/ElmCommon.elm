@@ -22,6 +22,8 @@ type alias Seconds = { seconds : Int }
 
 type alias Encoder a = a -> Value
 
+type alias ModelCommand model msg = model -> (model, Cmd msg)
+
 debug : String -> ()
 debug message = Debug.log message ()
 
