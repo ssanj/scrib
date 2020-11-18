@@ -70,6 +70,7 @@ type Msg = NoteSavedMsg
          | NewNoteMsg
          | ViewNoteMsg
          | NoteSaveResponseMsg RemoteNoteData
+         | NoteSaveResponseMsg2 (Result (HttpError String) (HttpSuccess SC.NoteIdVersion))
          | NoteSavedToLocalStorage
          | RemoteNoteIdVersionSavedToLocalStorage
          | JSNotificationError String
@@ -120,6 +121,7 @@ update msg model =
     InlineInfoTimedOut                     -> handleInfoMessageTimeout model
     TesterMsg timeout realMessage          -> handleTesterMessage model timeout realMessage
     ErrorModalClosed                       -> handleErrorModalClose model
+    (NoteSaveResponseMsg2 noteResponse)    -> onlyModel model
 
 
 handleErrorModalClose : SaveModelCommand
@@ -219,35 +221,37 @@ performRemoteSaveNote note apiKey =
   , headers  = [ apiKeyHeader apiKey ]
   , url      = "/xnote"
   , body     = Http.jsonBody <| encodeSaveNote note
-  , expect   = Http.expectJson processSaveNoteResults SC.decoderNoteIdVersion
+  , expect   = Http.expectStringResponse processSaveNoteResults (responseToHttpResponse D.string SC.decoderNoteIdVersion ) -- Http.expectJson processSaveNoteResults SC.decoderNoteIdVersion
   , timeout  = Nothing
   , tracker  = Nothing
   }
 
-type alias HttpMetaData e =
+
+type alias HttpMetaData v =
   {
     url : String
   , statusCode : Int
   , statusText : String
-  , statusJson : Result D.Error e
+  , statusJson : Result D.Error v
   , headers : Dict String String
   }
 
-type HttpResponse a e = HttpBadUrl String
-                      | HttpTimeout
-                      | HttpNetworkError
-                      | HttpBadStatus (HttpMetaData e)
-                      | HttpGoodStatus (HttpMetaData a)
+type HttpError e = HttpBadUrl String
+                 | HttpTimeout
+                 | HttpNetworkError
+                 | HttpBadStatus (HttpMetaData e)
+
+type HttpSuccess a = HttpSuccess (HttpMetaData a)
 
 
-responseToHttpResponse : Http.Response String -> D.Decoder a -> D.Decoder e -> HttpResponse a e
-responseToHttpResponse response successDecoder errorDecoder =
+responseToHttpResponse : D.Decoder e -> D.Decoder a ->  Http.Response String -> Result (HttpError e) (HttpSuccess a)
+responseToHttpResponse errorDecoder successDecoder response  =
   case response of
-    Http.BadUrl_ url               -> HttpBadUrl url
-    Http.Timeout_                  -> HttpTimeout
-    Http.NetworkError_             -> HttpNetworkError
-    Http.BadStatus_ metadata body  -> HttpBadStatus  (toHttpMetaData metadata errorDecoder body)
-    Http.GoodStatus_ metadata body -> HttpGoodStatus (toHttpMetaData metadata successDecoder body)
+    Http.BadUrl_ url               -> Err <| HttpBadUrl url
+    Http.Timeout_                  -> Err HttpTimeout
+    Http.NetworkError_             -> Err HttpNetworkError
+    Http.BadStatus_ metadata body  -> Err <| HttpBadStatus (toHttpMetaData metadata errorDecoder body)
+    Http.GoodStatus_ metadata body -> Ok <| HttpSuccess (toHttpMetaData metadata successDecoder body)
 
 
 toHttpMetaData : Http.Metadata -> D.Decoder a -> String -> HttpMetaData a
@@ -341,13 +345,19 @@ inlineInfoSuccessTimeout = Seconds 1
 --    ((NoteWithId fullNote), Success noteIdVersion)  -> NoteWithId <| SC.updateNoteVersion noteIdVersion fullNote -- if we already have an id, then there's nothing to update
 --    ((NoteWithId fullNote), _)                      -> existingNote -- if we didn't succeed then don't update the existing note
 
-processSaveNoteResults: Result Http.Error SC.NoteIdVersion -> Msg
-processSaveNoteResults = processHttpResult (TesterMsg (Seconds 2) << NoteSaveResponseMsg)
+--processSaveNoteResults: Result Http.Error SC.NoteIdVersion -> Msg
+--processSaveNoteResults = processHttpResult (TesterMsg (Seconds 2) << NoteSaveResponseMsg)
 
-processHttpResult: (RemoteNoteData -> Msg) -> Result Http.Error SC.NoteIdVersion -> Msg
-processHttpResult toMsg httpResult   =
-  let result  = RemoteData.fromResult httpResult
-  in toMsg result
+processSaveNoteResults : Result (HttpError String) (HttpSuccess SC.NoteIdVersion) -> Msg
+processSaveNoteResults = TesterMsg (Seconds 2) << NoteSaveResponseMsg2
+
+
+
+
+--processHttpResult: (RemoteNoteData -> Msg) -> Result Http.Error SC.NoteIdVersion -> Msg
+--processHttpResult toMsg httpResult   =
+--  let result  = RemoteData.fromResult httpResult
+--  in toMsg result
 
 
 

@@ -7029,7 +7029,7 @@ var $author$project$Save$performRemoteSaveNote = F2(
 				method: 'POST',
 				timeout: $elm$core$Maybe$Nothing,
 				tracker: $elm$core$Maybe$Nothing,
-				url: '/xnote'
+				url: '/note'
 			});
 	});
 var $author$project$Save$handleRemoteSave = function (model) {
