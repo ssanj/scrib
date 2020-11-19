@@ -69,7 +69,7 @@ type Msg = NoteSavedMsg
          | NoteEditedMsg String
          | NewNoteMsg
          | ViewNoteMsg
-         | NoteSaveResponseMsg2 RemoteSaveStatus
+         | NoteSaveResponseMsg RemoteSaveStatus
          | NoteSavedToLocalStorage
          | RemoteNoteIdVersionSavedToLocalStorage
          | JSNotificationError String
@@ -119,7 +119,7 @@ update msg model =
     InlineInfoTimedOut                     -> handleInfoMessageTimeout model
     TesterMsg timeout realMessage          -> handleTesterMessage model timeout realMessage
     ErrorModalClosed                       -> handleErrorModalClose model
-    (NoteSaveResponseMsg2 noteResponse)    -> handleNoteSaveResponse2 model noteResponse
+    (NoteSaveResponseMsg noteResponse)    -> handleNoteSaveResponse model noteResponse
 
 
 handleErrorModalClose : SaveModelCommand
@@ -347,7 +347,7 @@ inlineInfoSuccessTimeout = Seconds 1
 --processSaveNoteResults = processHttpResult (TesterMsg (Seconds 2) << NoteSaveResponseMsg)
 
 processSaveNoteResults : RemoteSaveStatus -> Msg
-processSaveNoteResults = TesterMsg (Seconds 2) << NoteSaveResponseMsg2
+processSaveNoteResults = TesterMsg (Seconds 2) << NoteSaveResponseMsg
 
 
 
@@ -424,8 +424,8 @@ handleNewNote model =
 handleGoingToView : Model -> (Model, Cmd Msg)
 handleGoingToView model = (model, Browser.Navigation.load "view.html")
 
-handleNoteSaveResponse2 : Model -> RemoteSaveStatus -> (Model, Cmd Msg)
-handleNoteSaveResponse2 model result =
+handleNoteSaveResponse : Model -> RemoteSaveStatus -> (Model, Cmd Msg)
+handleNoteSaveResponse model result =
   case result of
     Err x            ->
       -- TODO: We should set AppErrors here
@@ -455,12 +455,12 @@ handleNoteSaveResponse2 model result =
           case model.note of
             NoteWithoutId noteText ->
               let newNote = NoteWithId <| SC.updateNoteIdVersion noteIdVersion noteText
-              in saveLocally2 newNote result model
+              in saveLocally newNote result model
 
             NoteWithId fullNote    ->
               if SC.isSameNoteId fullNote noteIdVersion then
                 let newNote = NoteWithId <| SC.updateNoteVersion noteIdVersion fullNote
-                in saveLocally2 newNote result model
+                in saveLocally newNote result model
               else onlyModel model -- save completed for some other note, just keep doing what you were doing
 
 
@@ -471,8 +471,8 @@ addErrorMessage errorMessage maybeErrorMessages =
     Just errors -> Just <| N.cons (createModalError errorMessage) errors
 
 
-saveLocally2 : NoteWithContent -> RemoteSaveStatus -> Model -> (Model, Cmd Msg)
-saveLocally2 newNote remoteSaveStatus model =
+saveLocally : NoteWithContent -> RemoteSaveStatus -> Model -> (Model, Cmd Msg)
+saveLocally newNote remoteSaveStatus model =
   (
     {
       model |
