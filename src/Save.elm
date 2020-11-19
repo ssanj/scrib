@@ -48,11 +48,14 @@ type ContentStatus = NeedsToSave
 
 type alias SaveModelCommand = ModelCommand Model Msg
 
+type alias RemoteSaveStatus = Result (HttpError String) (HttpSuccess SC.NoteIdVersion)
+
 type alias Model =
   {
     note: NoteWithContent
   , dataSource: DataSource
   , remoteNoteData: RemoteNoteData
+  , remoteSaveStatus : Maybe RemoteSaveStatus
   , noteContentStatus: ContentStatus
   , apiKey: Maybe ApiKey
   , successMessage : Maybe SuccessMessage
@@ -70,7 +73,7 @@ type Msg = NoteSavedMsg
          | NewNoteMsg
          | ViewNoteMsg
          | NoteSaveResponseMsg RemoteNoteData
-         | NoteSaveResponseMsg2 (Result (HttpError String) (HttpSuccess SC.NoteIdVersion))
+         | NoteSaveResponseMsg2 RemoteSaveStatus
          | NoteSavedToLocalStorage
          | RemoteNoteIdVersionSavedToLocalStorage
          | JSNotificationError String
@@ -284,6 +287,7 @@ defaultModel =
     note              = defaultNote
   , dataSource        = InitNote
   , remoteNoteData    = NotAsked
+  , remoteSaveStatus  = Nothing
   , noteContentStatus = UpToDate
   , apiKey            = Nothing
   , successMessage    = Nothing
@@ -348,7 +352,7 @@ inlineInfoSuccessTimeout = Seconds 1
 --processSaveNoteResults: Result Http.Error SC.NoteIdVersion -> Msg
 --processSaveNoteResults = processHttpResult (TesterMsg (Seconds 2) << NoteSaveResponseMsg)
 
-processSaveNoteResults : Result (HttpError String) (HttpSuccess SC.NoteIdVersion) -> Msg
+processSaveNoteResults : RemoteSaveStatus -> Msg
 processSaveNoteResults = TesterMsg (Seconds 2) << NoteSaveResponseMsg2
 
 
