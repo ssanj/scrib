@@ -54,7 +54,6 @@ type alias Model =
   {
     note: NoteWithContent
   , dataSource: DataSource
-  , remoteNoteData: RemoteNoteData
   , remoteSaveStatus : Maybe RemoteSaveStatus
   , noteContentStatus: ContentStatus
   , apiKey: Maybe ApiKey
@@ -116,7 +115,7 @@ update msg model =
     (NoteEditedMsg newNoteText)            -> handleEditingNote model newNoteText
     NewNoteMsg                             -> handleNewNote model
     ViewNoteMsg                            -> handleGoingToView model
-    (NoteSaveResponseMsg noteResponse)     -> handleNoteSaveResponse model noteResponse
+    (NoteSaveResponseMsg noteResponse)     ->  onlyModel model --handleNoteSaveResponse model noteResponse
     NoteSavedToLocalStorage                -> handleRemoteSave model
     RemoteNoteIdVersionSavedToLocalStorage -> handleNoteIdVersionSavedToLocalStorage model
     (JSNotificationError error)            -> handleJSError model error
@@ -124,7 +123,7 @@ update msg model =
     InlineInfoTimedOut                     -> handleInfoMessageTimeout model
     TesterMsg timeout realMessage          -> handleTesterMessage model timeout realMessage
     ErrorModalClosed                       -> handleErrorModalClose model
-    (NoteSaveResponseMsg2 noteResponse)    -> onlyModel model
+    (NoteSaveResponseMsg2 noteResponse)    -> handleNoteSaveResponse2 model noteResponse
 
 
 handleErrorModalClose : SaveModelCommand
@@ -286,7 +285,6 @@ defaultModel =
   {
     note              = defaultNote
   , dataSource        = InitNote
-  , remoteNoteData    = NotAsked
   , remoteSaveStatus  = Nothing
   , noteContentStatus = UpToDate
   , apiKey            = Nothing
@@ -375,7 +373,8 @@ handleSavingNote model =
         {
           model |
             doing            = SavingNoteLocally
-          , remoteNoteData = NotAsked
+          --, remoteNoteData = NotAsked
+          , remoteSaveStatus = Nothing
           , infoMessage      = Just <| InformationMessage "Saving Locally"
         }
   in (newModel, saveNoteToLocalCmd)
@@ -385,7 +384,8 @@ handleRemoteSave model =
   let updatedModel =
         {
           model |
-            remoteNoteData = Loading
+            --remoteNoteData = Loading
+            remoteSaveStatus = Nothing
         ,   doing            = SavingNoteRemotely
         ,   infoMessage      = Just <| InformationMessage "Saving Remotely"
         }
@@ -421,7 +421,7 @@ handleNewNote model =
     defaultModel |
       dataSource       = UserCreated
     , apiKey           = model.apiKey
-    , remoteNoteData = NotAsked
+    --, remoteNoteData = NotAsked
     , doing            = Idle
   }
 
@@ -468,57 +468,12 @@ handleNoteSaveResponse2 model result =
               else onlyModel model -- save completed for some other note, just keep doing what you were doing
 
 
-handleNoteSaveResponse : Model -> RemoteNoteData -> (Model, Cmd Msg)
-handleNoteSaveResponse model remoteData =
-  case remoteData of
-    (Success noteIdVersion) ->
-      case model.note of
-        NoteWithoutId noteText ->
-          let newNote = NoteWithId <| SC.updateNoteIdVersion noteIdVersion noteText
-          in saveLocally newNote remoteData model
-
-        NoteWithId fullNote    ->
-          if SC.isSameNoteId fullNote noteIdVersion then
-            let newNote = NoteWithId <| SC.updateNoteVersion noteIdVersion fullNote
-            in saveLocally newNote remoteData model
-          else onlyModel model -- save completed for some other note, just keep doing what you were doing
-
-    (Failure x)             ->
-      -- TODO: We should set AppErrors here
-      onlyModel
-        {
-          model |
-            remoteNoteData  = remoteData
-          , doing             = Idle
-          , noteContentStatus = NeedsToSave
-          , errorMessages     =  addErrorMessage (fromHttpError x) model.errorMessages
-        }
-
-    -- these two don't make any sense at this point
-    NotAsked                -> onlyModel { model | remoteNoteData = remoteData, doing = Idle }
-    Loading                 -> onlyModel { model | remoteNoteData = remoteData, doing = SavingNoteRemotely }
-
-
 addErrorMessage : String -> Maybe (N.Nonempty ModalError) -> Maybe (N.Nonempty ModalError)
 addErrorMessage errorMessage maybeErrorMessages =
   case maybeErrorMessages of
     Nothing     -> Just <| N.fromElement <| createModalError errorMessage
     Just errors -> Just <| N.cons (createModalError errorMessage) errors
 
-
-saveLocally : NoteWithContent -> RemoteNoteData -> Model -> (Model, Cmd Msg)
-saveLocally newNote remoteData model =
-  (
-    {
-      model |
-        note              = newNote
-      , remoteNoteData  = remoteData
-      , doing             = SavingNoteLocally
-      , noteContentStatus = UpToDate
-      , successMessage    = Just <| SuccessMessage "Saved Note"
-    }
-  , saveRemoteUpdateToLocalStorage newNote
-  )
 
 saveLocally2 : NoteWithContent -> RemoteSaveStatus -> Model -> (Model, Cmd Msg)
 saveLocally2 newNote remoteSaveStatus model =
