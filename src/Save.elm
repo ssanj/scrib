@@ -52,7 +52,7 @@ type alias Model =
   {
     note: NoteWithContent
   , dataSource: DataSource
-  , remoteSaveStatus: RemoteNoteData
+  , remoteNoteData: RemoteNoteData
   , noteContentStatus: ContentStatus
   , apiKey: Maybe ApiKey
   , successMessage : Maybe SuccessMessage
@@ -283,7 +283,7 @@ defaultModel =
   {
     note              = defaultNote
   , dataSource        = InitNote
-  , remoteSaveStatus  = NotAsked
+  , remoteNoteData    = NotAsked
   , noteContentStatus = UpToDate
   , apiKey            = Nothing
   , successMessage    = Nothing
@@ -371,7 +371,7 @@ handleSavingNote model =
         {
           model |
             doing            = SavingNoteLocally
-          , remoteSaveStatus = NotAsked
+          , remoteNoteData = NotAsked
           , infoMessage      = Just <| InformationMessage "Saving Locally"
         }
   in (newModel, saveNoteToLocalCmd)
@@ -381,7 +381,7 @@ handleRemoteSave model =
   let updatedModel =
         {
           model |
-            remoteSaveStatus = Loading
+            remoteNoteData = Loading
         ,   doing            = SavingNoteRemotely
         ,   infoMessage      = Just <| InformationMessage "Saving Remotely"
         }
@@ -417,7 +417,7 @@ handleNewNote model =
     defaultModel |
       dataSource       = UserCreated
     , apiKey           = model.apiKey
-    , remoteSaveStatus = NotAsked
+    , remoteNoteData = NotAsked
     , doing            = Idle
   }
 
@@ -472,15 +472,15 @@ handleNoteSaveResponse model remoteData =
       onlyModel
         {
           model |
-            remoteSaveStatus  = remoteData
+            remoteNoteData  = remoteData
           , doing             = Idle
           , noteContentStatus = NeedsToSave
           , errorMessages     =  addErrorMessage (fromHttpError x) model.errorMessages
         }
 
     -- these two don't make any sense at this point
-    NotAsked                -> onlyModel { model | remoteSaveStatus = remoteData, doing = Idle }
-    Loading                 -> onlyModel { model | remoteSaveStatus = remoteData, doing = SavingNoteRemotely }
+    NotAsked                -> onlyModel { model | remoteNoteData = remoteData, doing = Idle }
+    Loading                 -> onlyModel { model | remoteNoteData = remoteData, doing = SavingNoteRemotely }
 
 
 addErrorMessage : String -> Maybe (N.Nonempty ModalError) -> Maybe (N.Nonempty ModalError)
@@ -496,7 +496,7 @@ saveLocally newNote remoteData model =
     {
       model |
         note              = newNote
-      , remoteSaveStatus  = remoteData
+      , remoteNoteData  = remoteData
       , doing             = SavingNoteLocally
       , noteContentStatus = UpToDate
       , successMessage    = Just <| SuccessMessage "Saved Note"
