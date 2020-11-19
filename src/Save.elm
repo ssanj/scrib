@@ -424,7 +424,34 @@ handleNewNote model =
 handleGoingToView : Model -> (Model, Cmd Msg)
 handleGoingToView model = (model, Browser.Navigation.load "view.html")
 
--- RemoteNoteData should only give us a Success or Failure
+handleNoteSaveResponse2 : Model -> Result (HttpError String) (HttpSuccess SC.NoteIdVersion) -> (Model, Cmd Msg)
+handleNoteSaveResponse2 model result =
+  case result of
+    Err x            ->
+      -- TODO: We should set AppErrors here
+      onlyModel model
+        --{
+        --  model |
+        --    remoteSaveStatus  = remoteData
+        --  , doing             = Idle
+        --  , noteContentStatus = NeedsToSave
+        --  , errorMessages     =  addErrorMessage (fromHttpError x) model.errorMessages
+        --}
+
+    Ok noteIdVersion ->
+      onlyModel model
+      --case model.note of
+      --  NoteWithoutId noteText ->
+      --    let newNote = NoteWithId <| SC.updateNoteIdVersion noteIdVersion noteText
+      --    in saveLocally newNote remoteData model
+
+      --  NoteWithId fullNote    ->
+      --    if SC.isSameNoteId fullNote noteIdVersion then
+      --      let newNote = NoteWithId <| SC.updateNoteVersion noteIdVersion fullNote
+      --      in saveLocally newNote remoteData model
+      --    else onlyModel model -- save completed for some other note, just keep doing what you were doing
+
+
 handleNoteSaveResponse : Model -> RemoteNoteData -> (Model, Cmd Msg)
 handleNoteSaveResponse model remoteData =
   case remoteData of
