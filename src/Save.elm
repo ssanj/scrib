@@ -428,7 +428,7 @@ handleNewNote model =
 handleGoingToView : Model -> (Model, Cmd Msg)
 handleGoingToView model = (model, Browser.Navigation.load "view.html")
 
-handleNoteSaveResponse2 : Model -> Result (HttpError String) (HttpSuccess SC.NoteIdVersion) -> (Model, Cmd Msg)
+handleNoteSaveResponse2 : Model -> RemoteSaveStatus -> (Model, Cmd Msg)
 handleNoteSaveResponse2 model result =
   case result of
     Err x            ->
@@ -442,18 +442,30 @@ handleNoteSaveResponse2 model result =
         --  , errorMessages     =  addErrorMessage (fromHttpError x) model.errorMessages
         --}
 
-    Ok noteIdVersion ->
-      onlyModel model
-      --case model.note of
-      --  NoteWithoutId noteText ->
-      --    let newNote = NoteWithId <| SC.updateNoteIdVersion noteIdVersion noteText
-      --    in saveLocally newNote remoteData model
+    (Ok (HttpSuccess meta)) ->
+      let responseData = meta.statusJson
+      in
+      case responseData of
+        Err x ->
+            let newModel =
+                  { model |
+                      remoteSaveStatus = Just result
+                   ,  errorMessages = addErrorMessage "I could not understand the response from the server :(" model.errorMessages
+                   }
+                event = logMessage <| "Could not decode json response from server: " ++ (D.errorToString x)
+            in (newModel, event)
 
-      --  NoteWithId fullNote    ->
-      --    if SC.isSameNoteId fullNote noteIdVersion then
-      --      let newNote = NoteWithId <| SC.updateNoteVersion noteIdVersion fullNote
-      --      in saveLocally newNote remoteData model
-      --    else onlyModel model -- save completed for some other note, just keep doing what you were doing
+        Ok noteIdVersion ->
+          case model.note of
+            NoteWithoutId noteText ->
+              let newNote = NoteWithId <| SC.updateNoteIdVersion noteIdVersion noteText
+              in saveLocally2 newNote result model
+
+            NoteWithId fullNote    ->
+              if SC.isSameNoteId fullNote noteIdVersion then
+                let newNote = NoteWithId <| SC.updateNoteVersion noteIdVersion fullNote
+                in saveLocally2 newNote result model
+              else onlyModel model -- save completed for some other note, just keep doing what you were doing
 
 
 handleNoteSaveResponse : Model -> RemoteNoteData -> (Model, Cmd Msg)
@@ -501,6 +513,20 @@ saveLocally newNote remoteData model =
       model |
         note              = newNote
       , remoteNoteData  = remoteData
+      , doing             = SavingNoteLocally
+      , noteContentStatus = UpToDate
+      , successMessage    = Just <| SuccessMessage "Saved Note"
+    }
+  , saveRemoteUpdateToLocalStorage newNote
+  )
+
+saveLocally2 : NoteWithContent -> RemoteSaveStatus -> Model -> (Model, Cmd Msg)
+saveLocally2 newNote remoteSaveStatus model =
+  (
+    {
+      model |
+        note              = newNote
+      , remoteSaveStatus  = Just remoteSaveStatus
       , doing             = SavingNoteLocally
       , noteContentStatus = UpToDate
       , successMessage    = Just <| SuccessMessage "Saved Note"
