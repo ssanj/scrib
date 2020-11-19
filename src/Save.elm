@@ -38,8 +38,6 @@ type WhatAreWeDoing = SavingNoteRemotely
                     | SavingNoteLocally
                     | Idle
 
-type alias RemoteNoteData = WebData SC.NoteIdVersion
-
 type NoteWithContent = NoteWithoutId SC.NoteLight
                      | NoteWithId SC.NoteFull
 
@@ -71,7 +69,6 @@ type Msg = NoteSavedMsg
          | NoteEditedMsg String
          | NewNoteMsg
          | ViewNoteMsg
-         | NoteSaveResponseMsg RemoteNoteData
          | NoteSaveResponseMsg2 RemoteSaveStatus
          | NoteSavedToLocalStorage
          | RemoteNoteIdVersionSavedToLocalStorage
@@ -115,7 +112,6 @@ update msg model =
     (NoteEditedMsg newNoteText)            -> handleEditingNote model newNoteText
     NewNoteMsg                             -> handleNewNote model
     ViewNoteMsg                            -> handleGoingToView model
-    (NoteSaveResponseMsg noteResponse)     ->  onlyModel model --handleNoteSaveResponse model noteResponse
     NoteSavedToLocalStorage                -> handleRemoteSave model
     RemoteNoteIdVersionSavedToLocalStorage -> handleNoteIdVersionSavedToLocalStorage model
     (JSNotificationError error)            -> handleJSError model error
