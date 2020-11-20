@@ -490,7 +490,10 @@ showMeta : HttpMetaData a -> (a -> String) -> String
 showMeta  { url, statusCode, statusText, statusJson, headers } showError =
   let urlString = "url: " ++ url
       statusCodeString = "stateCode: " ++ (String.fromInt statusCode)
-      statusTextString = ""
+      statusTextString = "statusText: " ++
+        case statusJson of
+          Err x    -> "Could not decode because: " ++ (D.errorToString x) ++ (", received: " ++ statusText)
+          Ok value -> showError value
       headerString = "headers:" ++ (headStrings headers)
   in List.foldl (\v a -> a ++ v) "" <| List.intersperse "\n" [urlString, statusCodeString, statusTextString, headerString]
 
