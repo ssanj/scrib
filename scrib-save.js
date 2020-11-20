@@ -5940,14 +5940,18 @@ var $mgold$elm_nonempty_list$List$Nonempty$Nonempty = F2(
 	function (a, b) {
 		return {$: 'Nonempty', a: a, b: b};
 	});
-var $mgold$elm_nonempty_list$List$Nonempty$cons = F2(
-	function (y, _v0) {
+var $mgold$elm_nonempty_list$List$Nonempty$append = F2(
+	function (_v0, _v1) {
 		var x = _v0.a;
 		var xs = _v0.b;
+		var y = _v1.a;
+		var ys = _v1.b;
 		return A2(
 			$mgold$elm_nonempty_list$List$Nonempty$Nonempty,
-			y,
-			A2($elm$core$List$cons, x, xs));
+			x,
+			_Utils_ap(
+				xs,
+				A2($elm$core$List$cons, y, ys)));
 	});
 var $author$project$ElmCommon$ErrorMessage = function (errorMessage) {
 	return {errorMessage: errorMessage};
@@ -5961,43 +5965,92 @@ var $elm$core$Basics$composeL = F3(
 			f(x));
 	});
 var $author$project$Notifications$createModalError = A2($elm$core$Basics$composeL, $author$project$Notifications$ModalError, $author$project$ElmCommon$ErrorMessage);
+var $mgold$elm_nonempty_list$List$Nonempty$map = F2(
+	function (f, _v0) {
+		var x = _v0.a;
+		var xs = _v0.b;
+		return A2(
+			$mgold$elm_nonempty_list$List$Nonempty$Nonempty,
+			f(x),
+			A2($elm$core$List$map, f, xs));
+	});
+var $author$project$Save$addErrorMessages = F2(
+	function (errorMessages, maybeErrorMessages) {
+		if (maybeErrorMessages.$ === 'Nothing') {
+			return $elm$core$Maybe$Just(
+				A2($mgold$elm_nonempty_list$List$Nonempty$map, $author$project$Notifications$createModalError, errorMessages));
+		} else {
+			var errors = maybeErrorMessages.a;
+			return $elm$core$Maybe$Just(
+				A2(
+					$mgold$elm_nonempty_list$List$Nonempty$append,
+					A2($mgold$elm_nonempty_list$List$Nonempty$map, $author$project$Notifications$createModalError, errorMessages),
+					errors));
+		}
+	});
 var $mgold$elm_nonempty_list$List$Nonempty$fromElement = function (x) {
 	return A2($mgold$elm_nonempty_list$List$Nonempty$Nonempty, x, _List_Nil);
 };
 var $author$project$Save$addErrorMessage = F2(
 	function (errorMessage, maybeErrorMessages) {
-		if (maybeErrorMessages.$ === 'Nothing') {
-			return $elm$core$Maybe$Just(
-				$mgold$elm_nonempty_list$List$Nonempty$fromElement(
-					$author$project$Notifications$createModalError(errorMessage)));
-		} else {
-			var errors = maybeErrorMessages.a;
-			return $elm$core$Maybe$Just(
-				A2(
-					$mgold$elm_nonempty_list$List$Nonempty$cons,
-					$author$project$Notifications$createModalError(errorMessage),
-					errors));
-		}
+		return A2(
+			$author$project$Save$addErrorMessages,
+			$mgold$elm_nonempty_list$List$Nonempty$fromElement(errorMessage),
+			maybeErrorMessages);
 	});
+var $mgold$elm_nonempty_list$List$Nonempty$cons = F2(
+	function (y, _v0) {
+		var x = _v0.a;
+		var xs = _v0.b;
+		return A2(
+			$mgold$elm_nonempty_list$List$Nonempty$Nonempty,
+			y,
+			A2($elm$core$List$cons, x, xs));
+	});
+var $author$project$Save$headStrings = function (_v0) {
+	return '-some headers -';
+};
 var $author$project$Save$showMeta = F2(
-	function (x, showError) {
-		return '';
+	function (_v0, showError) {
+		var url = _v0.url;
+		var statusCode = _v0.statusCode;
+		var statusText = _v0.statusText;
+		var statusJson = _v0.statusJson;
+		var headers = _v0.headers;
+		var urlString = 'url: ' + url;
+		var statusTextString = 'statusText: ' + statusText;
+		var statusCodeString = 'stateCode: ' + $elm$core$String$fromInt(statusCode);
+		var statusBodyString = 'body: ' + function () {
+			if (statusJson.$ === 'Err') {
+				var x = statusJson.a;
+				return 'Could not decode because: ' + $elm$json$Json$Decode$errorToString(x);
+			} else {
+				var value = statusJson.a;
+				return showError(value);
+			}
+		}();
+		var headerString = 'headers:' + $author$project$Save$headStrings(headers);
+		return A2(
+			$mgold$elm_nonempty_list$List$Nonempty$Nonempty,
+			urlString,
+			_List_fromArray(
+				[statusCodeString, statusTextString, statusBodyString, headerString]));
 	});
 var $author$project$Save$fromRemoteError = F2(
 	function (error, showError) {
 		switch (error.$) {
 			case 'HttpBadUrl':
 				var url = error.a;
-				return 'The url supplied was invalid: ' + url;
+				return $mgold$elm_nonempty_list$List$Nonempty$fromElement('The url supplied was invalid: ' + url);
 			case 'HttpTimeout':
-				return 'The remote operation timed out';
+				return $mgold$elm_nonempty_list$List$Nonempty$fromElement('The remote operation timed out');
 			case 'HttpNetworkError':
-				return 'There was a network error during your remote request';
+				return $mgold$elm_nonempty_list$List$Nonempty$fromElement('There was a network error during your remote request');
 			default:
 				var meta = error.a;
-				var metaString = A2($author$project$Save$showMeta, meta, showError);
+				var metaStrings = A2($author$project$Save$showMeta, meta, showError);
 				var heading = 'The following error occurred';
-				return heading + ('\n' + metaString);
+				return A2($mgold$elm_nonempty_list$List$Nonempty$cons, heading, metaStrings);
 		}
 	});
 var $author$project$Note$getNoteFullId = function (_v0) {
@@ -6129,7 +6182,7 @@ var $author$project$Save$handleNoteSaveResponse = F2(
 					{
 						doing: $author$project$Save$Idle,
 						errorMessages: A2(
-							$author$project$Save$addErrorMessage,
+							$author$project$Save$addErrorMessages,
 							A2($author$project$Save$fromRemoteError, x, $elm$core$Basics$identity),
 							model.errorMessages),
 						noteContentStatus: $author$project$Save$NeedsToSave,
@@ -7178,15 +7231,6 @@ var $author$project$Save$createMarkdownPreview = function (note) {
 var $elm$html$Html$section = _VirtualDom_node('section');
 var $author$project$Save$ErrorModalClosed = {$: 'ErrorModalClosed'};
 var $author$project$ElmCommon$emptyDiv = A2($elm$html$Html$div, _List_Nil, _List_Nil);
-var $mgold$elm_nonempty_list$List$Nonempty$map = F2(
-	function (f, _v0) {
-		var x = _v0.a;
-		var xs = _v0.b;
-		return A2(
-			$mgold$elm_nonempty_list$List$Nonempty$Nonempty,
-			f(x),
-			A2($elm$core$List$map, f, xs));
-	});
 var $elm$html$Html$article = _VirtualDom_node('article');
 var $elm$virtual_dom$VirtualDom$attribute = F2(
 	function (key, value) {

@@ -435,7 +435,7 @@ handleNoteSaveResponse model result =
               remoteSaveStatus  = Nothing
             , doing             = Idle
             , noteContentStatus = NeedsToSave
-            , errorMessages     =  addErrorMessage (fromRemoteError x identity) model.errorMessages
+            , errorMessages     =  addErrorMessages (fromRemoteError x identity) model.errorMessages
           }
 
     (Ok (HttpSuccess meta)) ->
@@ -464,16 +464,16 @@ handleNoteSaveResponse model result =
               else onlyModel model -- save completed for some other note, just keep doing what you were doing
 
 
-fromRemoteError : HttpError e -> (e -> String) -> String
+fromRemoteError : HttpError e -> (e -> String) -> N.Nonempty String
 fromRemoteError error showError =
   case error of
-    HttpBadUrl url                 -> "The url supplied was invalid: " ++ url
-    HttpTimeout                    -> "The remote operation timed out"
-    HttpNetworkError               -> "There was a network error during your remote request"
+    HttpBadUrl url                 -> N.fromElement <| "The url supplied was invalid: " ++ url
+    HttpTimeout                    -> N.fromElement <| "The remote operation timed out"
+    HttpNetworkError               -> N.fromElement <| "There was a network error during your remote request"
     HttpBadStatus meta ->
-      let heading = "The following error occurred"
-          metaString = showMeta meta showError
-      in heading ++ "\n" ++ metaString
+      let heading     = "The following error occurred"
+          metaStrings = showMeta meta showError
+      in N.cons heading metaStrings
 
 
 --type alias HttpMetaData v =
@@ -486,26 +486,30 @@ fromRemoteError error showError =
 --  }
 
 
-showMeta : HttpMetaData a -> (a -> String) -> String
+showMeta : HttpMetaData a -> (a -> String) -> N.Nonempty String
 showMeta  { url, statusCode, statusText, statusJson, headers } showError =
   let urlString = "url: " ++ url
       statusCodeString = "stateCode: " ++ (String.fromInt statusCode)
-      statusTextString = "statusText: " ++
+      statusTextString = "statusText: " ++ statusText
+      statusBodyString = "body: " ++
         case statusJson of
-          Err x    -> "Could not decode because: " ++ (D.errorToString x) ++ (", received: " ++ statusText)
+          Err x    -> "Could not decode because: " ++ (D.errorToString x)
           Ok value -> showError value
       headerString = "headers:" ++ (headStrings headers)
-  in List.foldl (\v a -> a ++ v) "" <| List.intersperse "\n" [urlString, statusCodeString, statusTextString, headerString]
+  in N.Nonempty urlString [statusCodeString, statusTextString, statusBodyString, headerString]
 
 
 headStrings : Dict String String -> String
-headStrings _ = ""
+headStrings _ = "-some headers -"
 
 addErrorMessage : String -> Maybe (N.Nonempty ModalError) -> Maybe (N.Nonempty ModalError)
-addErrorMessage errorMessage maybeErrorMessages =
+addErrorMessage errorMessage maybeErrorMessages = addErrorMessages (N.fromElement errorMessage) maybeErrorMessages
+
+addErrorMessages : N.Nonempty String -> Maybe (N.Nonempty ModalError) -> Maybe (N.Nonempty ModalError)
+addErrorMessages errorMessages maybeErrorMessages =
   case maybeErrorMessages of
-    Nothing     -> Just <| N.fromElement <| createModalError errorMessage
-    Just errors -> Just <| N.cons (createModalError errorMessage) errors
+    Nothing     -> Just <| N.map createModalError errorMessages
+    Just errors -> Just <| N.append (N.map createModalError errorMessages) errors
 
 
 saveLocally : NoteWithContent -> RemoteSaveStatus -> Model -> (Model, Cmd Msg)
