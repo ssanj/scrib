@@ -15,8 +15,8 @@ import Browser
 import Http
 import Browser.Navigation
 import Markdown
-import Dict exposing (Dict)
 
+import Dict          as DICT
 import List.Nonempty as N
 import Json.Decode   as D
 import Json.Encode   as E
@@ -55,7 +55,7 @@ type alias HttpMetaData v =
   , statusCode : Int
   , statusText : String
   , statusJson : Result D.Error v
-  , headers : Dict String String
+  , headers : DICT.Dict String String
   }
 
 type HttpError e = HttpBadUrl String
@@ -495,12 +495,19 @@ showMeta  { url, statusCode, statusText, statusJson, headers } showError =
         case statusJson of
           Err x    -> "Could not decode because: " ++ (D.errorToString x)
           Ok value -> showError value
-      headerString = "headers:" ++ (headStrings headers)
+      headerString = "headers: " ++ (headStrings headers)
   in N.Nonempty urlString [statusCodeString, statusTextString, statusBodyString, headerString]
 
 
-headStrings : Dict String String -> String
-headStrings _ = "-some headers -"
+headStrings : DICT.Dict String String -> String
+headStrings dict =
+  if DICT.isEmpty dict then "-"
+  else
+    let keyValuePairs         = DICT.toList dict
+        keyValuePairsStrings  = List.map (\(k, v) -> k ++ "=" ++ v) keyValuePairs
+        commaSeparatedPairs   = List.intersperse ", " keyValuePairsStrings
+        combinedHeaderStrings = List.foldl (\v a -> a ++ v) "" commaSeparatedPairs
+    in combinedHeaderStrings
 
 addErrorMessage : String -> Maybe (N.Nonempty ModalError) -> Maybe (N.Nonempty ModalError)
 addErrorMessage errorMessage maybeErrorMessages = addErrorMessages (N.fromElement errorMessage) maybeErrorMessages

@@ -6007,8 +6007,55 @@ var $mgold$elm_nonempty_list$List$Nonempty$cons = F2(
 			y,
 			A2($elm$core$List$cons, x, xs));
 	});
-var $author$project$Save$headStrings = function (_v0) {
-	return '-some headers -';
+var $elm$core$List$intersperse = F2(
+	function (sep, xs) {
+		if (!xs.b) {
+			return _List_Nil;
+		} else {
+			var hd = xs.a;
+			var tl = xs.b;
+			var step = F2(
+				function (x, rest) {
+					return A2(
+						$elm$core$List$cons,
+						sep,
+						A2($elm$core$List$cons, x, rest));
+				});
+			var spersed = A3($elm$core$List$foldr, step, _List_Nil, tl);
+			return A2($elm$core$List$cons, hd, spersed);
+		}
+	});
+var $elm$core$Dict$isEmpty = function (dict) {
+	if (dict.$ === 'RBEmpty_elm_builtin') {
+		return true;
+	} else {
+		return false;
+	}
+};
+var $author$project$Save$headStrings = function (dict) {
+	if ($elm$core$Dict$isEmpty(dict)) {
+		return '-';
+	} else {
+		var keyValuePairs = $elm$core$Dict$toList(dict);
+		var keyValuePairsStrings = A2(
+			$elm$core$List$map,
+			function (_v0) {
+				var k = _v0.a;
+				var v = _v0.b;
+				return k + ('=' + v);
+			},
+			keyValuePairs);
+		var commaSeparatedPairs = A2($elm$core$List$intersperse, ', ', keyValuePairsStrings);
+		var combinedHeaderStrings = A3(
+			$elm$core$List$foldl,
+			F2(
+				function (v, a) {
+					return _Utils_ap(a, v);
+				}),
+			'',
+			commaSeparatedPairs);
+		return combinedHeaderStrings;
+	}
 };
 var $author$project$Save$showMeta = F2(
 	function (_v0, showError) {
@@ -6029,7 +6076,7 @@ var $author$project$Save$showMeta = F2(
 				return showError(value);
 			}
 		}();
-		var headerString = 'headers:' + $author$project$Save$headStrings(headers);
+		var headerString = 'headers: ' + $author$project$Save$headStrings(headers);
 		return A2(
 			$mgold$elm_nonempty_list$List$Nonempty$Nonempty,
 			urlString,
