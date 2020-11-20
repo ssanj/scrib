@@ -5514,12 +5514,11 @@ var $author$project$ElmCommon$foldResult = F3(
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $author$project$Save$Idle = {$: 'Idle'};
 var $author$project$Save$InitNote = {$: 'InitNote'};
-var $krisajenkins$remotedata$RemoteData$NotAsked = {$: 'NotAsked'};
 var $author$project$Save$UpToDate = {$: 'UpToDate'};
 var $author$project$Note$mkLightNote = $author$project$Note$NoteLight;
 var $author$project$Save$defaultNote = $author$project$Save$NoteWithoutId(
 	$author$project$Note$mkLightNote(''));
-var $author$project$Save$defaultModel = {apiKey: $elm$core$Maybe$Nothing, dataSource: $author$project$Save$InitNote, doing: $author$project$Save$Idle, errorMessages: $elm$core$Maybe$Nothing, infoMessage: $elm$core$Maybe$Nothing, note: $author$project$Save$defaultNote, noteContentStatus: $author$project$Save$UpToDate, remoteSaveStatus: $krisajenkins$remotedata$RemoteData$NotAsked, successMessage: $elm$core$Maybe$Nothing};
+var $author$project$Save$defaultModel = {apiKey: $elm$core$Maybe$Nothing, dataSource: $author$project$Save$InitNote, doing: $author$project$Save$Idle, errorMessages: $elm$core$Maybe$Nothing, infoMessage: $elm$core$Maybe$Nothing, note: $author$project$Save$defaultNote, noteContentStatus: $author$project$Save$UpToDate, remoteSaveStatus: $elm$core$Maybe$Nothing, successMessage: $elm$core$Maybe$Nothing};
 var $elm$browser$Browser$Navigation$load = _Browser_load;
 var $author$project$Ports$LogConsole = function (a) {
 	return {$: 'LogConsole', a: a};
@@ -5903,7 +5902,7 @@ var $author$project$Save$handleNewNote = function (model) {
 	return $author$project$ElmCommon$onlyModel(
 		_Utils_update(
 			$author$project$Save$defaultModel,
-			{apiKey: model.apiKey, dataSource: $author$project$Save$UserCreated, doing: $author$project$Save$Idle, remoteSaveStatus: $krisajenkins$remotedata$RemoteData$NotAsked}));
+			{apiKey: model.apiKey, dataSource: $author$project$Save$UserCreated, doing: $author$project$Save$Idle}));
 };
 var $author$project$ElmCommon$InformationMessage = function (infoMessage) {
 	return {infoMessage: infoMessage};
@@ -5937,7 +5936,6 @@ var $author$project$Save$handleNoteIdVersionSavedToLocalStorage = function (mode
 		newModel,
 		A2($author$project$Notifications$addTimeoutForInlineMessage, $author$project$Save$inlineInfoSuccessTimeout, $author$project$Save$InlineInfoTimedOut));
 };
-var $author$project$Save$SavingNoteRemotely = {$: 'SavingNoteRemotely'};
 var $mgold$elm_nonempty_list$List$Nonempty$Nonempty = F2(
 	function (a, b) {
 		return {$: 'Nonempty', a: a, b: b};
@@ -5981,23 +5979,27 @@ var $author$project$Save$addErrorMessage = F2(
 					errors));
 		}
 	});
-var $author$project$ElmCommon$fromHttpError = function (error) {
-	switch (error.$) {
-		case 'BadUrl':
-			var burl = error.a;
-			return 'bad url: ' + burl;
-		case 'Timeout':
-			return 'timeout';
-		case 'NetworkError':
-			return 'network error';
-		case 'BadStatus':
-			var status = error.a;
-			return 'bad status: ' + $elm$core$String$fromInt(status);
-		default:
-			var body = error.a;
-			return 'bad body: ' + body;
-	}
-};
+var $author$project$Save$showMeta = F2(
+	function (x, showError) {
+		return '';
+	});
+var $author$project$Save$fromRemoteError = F2(
+	function (error, showError) {
+		switch (error.$) {
+			case 'HttpBadUrl':
+				var url = error.a;
+				return 'The url supplied was invalid: ' + url;
+			case 'HttpTimeout':
+				return 'The remote operation timed out';
+			case 'HttpNetworkError':
+				return 'There was a network error during your remote request';
+			default:
+				var meta = error.a;
+				var metaString = A2($author$project$Save$showMeta, meta, showError);
+				var heading = 'The following error occurred';
+				return heading + ('\n' + metaString);
+		}
+	});
 var $author$project$Note$getNoteFullId = function (_v0) {
 	var noteId = _v0.b.noteId;
 	return noteId;
@@ -6088,7 +6090,7 @@ var $author$project$Save$saveRemoteUpdateToLocalStorage = function (note) {
 	return A2($author$project$Save$saveEditingNoteToLocalStorage, $author$project$Save$remoteNoteIdVersionSavedToLocalStorageResponseKey, note);
 };
 var $author$project$Save$saveLocally = F3(
-	function (newNote, remoteData, model) {
+	function (newNote, remoteSaveStatus, model) {
 		return _Utils_Tuple2(
 			_Utils_update(
 				model,
@@ -6096,7 +6098,7 @@ var $author$project$Save$saveLocally = F3(
 					doing: $author$project$Save$SavingNoteLocally,
 					note: newNote,
 					noteContentStatus: $author$project$Save$UpToDate,
-					remoteSaveStatus: remoteData,
+					remoteSaveStatus: $elm$core$Maybe$Just(remoteSaveStatus),
 					successMessage: $elm$core$Maybe$Just(
 						$author$project$ElmCommon$SuccessMessage('Saved Note'))
 				}),
@@ -6118,53 +6120,57 @@ var $author$project$Note$updateNoteVersion = F2(
 			{noteId: noteId, noteVersion: noteVersion});
 	});
 var $author$project$Save$handleNoteSaveResponse = F2(
-	function (model, remoteData) {
-		switch (remoteData.$) {
-			case 'Success':
-				var noteIdVersion = remoteData.a;
-				var _v1 = model.note;
-				if (_v1.$ === 'NoteWithoutId') {
-					var noteText = _v1.a;
+	function (model, result) {
+		if (result.$ === 'Err') {
+			var x = result.a;
+			return $author$project$ElmCommon$onlyModel(
+				_Utils_update(
+					model,
+					{
+						doing: $author$project$Save$Idle,
+						errorMessages: A2(
+							$author$project$Save$addErrorMessage,
+							A2($author$project$Save$fromRemoteError, x, $elm$core$Basics$identity),
+							model.errorMessages),
+						noteContentStatus: $author$project$Save$NeedsToSave,
+						remoteSaveStatus: $elm$core$Maybe$Nothing
+					}));
+		} else {
+			var meta = result.a.a;
+			var responseData = meta.statusJson;
+			if (responseData.$ === 'Err') {
+				var x = responseData.a;
+				var newModel = _Utils_update(
+					model,
+					{
+						errorMessages: A2($author$project$Save$addErrorMessage, 'I could not understand the response from the server :(', model.errorMessages),
+						remoteSaveStatus: $elm$core$Maybe$Just(result)
+					});
+				var event = $author$project$Save$logMessage(
+					'Could not decode json response from server: ' + $elm$json$Json$Decode$errorToString(x));
+				return _Utils_Tuple2(newModel, event);
+			} else {
+				var noteIdVersion = responseData.a;
+				var _v2 = model.note;
+				if (_v2.$ === 'NoteWithoutId') {
+					var noteText = _v2.a;
 					var newNote = $author$project$Save$NoteWithId(
 						A2($author$project$Note$updateNoteIdVersion, noteIdVersion, noteText));
-					return A3($author$project$Save$saveLocally, newNote, remoteData, model);
+					return A3($author$project$Save$saveLocally, newNote, result, model);
 				} else {
-					var fullNote = _v1.a;
+					var fullNote = _v2.a;
 					if (A2($author$project$Note$isSameNoteId, fullNote, noteIdVersion)) {
 						var newNote = $author$project$Save$NoteWithId(
 							A2($author$project$Note$updateNoteVersion, noteIdVersion, fullNote));
-						return A3($author$project$Save$saveLocally, newNote, remoteData, model);
+						return A3($author$project$Save$saveLocally, newNote, result, model);
 					} else {
 						return $author$project$ElmCommon$onlyModel(model);
 					}
 				}
-			case 'Failure':
-				var x = remoteData.a;
-				return $author$project$ElmCommon$onlyModel(
-					_Utils_update(
-						model,
-						{
-							doing: $author$project$Save$Idle,
-							errorMessages: A2(
-								$author$project$Save$addErrorMessage,
-								$author$project$ElmCommon$fromHttpError(x),
-								model.errorMessages),
-							noteContentStatus: $author$project$Save$NeedsToSave,
-							remoteSaveStatus: remoteData
-						}));
-			case 'NotAsked':
-				return $author$project$ElmCommon$onlyModel(
-					_Utils_update(
-						model,
-						{doing: $author$project$Save$Idle, remoteSaveStatus: remoteData}));
-			default:
-				return $author$project$ElmCommon$onlyModel(
-					_Utils_update(
-						model,
-						{doing: $author$project$Save$SavingNoteRemotely, remoteSaveStatus: remoteData}));
+			}
 		}
 	});
-var $krisajenkins$remotedata$RemoteData$Loading = {$: 'Loading'};
+var $author$project$Save$SavingNoteRemotely = {$: 'SavingNoteRemotely'};
 var $author$project$ApiKey$performApiKey = F3(
 	function (maybeApiKey, _v0, _v1) {
 		var model1 = _v0.a;
@@ -6198,7 +6204,6 @@ var $elm$http$Http$header = $elm$http$Http$Header;
 var $author$project$ApiKey$apiKeyHeader = function (apiKey) {
 	return A2($elm$http$Http$header, 'X-API-KEY', apiKey.value);
 };
-var $elm$json$Json$Decode$decodeString = _Json_runOnString;
 var $elm$http$Http$BadStatus_ = F2(
 	function (a, b) {
 		return {$: 'BadStatus_', a: a, b: b};
@@ -6754,64 +6759,6 @@ var $elm$http$Http$expectStringResponse = F2(
 			$elm$core$Basics$identity,
 			A2($elm$core$Basics$composeR, toResult, toMsg));
 	});
-var $elm$core$Result$mapError = F2(
-	function (f, result) {
-		if (result.$ === 'Ok') {
-			var v = result.a;
-			return $elm$core$Result$Ok(v);
-		} else {
-			var e = result.a;
-			return $elm$core$Result$Err(
-				f(e));
-		}
-	});
-var $elm$http$Http$BadBody = function (a) {
-	return {$: 'BadBody', a: a};
-};
-var $elm$http$Http$BadStatus = function (a) {
-	return {$: 'BadStatus', a: a};
-};
-var $elm$http$Http$BadUrl = function (a) {
-	return {$: 'BadUrl', a: a};
-};
-var $elm$http$Http$NetworkError = {$: 'NetworkError'};
-var $elm$http$Http$Timeout = {$: 'Timeout'};
-var $elm$http$Http$resolve = F2(
-	function (toResult, response) {
-		switch (response.$) {
-			case 'BadUrl_':
-				var url = response.a;
-				return $elm$core$Result$Err(
-					$elm$http$Http$BadUrl(url));
-			case 'Timeout_':
-				return $elm$core$Result$Err($elm$http$Http$Timeout);
-			case 'NetworkError_':
-				return $elm$core$Result$Err($elm$http$Http$NetworkError);
-			case 'BadStatus_':
-				var metadata = response.a;
-				return $elm$core$Result$Err(
-					$elm$http$Http$BadStatus(metadata.statusCode));
-			default:
-				var body = response.b;
-				return A2(
-					$elm$core$Result$mapError,
-					$elm$http$Http$BadBody,
-					toResult(body));
-		}
-	});
-var $elm$http$Http$expectJson = F2(
-	function (toMsg, decoder) {
-		return A2(
-			$elm$http$Http$expectStringResponse,
-			toMsg,
-			$elm$http$Http$resolve(
-				function (string) {
-					return A2(
-						$elm$core$Result$mapError,
-						$elm$json$Json$Decode$errorToString,
-						A2($elm$json$Json$Decode$decodeString, decoder, string));
-				}));
-	});
 var $elm$http$Http$jsonBody = function (value) {
 	return A2(
 		_Http_pair,
@@ -6821,32 +6768,11 @@ var $elm$http$Http$jsonBody = function (value) {
 var $author$project$Save$NoteSaveResponseMsg = function (a) {
 	return {$: 'NoteSaveResponseMsg', a: a};
 };
-var $krisajenkins$remotedata$RemoteData$Failure = function (a) {
-	return {$: 'Failure', a: a};
-};
-var $krisajenkins$remotedata$RemoteData$Success = function (a) {
-	return {$: 'Success', a: a};
-};
-var $krisajenkins$remotedata$RemoteData$fromResult = function (result) {
-	if (result.$ === 'Err') {
-		var e = result.a;
-		return $krisajenkins$remotedata$RemoteData$Failure(e);
-	} else {
-		var x = result.a;
-		return $krisajenkins$remotedata$RemoteData$Success(x);
-	}
-};
-var $author$project$Save$processHttpResult = F2(
-	function (toMsg, httpResult) {
-		var result = $krisajenkins$remotedata$RemoteData$fromResult(httpResult);
-		return toMsg(result);
-	});
-var $author$project$Save$processSaveNoteResults = $author$project$Save$processHttpResult(
-	A2(
-		$elm$core$Basics$composeL,
-		$author$project$Save$TesterMsg(
-			$author$project$ElmCommon$Seconds(2)),
-		$author$project$Save$NoteSaveResponseMsg));
+var $author$project$Save$processSaveNoteResults = A2(
+	$elm$core$Basics$composeL,
+	$author$project$Save$TesterMsg(
+		$author$project$ElmCommon$Seconds(2)),
+	$author$project$Save$NoteSaveResponseMsg);
 var $elm$http$Http$Request = function (a) {
 	return {$: 'Request', a: a};
 };
@@ -7015,13 +6941,63 @@ var $elm$http$Http$request = function (r) {
 		$elm$http$Http$Request(
 			{allowCookiesFromOtherDomains: false, body: r.body, expect: r.expect, headers: r.headers, method: r.method, timeout: r.timeout, tracker: r.tracker, url: r.url}));
 };
+var $author$project$Save$HttpBadStatus = function (a) {
+	return {$: 'HttpBadStatus', a: a};
+};
+var $author$project$Save$HttpBadUrl = function (a) {
+	return {$: 'HttpBadUrl', a: a};
+};
+var $author$project$Save$HttpNetworkError = {$: 'HttpNetworkError'};
+var $author$project$Save$HttpSuccess = function (a) {
+	return {$: 'HttpSuccess', a: a};
+};
+var $author$project$Save$HttpTimeout = {$: 'HttpTimeout'};
+var $elm$json$Json$Decode$decodeString = _Json_runOnString;
+var $author$project$Save$toHttpMetaData = F3(
+	function (meta, decoderOfA, valueA) {
+		return {
+			headers: meta.headers,
+			statusCode: meta.statusCode,
+			statusJson: A2($elm$json$Json$Decode$decodeString, decoderOfA, valueA),
+			statusText: meta.statusText,
+			url: meta.url
+		};
+	});
+var $author$project$Save$responseToHttpResponse = F3(
+	function (errorDecoder, successDecoder, response) {
+		switch (response.$) {
+			case 'BadUrl_':
+				var url = response.a;
+				return $elm$core$Result$Err(
+					$author$project$Save$HttpBadUrl(url));
+			case 'Timeout_':
+				return $elm$core$Result$Err($author$project$Save$HttpTimeout);
+			case 'NetworkError_':
+				return $elm$core$Result$Err($author$project$Save$HttpNetworkError);
+			case 'BadStatus_':
+				var metadata = response.a;
+				var body = response.b;
+				return $elm$core$Result$Err(
+					$author$project$Save$HttpBadStatus(
+						A3($author$project$Save$toHttpMetaData, metadata, errorDecoder, body)));
+			default:
+				var metadata = response.a;
+				var body = response.b;
+				return $elm$core$Result$Ok(
+					$author$project$Save$HttpSuccess(
+						A3($author$project$Save$toHttpMetaData, metadata, successDecoder, body)));
+		}
+	});
 var $author$project$Save$performRemoteSaveNote = F2(
 	function (note, apiKey) {
 		return $elm$http$Http$request(
 			{
 				body: $elm$http$Http$jsonBody(
 					$author$project$Save$encodeSaveNote(note)),
-				expect: A2($elm$http$Http$expectJson, $author$project$Save$processSaveNoteResults, $author$project$Note$decoderNoteIdVersion),
+				expect: A2(
+					$elm$http$Http$expectStringResponse,
+					$author$project$Save$processSaveNoteResults,
+					A2($author$project$Save$responseToHttpResponse, $elm$json$Json$Decode$string, $author$project$Note$decoderNoteIdVersion)),
 				headers: _List_fromArray(
 					[
 						$author$project$ApiKey$apiKeyHeader(apiKey)
@@ -7029,7 +7005,7 @@ var $author$project$Save$performRemoteSaveNote = F2(
 				method: 'POST',
 				timeout: $elm$core$Maybe$Nothing,
 				tracker: $elm$core$Maybe$Nothing,
-				url: '/note'
+				url: '/xnote'
 			});
 	});
 var $author$project$Save$handleRemoteSave = function (model) {
@@ -7039,7 +7015,7 @@ var $author$project$Save$handleRemoteSave = function (model) {
 			doing: $author$project$Save$SavingNoteRemotely,
 			infoMessage: $elm$core$Maybe$Just(
 				$author$project$ElmCommon$InformationMessage('Saving Remotely')),
-			remoteSaveStatus: $krisajenkins$remotedata$RemoteData$Loading
+			remoteSaveStatus: $elm$core$Maybe$Nothing
 		});
 	return A2(
 		$author$project$Save$performOrGotoConfig,
@@ -7057,7 +7033,7 @@ var $author$project$Save$handleSavingNote = function (model) {
 			doing: $author$project$Save$SavingNoteLocally,
 			infoMessage: $elm$core$Maybe$Just(
 				$author$project$ElmCommon$InformationMessage('Saving Locally')),
-			remoteSaveStatus: $krisajenkins$remotedata$RemoteData$NotAsked
+			remoteSaveStatus: $elm$core$Maybe$Nothing
 		});
 	return _Utils_Tuple2(newModel, saveNoteToLocalCmd);
 };
@@ -7085,9 +7061,6 @@ var $author$project$Save$update = F2(
 				return $author$project$Save$handleNewNote(model);
 			case 'ViewNoteMsg':
 				return $author$project$Save$handleGoingToView(model);
-			case 'NoteSaveResponseMsg':
-				var noteResponse = msg.a;
-				return A2($author$project$Save$handleNoteSaveResponse, model, noteResponse);
 			case 'NoteSavedToLocalStorage':
 				return $author$project$Save$handleRemoteSave(model);
 			case 'RemoteNoteIdVersionSavedToLocalStorage':
@@ -7103,8 +7076,11 @@ var $author$project$Save$update = F2(
 				var timeout = msg.a;
 				var realMessage = msg.b;
 				return A3($author$project$Save$handleTesterMessage, model, timeout, realMessage);
-			default:
+			case 'ErrorModalClosed':
 				return $author$project$Save$handleErrorModalClose(model);
+			default:
+				var noteResponse = msg.a;
+				return A2($author$project$Save$handleNoteSaveResponse, model, noteResponse);
 		}
 	});
 var $elm$html$Html$Attributes$stringProperty = F2(

@@ -471,14 +471,32 @@ fromRemoteError error showError =
     HttpTimeout                    -> "The remote operation timed out"
     HttpNetworkError               -> "There was a network error during your remote request"
     HttpBadStatus meta ->
-      let heading = ""
+      let heading = "The following error occurred"
           metaString = showMeta meta showError
       in heading ++ "\n" ++ metaString
 
 
+--type alias HttpMetaData v =
+--  {
+--    url : String
+--  , statusCode : Int
+--  , statusText : String
+--  , statusJson : Result D.Error v
+--  , headers : Dict String String
+--  }
+
 
 showMeta : HttpMetaData a -> (a -> String) -> String
-showMeta x showError = ""
+showMeta  { url, statusCode, statusText, statusJson, headers } showError =
+  let urlString = "url: " ++ url
+      statusCodeString = "stateCode: " ++ (String.fromInt statusCode)
+      statusTextString = ""
+      headerString = "headers:" ++ (headStrings headers)
+  in List.foldl (\v a -> a ++ v) "" <| List.intersperse "\n" [urlString, statusCodeString, statusTextString, headerString]
+
+
+headStrings : Dict String String -> String
+headStrings _ = ""
 
 addErrorMessage : String -> Maybe (N.Nonempty ModalError) -> Maybe (N.Nonempty ModalError)
 addErrorMessage errorMessage maybeErrorMessages =
