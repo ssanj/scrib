@@ -323,41 +323,11 @@ hasContent note =
 inlineInfoSuccessTimeout : Seconds
 inlineInfoSuccessTimeout = Seconds 1
 
+
 -- REMOTE HELPERS
-
-
---contentStatusFromRemoteSave : RemoteNoteData -> ContentStatus
---contentStatusFromRemoteSave remoteData =
---  if RemoteData.isSuccess remoteData then UpToDate else NeedsToSave
-
---processRemoteSave : Model -> RemoteNoteData -> Model
---processRemoteSave model remoteData =
---  case remoteData of
---    Success _ -> { model | successMessage = Just <| SuccessMessage "Saved note" }
-    --_         -> model
-
---noteFromRemoteSave : NoteWithContent -> RemoteNoteData -> NoteWithContent
---noteFromRemoteSave existingNote remoteData =
---  case (existingNote, remoteData) of
---    (NoteWithoutId noteText, Success noteIdVersion) -> NoteWithId <| SC.updateNoteIdVersion noteIdVersion noteText
---    (NoteWithoutId _, _)                            -> existingNote -- if we didn't succeed in updating the note, then there's no id to save
---    ((NoteWithId fullNote), Success noteIdVersion)  -> NoteWithId <| SC.updateNoteVersion noteIdVersion fullNote -- if we already have an id, then there's nothing to update
---    ((NoteWithId fullNote), _)                      -> existingNote -- if we didn't succeed then don't update the existing note
-
---processSaveNoteResults: Result Http.Error SC.NoteIdVersion -> Msg
---processSaveNoteResults = processHttpResult (TesterMsg (Seconds 2) << NoteSaveResponseMsg)
 
 processSaveNoteResults : RemoteSaveStatus -> Msg
 processSaveNoteResults = TesterMsg (Seconds 2) << NoteSaveResponseMsg
-
-
-
-
---processHttpResult: (RemoteNoteData -> Msg) -> Result Http.Error SC.NoteIdVersion -> Msg
---processHttpResult toMsg httpResult   =
---  let result  = RemoteData.fromResult httpResult
---  in toMsg result
-
 
 
 -- UPDATE HELPERS
@@ -509,8 +479,10 @@ headStrings dict =
         combinedHeaderStrings = List.foldl (\v a -> a ++ v) "" commaSeparatedPairs
     in combinedHeaderStrings
 
+
 addErrorMessage : String -> Maybe (N.Nonempty ModalError) -> Maybe (N.Nonempty ModalError)
 addErrorMessage errorMessage maybeErrorMessages = addErrorMessages (N.fromElement errorMessage) maybeErrorMessages
+
 
 addErrorMessages : N.Nonempty String -> Maybe (N.Nonempty ModalError) -> Maybe (N.Nonempty ModalError)
 addErrorMessages errorMessages maybeErrorMessages =
@@ -533,8 +505,10 @@ saveLocally newNote remoteSaveStatus model =
   , saveRemoteUpdateToLocalStorage newNote
   )
 
+
 handleSuccessMessageTimeout : Model -> (Model, Cmd Msg)
 handleSuccessMessageTimeout model = onlyModel { model | successMessage = Nothing }
+
 
 handleInfoMessageTimeout : Model -> (Model, Cmd Msg)
 handleInfoMessageTimeout model = onlyModel { model | infoMessage = Nothing }
@@ -565,22 +539,9 @@ viewNoteEditingArea model =
 viewInlineInfoIfAny : Maybe InformationMessage -> Html a
 viewInlineInfoIfAny = maybe emptyDiv addInlineInfoFlash
 
+
 viewInlineSuccessIfAny : Maybe SuccessMessage -> Html a
 viewInlineSuccessIfAny = maybe emptyDiv addInlineSuccessFlash
-
---successMessageLens : Lens Model (Maybe SuccessMessage)
---successMessageLens = { getter = .successMessage, setter = \m newMessage -> { m | successMessage = newMessage } }
-
---handleSuccessMessage : Model -> SuccessMessage -> (Model, Cmd Msg)
---handleSuccessMessage model message seconds =
---  addInlineMessage (getSetter successMessageLens) model message inlineInfoSuccessTimeout InlineSuccessMessageTimedOut
-
---viewNotificationsArea: RemoteNoteData -> Html a
---viewNotificationsArea remoteSaveStatus =
---  case remoteSaveStatus of
---    Failure e   -> addInlineErrorFlash <| ErrorMessage <| "Save failed: " ++ fromHttpError e -- show error
---    (Success _) -> addInlineSuccessFlash <| SuccessMessage "Saved note"
---    _           -> hideAlertSpace
 
 
 viewNotesTextArea: WhatAreWeDoing -> NoteWithContent -> Html Msg
@@ -609,6 +570,7 @@ viewControls doing note contentStatus =
         , modifiedTag contentStatus
         ]
     ]
+
 
 viewNewNoteButton : WhatAreWeDoing -> Html Msg
 viewNewNoteButton doing =
