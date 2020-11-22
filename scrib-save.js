@@ -6070,7 +6070,7 @@ var $author$project$Save$showMeta = F2(
 		var statusBodyString = 'body: ' + function () {
 			if (statusJson.$ === 'Err') {
 				var x = statusJson.a;
-				return 'Could not decode because: ' + $elm$json$Json$Decode$errorToString(x);
+				return $elm$json$Json$Decode$errorToString(x);
 			} else {
 				var value = statusJson.a;
 				return showError(value);
@@ -7055,13 +7055,24 @@ var $author$project$Save$HttpTimeout = {$: 'HttpTimeout'};
 var $elm$json$Json$Decode$decodeString = _Json_runOnString;
 var $author$project$Save$toHttpMetaData = F3(
 	function (meta, decoderOfA, valueA) {
-		return {
-			headers: meta.headers,
-			statusCode: meta.statusCode,
-			statusJson: A2($elm$json$Json$Decode$decodeString, decoderOfA, valueA),
-			statusText: meta.statusText,
-			url: meta.url
-		};
+		var maybeContentType = A2($elm$core$Dict$get, 'content-type', meta.headers);
+		var jsonDecoder = $elm$json$Json$Decode$decodeString(decoderOfA);
+		var isJsonResponse = A3(
+			$author$project$FP$maybe,
+			false,
+			function (h) {
+				return h === 'application/json';
+			},
+			maybeContentType);
+		var contentType = A3($author$project$FP$maybe, 'no content type', $elm$core$Basics$identity, maybeContentType);
+		var errorText = 'Could not decode result because the content type was invalid. Expected: \'application/json\', but got: ' + (contentType + ('. Response received: ' + valueA));
+		var invalidContentResult = $elm$core$Result$Err(
+			A2(
+				$elm$json$Json$Decode$Failure,
+				'invalid content',
+				$elm$json$Json$Encode$string(errorText)));
+		var responseJson = isJsonResponse ? jsonDecoder(valueA) : invalidContentResult;
+		return {headers: meta.headers, statusCode: meta.statusCode, statusJson: responseJson, statusText: meta.statusText, url: meta.url};
 	});
 var $author$project$Save$responseToHttpResponse = F3(
 	function (errorDecoder, successDecoder, response) {

@@ -237,7 +237,7 @@ performRemoteSaveNote note apiKey =
   , headers  = [ apiKeyHeader apiKey ]
   , url      = "/xnote"
   , body     = Http.jsonBody <| encodeSaveNote note
-  , expect   = Http.expectStringResponse processSaveNoteResults (responseToHttpResponse D.string SC.decoderNoteIdVersion ) -- Http.expectJson processSaveNoteResults SC.decoderNoteIdVersion
+  , expect   = Http.expectStringResponse processSaveNoteResults (responseToHttpResponse D.string SC.decoderNoteIdVersion) -- Http.expectJson processSaveNoteResults SC.decoderNoteIdVersion
   , timeout  = Nothing
   , tracker  = Nothing
   }
@@ -255,13 +255,25 @@ responseToHttpResponse errorDecoder successDecoder response  =
 
 toHttpMetaData : Http.Metadata -> D.Decoder a -> String -> HttpMetaData a
 toHttpMetaData meta decoderOfA valueA =
-  {
-      url        = meta.url
-    , statusCode = meta.statusCode
-    , statusText = meta.statusText
-    , statusJson = D.decodeString decoderOfA valueA
-    , headers    = meta.headers
-  }
+  let maybeContentType      = DICT.get "content-type" meta.headers
+      isJsonResponse        = maybe False (\h -> h == "application/json") maybeContentType
+      jsonDecoder           = D.decodeString decoderOfA
+      contentType           = maybe "no content type" identity maybeContentType
+      errorText             =
+          ("Could not decode result because the content type was invalid. Expected: 'application/json', but got: " ++
+          contentType ++
+          ". Response received: " ++
+          valueA)
+      invalidContentResult  = Err <| D.Failure "invalid content" <| E.string errorText
+      responseJson          = if isJsonResponse then jsonDecoder valueA else invalidContentResult
+  in
+    {
+        url        = meta.url
+      , statusCode = meta.statusCode
+      , statusText = meta.statusText
+      , statusJson = responseJson
+      , headers    = meta.headers
+    }
 
 -- PAGE REDIRECTS
 
@@ -463,7 +475,7 @@ showMeta  { url, statusCode, statusText, statusJson, headers } showError =
       statusTextString = "statusText: " ++ statusText
       statusBodyString = "body: " ++
         case statusJson of
-          Err x    -> "Could not decode because: " ++ (D.errorToString x)
+          Err x    -> D.errorToString x
           Ok value -> showError value
       headerString = "headers: " ++ (headStrings headers)
   in N.Nonempty urlString [statusCodeString, statusTextString, statusBodyString, headerString]
