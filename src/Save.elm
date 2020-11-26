@@ -235,8 +235,8 @@ performRemoteSaveNote note apiKey =
   Http.request {
    method    = "POST"
   , headers  = [ apiKeyHeader apiKey ]
-  , url      = "/xnote"
-  , body     = Http.jsonBody <| encodeSaveNote note
+  , url      = "/note"
+  , body     = Http.jsonBody E.null --<| encodeSaveNote note
   , expect   = Http.expectStringResponse processSaveNoteResults (responseToHttpResponse D.string SC.decoderNoteIdVersion) -- Http.expectJson processSaveNoteResults SC.decoderNoteIdVersion
   , timeout  = Nothing
   , tracker  = Nothing
@@ -256,7 +256,7 @@ responseToHttpResponse errorDecoder successDecoder response  =
 toHttpMetaData : Http.Metadata -> D.Decoder a -> String -> HttpMetaData a
 toHttpMetaData meta decoderOfA valueA =
   let maybeContentType      = DICT.get "content-type" meta.headers
-      isJsonResponse        = maybe False (\h -> h == "application/json") maybeContentType
+      isJsonResponse        = maybe False (String.contains "application/json") maybeContentType
       jsonDecoder           = D.decodeString decoderOfA
       contentType           = maybe "no content type" identity maybeContentType
       errorText             =

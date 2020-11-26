@@ -7060,9 +7060,7 @@ var $author$project$Save$toHttpMetaData = F3(
 		var isJsonResponse = A3(
 			$author$project$FP$maybe,
 			false,
-			function (h) {
-				return h === 'application/json';
-			},
+			$elm$core$String$contains('application/json'),
 			maybeContentType);
 		var contentType = A3($author$project$FP$maybe, 'no content type', $elm$core$Basics$identity, maybeContentType);
 		var errorText = 'Could not decode result because the content type was invalid. Expected: \'application/json\', but got: ' + (contentType + ('. Response received: ' + valueA));
@@ -7103,8 +7101,7 @@ var $author$project$Save$performRemoteSaveNote = F2(
 	function (note, apiKey) {
 		return $elm$http$Http$request(
 			{
-				body: $elm$http$Http$jsonBody(
-					$author$project$Save$encodeSaveNote(note)),
+				body: $elm$http$Http$jsonBody($elm$json$Json$Encode$null),
 				expect: A2(
 					$elm$http$Http$expectStringResponse,
 					$author$project$Save$processSaveNoteResults,
@@ -7116,7 +7113,7 @@ var $author$project$Save$performRemoteSaveNote = F2(
 				method: 'POST',
 				timeout: $elm$core$Maybe$Nothing,
 				tracker: $elm$core$Maybe$Nothing,
-				url: '/xnote'
+				url: '/note'
 			});
 	});
 var $author$project$Save$handleRemoteSave = function (model) {
