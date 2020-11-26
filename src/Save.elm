@@ -24,6 +24,7 @@ import Note          as SC
 import Ports         as P
 import Subs          as S
 import List.Nonempty as N
+import SlateError    as SL
 
 
 -- MODEL
@@ -46,7 +47,7 @@ type ContentStatus = NeedsToSave
 
 type alias SaveModelCommand = ModelCommand Model Msg
 
-type alias RemoteSaveStatus = Result (HttpError String) (HttpSuccess SC.NoteIdVersion)
+type alias RemoteSaveStatus = Result (HttpError SL.SlateError) (HttpSuccess SC.NoteIdVersion)
 
 
 type alias HttpMetaData v =
@@ -237,7 +238,7 @@ performRemoteSaveNote note apiKey =
   , headers  = [ apiKeyHeader apiKey ]
   , url      = "/note"
   , body     = Http.jsonBody E.null --<| encodeSaveNote note
-  , expect   = Http.expectStringResponse processSaveNoteResults (responseToHttpResponse D.string SC.decoderNoteIdVersion) -- Http.expectJson processSaveNoteResults SC.decoderNoteIdVersion
+  , expect   = Http.expectStringResponse processSaveNoteResults (responseToHttpResponse SL.decodeSlateError SC.decoderNoteIdVersion) -- Http.expectJson processSaveNoteResults SC.decoderNoteIdVersion
   , timeout  = Nothing
   , tracker  = Nothing
   }
@@ -417,7 +418,7 @@ handleNoteSaveResponse model result =
               remoteSaveStatus  = Nothing
             , doing             = Idle
             , noteContentStatus = NeedsToSave
-            , errorMessages     =  addErrorMessages (fromRemoteError x identity) model.errorMessages
+            , errorMessages     =  addErrorMessages (fromRemoteError x SL.showSlateError) model.errorMessages
           }
 
     (Ok (HttpSuccess meta)) ->

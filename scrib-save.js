@@ -6204,6 +6204,11 @@ var $author$project$Save$saveLocally = F3(
 				}),
 			$author$project$Save$saveRemoteUpdateToLocalStorage(newNote));
 	});
+var $author$project$SlateError$showSlateError = function (_v0) {
+	var errorId = _v0.errorId;
+	var errorMessage = _v0.errorMessage;
+	return 'errorId: ' + ($elm$core$String$fromInt(errorId) + (', errorMessage: ' + errorMessage));
+};
 var $author$project$Note$updateNoteIdVersion = F2(
 	function (idVersion, _v0) {
 		var noteText = _v0.a;
@@ -6230,7 +6235,7 @@ var $author$project$Save$handleNoteSaveResponse = F2(
 						doing: $author$project$Save$Idle,
 						errorMessages: A2(
 							$author$project$Save$addErrorMessages,
-							A2($author$project$Save$fromRemoteError, x, $elm$core$Basics$identity),
+							A2($author$project$Save$fromRemoteError, x, $author$project$SlateError$showSlateError),
 							model.errorMessages),
 						noteContentStatus: $author$project$Save$NeedsToSave,
 						remoteSaveStatus: $elm$core$Maybe$Nothing
@@ -6304,6 +6309,15 @@ var $elm$http$Http$header = $elm$http$Http$Header;
 var $author$project$ApiKey$apiKeyHeader = function (apiKey) {
 	return A2($elm$http$Http$header, 'X-API-KEY', apiKey.value);
 };
+var $author$project$SlateError$SlateError = F2(
+	function (errorId, errorMessage) {
+		return {errorId: errorId, errorMessage: errorMessage};
+	});
+var $author$project$SlateError$decodeSlateError = A3(
+	$elm$json$Json$Decode$map2,
+	$author$project$SlateError$SlateError,
+	A2($elm$json$Json$Decode$field, 'errorId', $elm$json$Json$Decode$int),
+	A2($elm$json$Json$Decode$field, 'errorMessage', $elm$json$Json$Decode$string));
 var $elm$http$Http$BadStatus_ = F2(
 	function (a, b) {
 		return {$: 'BadStatus_', a: a, b: b};
@@ -7105,7 +7119,7 @@ var $author$project$Save$performRemoteSaveNote = F2(
 				expect: A2(
 					$elm$http$Http$expectStringResponse,
 					$author$project$Save$processSaveNoteResults,
-					A2($author$project$Save$responseToHttpResponse, $elm$json$Json$Decode$string, $author$project$Note$decoderNoteIdVersion)),
+					A2($author$project$Save$responseToHttpResponse, $author$project$SlateError$decodeSlateError, $author$project$Note$decoderNoteIdVersion)),
 				headers: _List_fromArray(
 					[
 						$author$project$ApiKey$apiKeyHeader(apiKey)
