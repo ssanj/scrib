@@ -7115,7 +7115,8 @@ var $author$project$Save$performRemoteSaveNote = F2(
 	function (note, apiKey) {
 		return $elm$http$Http$request(
 			{
-				body: $elm$http$Http$jsonBody($elm$json$Json$Encode$null),
+				body: $elm$http$Http$jsonBody(
+					$author$project$Save$encodeSaveNote(note)),
 				expect: A2(
 					$elm$http$Http$expectStringResponse,
 					$author$project$Save$processSaveNoteResults,
