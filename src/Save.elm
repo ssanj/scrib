@@ -37,6 +37,7 @@ type DataSource = LocalLoad
 
 type WhatAreWeDoing = SavingNoteRemotely
                     | SavingNoteLocally
+                    | UpdatingSessionCache
                     | Idle
 
 type NoteWithContent = NoteWithoutId SC.NoteLight
@@ -440,7 +441,7 @@ handleNoteSaveResponse model result =
           case model.note of
             NoteWithoutId noteText ->
               let newNote = NoteWithId <| SC.updateNoteIdVersion noteIdVersion noteText
-              in saveLocally newNote result model
+              in saveNewNoteToSession newNote result model
 
             NoteWithId fullNote    ->
               if SC.isSameNoteId fullNote noteIdVersion then
@@ -518,6 +519,20 @@ saveLocally newNote remoteSaveStatus model =
       , successMessage    = Just <| SuccessMessage "Saved Note"
     }
   , saveRemoteUpdateToLocalStorage newNote
+  )
+
+saveNewNoteToSession : NoteWithContent -> RemoteSaveStatus -> Model -> (Model, Cmd Msg)
+saveNewNoteToSession newNote remoteSaveStatus model =
+  (
+    {
+      model |
+        note              = newNote
+      , remoteSaveStatus  = Just remoteSaveStatus
+      , doing             = UpdatingSessionCache
+      , noteContentStatus = UpToDate
+      , successMessage    = Just <| SuccessMessage "Saved Note"
+    }
+  , saveRemoteNewNoteToSessionStorage newNote
   )
 
 --saveLocally : NoteWithContent -> RemoteSaveStatus -> Model -> (Model, Cmd Msg)
@@ -638,9 +653,10 @@ viewSaveButton: WhatAreWeDoing -> NoteWithContent -> Html Msg
 viewSaveButton doing note =
   let showSpinner =
         case doing of
-          SavingNoteRemotely -> True
-          SavingNoteLocally  -> True
-          Idle               -> False
+          SavingNoteRemotely   -> True
+          SavingNoteLocally    -> True
+          UpdatingSessionCache -> True
+          Idle                 -> False
   in button [
        id "save-note"
        , onClick NoteSavedMsg
@@ -710,6 +726,13 @@ saveRemoteUpdateToLocalStorage note =
   let storageArea             = savedNoteStorageArea
       saveSelectedNoteValue   = P.JsStorageValue storageArea Save note
       saveSelectedNoteCommand = P.WithStorage saveSelectedNoteValue (Just remoteNoteIdVersionSavedToLocalStorageResponseKey)
+  in scribMessage <| P.encodeJsCommand saveSelectedNoteCommand encodeSaveNote
+
+saveRemoteNewNoteToSessionStorage : NoteWithContent -> Cmd Msg
+saveRemoteNewNoteToSessionStorage note =
+  let storageArea             = viewTopNotesStorageArea
+      saveNewNoteValue        = P.JsStorageValue storageArea (Add ArrayType) note
+      saveSelectedNoteCommand = P.WithStorage saveNewNoteValue Nothing --(Just remoteNewNoteSavedToSessionStorageResponseKey)
   in scribMessage <| P.encodeJsCommand saveSelectedNoteCommand encodeSaveNote
 
 
