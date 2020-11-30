@@ -98,6 +98,7 @@ type Msg = NoteSavedMsg
          | NoteSavedToLocalStorage
          | RemoteNoteIdVersionSavedToLocalStorage
          | RemoteNewNoteSavedToToLocalStorage
+         | NewNoteSyncedToSessionStorage
          | JSNotificationError String
          | InlineSuccessMessageTimedOut
          | InlineInfoTimedOut
@@ -141,6 +142,7 @@ update msg model =
     NoteSavedToLocalStorage                -> handleRemoteSave model
     RemoteNoteIdVersionSavedToLocalStorage -> handleNoteIdVersionSavedToLocalStorage model
     RemoteNewNoteSavedToToLocalStorage     -> handleNewNoteSavedToLocalStorage model
+    NewNoteSyncedToSessionStorage          -> handleNewNoteSyncedToSessionStorage model
     (JSNotificationError error)            -> handleJSError model error
     InlineSuccessMessageTimedOut           -> handleSuccessMessageTimeout model
     InlineInfoTimedOut                     -> handleInfoMessageTimeout model
@@ -393,6 +395,7 @@ handleNoteIdVersionSavedToLocalStorage model =
         }
   in (newModel, addTimeoutForInlineMessage inlineInfoSuccessTimeout InlineInfoTimedOut)
 
+
 handleNewNoteSavedToLocalStorage : Model -> (Model, Cmd Msg)
 handleNewNoteSavedToLocalStorage model =
   let newModel =
@@ -400,9 +403,22 @@ handleNewNoteSavedToLocalStorage model =
           model |
             successMessage = Nothing
           , infoMessage    = Just <| InformationMessage "New Note Saved Locally"
-          , doing          = Idle
+          , doing          = UpdatingSessionCache
         }
   in (newModel, syncWithSessionCache model.note)
+
+
+handleNewNoteSyncedToSessionStorage : ModelCommand Model Msg
+handleNewNoteSyncedToSessionStorage model =
+  let newModel =
+        {
+          model |
+            successMessage = Nothing
+          , infoMessage    = Just <| InformationMessage "New Note Synced to Session"
+          , doing          = Idle
+        }
+  in (newModel, addTimeoutForInlineMessage inlineInfoSuccessTimeout InlineInfoTimedOut)
+
 
 handleEditingNote : Model -> String -> (Model, Cmd Msg)
 handleEditingNote model newNoteText =
@@ -744,7 +760,7 @@ subscriptionSuccess (S.JsResponse (P.ResponseKey key) result) =
     "NoteSavedToLocalStorage"                -> TesterMsg (Seconds 2) NoteSavedToLocalStorage
     "RemoteNoteIdVersionSavedToLocalStorage" -> RemoteNoteIdVersionSavedToLocalStorage
     "RemoteNewNoteSavedToToLocalStorage"     -> RemoteNewNoteSavedToToLocalStorage
-    --"NewNoteSyncedToSessionStorage"          -> RemoteNewNoteSavedToToLocalStorage
+    "NewNoteSyncedToSessionStorage"          -> NewNoteSyncedToSessionStorage
     otherKey                                 -> subscriptionFailure <| ("Unhandled JS notification: " ++ otherKey)
 
 subscriptionFailure : String -> Msg

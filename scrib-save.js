@@ -5822,6 +5822,7 @@ var $author$project$Save$JSNotificationError = function (a) {
 var $author$project$Save$subscriptionFailure = function (m) {
 	return $author$project$Save$JSNotificationError('subscriptionFailure: ' + m);
 };
+var $author$project$Save$NewNoteSyncedToSessionStorage = {$: 'NewNoteSyncedToSessionStorage'};
 var $author$project$Save$NoteSavedToLocalStorage = {$: 'NoteSavedToLocalStorage'};
 var $author$project$Save$RemoteNewNoteSavedToToLocalStorage = {$: 'RemoteNewNoteSavedToToLocalStorage'};
 var $author$project$Save$RemoteNoteIdVersionSavedToLocalStorage = {$: 'RemoteNoteIdVersionSavedToLocalStorage'};
@@ -5845,6 +5846,8 @@ var $author$project$Save$subscriptionSuccess = function (_v0) {
 			return $author$project$Save$RemoteNoteIdVersionSavedToLocalStorage;
 		case 'RemoteNewNoteSavedToToLocalStorage':
 			return $author$project$Save$RemoteNewNoteSavedToToLocalStorage;
+		case 'NewNoteSyncedToSessionStorage':
+			return $author$project$Save$NewNoteSyncedToSessionStorage;
 		default:
 			var otherKey = key;
 			return $author$project$Save$subscriptionFailure('Unhandled JS notification: ' + otherKey);
@@ -5919,6 +5922,7 @@ var $author$project$Save$handleNewNote = function (model) {
 var $author$project$ElmCommon$InformationMessage = function (infoMessage) {
 	return {infoMessage: infoMessage};
 };
+var $author$project$Save$UpdatingSessionCache = {$: 'UpdatingSessionCache'};
 var $author$project$StorageKeys$Add = function (a) {
 	return {$: 'Add', a: a};
 };
@@ -6001,7 +6005,7 @@ var $author$project$Save$handleNewNoteSavedToLocalStorage = function (model) {
 	var newModel = _Utils_update(
 		model,
 		{
-			doing: $author$project$Save$Idle,
+			doing: $author$project$Save$UpdatingSessionCache,
 			infoMessage: $elm$core$Maybe$Just(
 				$author$project$ElmCommon$InformationMessage('New Note Saved Locally')),
 			successMessage: $elm$core$Maybe$Nothing
@@ -6026,6 +6030,19 @@ var $author$project$Notifications$addTimeoutForInlineMessage = F2(
 			sleepTask);
 	});
 var $author$project$Save$inlineInfoSuccessTimeout = $author$project$ElmCommon$Seconds(1);
+var $author$project$Save$handleNewNoteSyncedToSessionStorage = function (model) {
+	var newModel = _Utils_update(
+		model,
+		{
+			doing: $author$project$Save$Idle,
+			infoMessage: $elm$core$Maybe$Just(
+				$author$project$ElmCommon$InformationMessage('New Note Synced to Session')),
+			successMessage: $elm$core$Maybe$Nothing
+		});
+	return _Utils_Tuple2(
+		newModel,
+		A2($author$project$Notifications$addTimeoutForInlineMessage, $author$project$Save$inlineInfoSuccessTimeout, $author$project$Save$InlineInfoTimedOut));
+};
 var $author$project$Save$handleNoteIdVersionSavedToLocalStorage = function (model) {
 	var newModel = _Utils_update(
 		model,
@@ -7251,6 +7268,8 @@ var $author$project$Save$update = F2(
 				return $author$project$Save$handleNoteIdVersionSavedToLocalStorage(model);
 			case 'RemoteNewNoteSavedToToLocalStorage':
 				return $author$project$Save$handleNewNoteSavedToLocalStorage(model);
+			case 'NewNoteSyncedToSessionStorage':
+				return $author$project$Save$handleNewNoteSyncedToSessionStorage(model);
 			case 'JSNotificationError':
 				var error = msg.a;
 				return A2($author$project$Save$handleJSError, model, error);
