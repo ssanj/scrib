@@ -5605,10 +5605,19 @@ var $author$project$Ports$encodePortWithMarkdownCommand = F3(
 var $author$project$Ports$markdownPreviewPort = $author$project$Ports$PortTypeName('markdown_action');
 var $author$project$Ports$markdownPreviewCommand = $author$project$Ports$encodePortWithMarkdownCommand($author$project$Ports$markdownPreviewPort);
 var $author$project$StorageKeys$encodeStorageAction = function (storageAction) {
-	if (storageAction.$ === 'Save') {
-		return $elm$json$Json$Encode$string('save');
-	} else {
-		return $elm$json$Json$Encode$string('delete');
+	switch (storageAction.$) {
+		case 'Save':
+			return $elm$json$Json$Encode$string('save');
+		case 'Delete':
+			return $elm$json$Json$Encode$string('delete');
+		default:
+			if (storageAction.a.$ === 'ArrayType') {
+				var _v1 = storageAction.a;
+				return $elm$json$Json$Encode$string('add_to_array');
+			} else {
+				var _v2 = storageAction.a;
+				return $elm$json$Json$Encode$string('add_to_hash');
+			}
 	}
 };
 var $author$project$StorageKeys$encodeStorageType = function (st) {
@@ -5814,6 +5823,7 @@ var $author$project$Save$subscriptionFailure = function (m) {
 	return $author$project$Save$JSNotificationError('subscriptionFailure: ' + m);
 };
 var $author$project$Save$NoteSavedToLocalStorage = {$: 'NoteSavedToLocalStorage'};
+var $author$project$Save$RemoteNewNoteSavedToToLocalStorage = {$: 'RemoteNewNoteSavedToToLocalStorage'};
 var $author$project$Save$RemoteNoteIdVersionSavedToLocalStorage = {$: 'RemoteNoteIdVersionSavedToLocalStorage'};
 var $author$project$ElmCommon$Seconds = function (seconds) {
 	return {seconds: seconds};
@@ -5833,6 +5843,8 @@ var $author$project$Save$subscriptionSuccess = function (_v0) {
 				$author$project$Save$NoteSavedToLocalStorage);
 		case 'RemoteNoteIdVersionSavedToLocalStorage':
 			return $author$project$Save$RemoteNoteIdVersionSavedToLocalStorage;
+		case 'RemoteNewNoteSavedToToLocalStorage':
+			return $author$project$Save$RemoteNewNoteSavedToToLocalStorage;
 		default:
 			var otherKey = key;
 			return $author$project$Save$subscriptionFailure('Unhandled JS notification: ' + otherKey);
@@ -5923,6 +5935,19 @@ var $author$project$Notifications$addTimeoutForInlineMessage = F2(
 			sleepTask);
 	});
 var $author$project$Save$inlineInfoSuccessTimeout = $author$project$ElmCommon$Seconds(1);
+var $author$project$Save$handleNewNoteSavedToLocalStorage = function (model) {
+	var newModel = _Utils_update(
+		model,
+		{
+			doing: $author$project$Save$Idle,
+			infoMessage: $elm$core$Maybe$Just(
+				$author$project$ElmCommon$InformationMessage('New Note Saved Locally')),
+			successMessage: $elm$core$Maybe$Nothing
+		});
+	return _Utils_Tuple2(
+		newModel,
+		A2($author$project$Notifications$addTimeoutForInlineMessage, $author$project$Save$inlineInfoSuccessTimeout, $author$project$Save$InlineInfoTimedOut));
+};
 var $author$project$Save$handleNoteIdVersionSavedToLocalStorage = function (model) {
 	var newModel = _Utils_update(
 		model,
@@ -5936,6 +5961,8 @@ var $author$project$Save$handleNoteIdVersionSavedToLocalStorage = function (mode
 		newModel,
 		A2($author$project$Notifications$addTimeoutForInlineMessage, $author$project$Save$inlineInfoSuccessTimeout, $author$project$Save$InlineInfoTimedOut));
 };
+var $author$project$Save$SaveNewNoteToLocalAfterRemoteSave = {$: 'SaveNewNoteToLocalAfterRemoteSave'};
+var $author$project$Save$UpdateNoteToLocalAfterRemoteSave = {$: 'UpdateNoteToLocalAfterRemoteSave'};
 var $mgold$elm_nonempty_list$List$Nonempty$Nonempty = F2(
 	function (a, b) {
 		return {$: 'Nonempty', a: a, b: b};
@@ -6115,7 +6142,6 @@ var $author$project$Save$SavingNoteLocally = {$: 'SavingNoteLocally'};
 var $author$project$ElmCommon$SuccessMessage = function (successMessage) {
 	return {successMessage: successMessage};
 };
-var $author$project$Save$remoteNoteIdVersionSavedToLocalStorageResponseKey = $author$project$Ports$ResponseKey('RemoteNoteIdVersionSavedToLocalStorage');
 var $author$project$Ports$JsStorageValue = F3(
 	function (storageArea, storageAction, value) {
 		return {storageAction: storageAction, storageArea: storageArea, value: value};
@@ -6163,6 +6189,9 @@ var $author$project$Save$encodeSaveNote = function (note) {
 		return $author$project$Note$encodeFullNote(fullNote);
 	}
 };
+var $author$project$Save$noteSavedToLocalStorageResponseKey = $author$project$Ports$ResponseKey('NoteSavedToLocalStorage');
+var $author$project$Save$remoteNewNoteSavedToToLocalStorageResponseKey = $author$project$Ports$ResponseKey('RemoteNewNoteSavedToToLocalStorage');
+var $author$project$Save$remoteNoteIdVersionSavedToLocalStorageResponseKey = $author$project$Ports$ResponseKey('RemoteNoteIdVersionSavedToLocalStorage');
 var $author$project$StorageKeys$Local = {$: 'Local'};
 var $author$project$StorageKeys$StorageArea = F2(
 	function (a, b) {
@@ -6175,10 +6204,20 @@ var $author$project$StorageKeys$savedNoteStorageArea = A2(
 	$author$project$StorageKeys$StorageArea,
 	$author$project$StorageKeys$Local,
 	$author$project$StorageKeys$StorageKey('scrib.edit'));
-var $author$project$Save$saveEditingNoteToLocalStorage = F2(
-	function (responseKey, note) {
+var $author$project$Save$saveNoteToLocalStorage = F2(
+	function (note, saveType) {
 		var storageArea = $author$project$StorageKeys$savedNoteStorageArea;
 		var saveSelectedNoteValue = A3($author$project$Ports$JsStorageValue, storageArea, $author$project$StorageKeys$Save, note);
+		var responseKey = function () {
+			switch (saveType.$) {
+				case 'SaveNewNoteToLocalAfterRemoteSave':
+					return $author$project$Save$remoteNewNoteSavedToToLocalStorageResponseKey;
+				case 'UpdateNoteToLocalAfterRemoteSave':
+					return $author$project$Save$remoteNoteIdVersionSavedToLocalStorageResponseKey;
+				default:
+					return $author$project$Save$noteSavedToLocalStorageResponseKey;
+			}
+		}();
 		var saveSelectedNoteCommand = A2(
 			$author$project$Ports$WithStorage,
 			saveSelectedNoteValue,
@@ -6186,11 +6225,8 @@ var $author$project$Save$saveEditingNoteToLocalStorage = F2(
 		return $author$project$Save$scribMessage(
 			A2($author$project$Ports$encodeJsCommand, saveSelectedNoteCommand, $author$project$Save$encodeSaveNote));
 	});
-var $author$project$Save$saveRemoteUpdateToLocalStorage = function (note) {
-	return A2($author$project$Save$saveEditingNoteToLocalStorage, $author$project$Save$remoteNoteIdVersionSavedToLocalStorageResponseKey, note);
-};
-var $author$project$Save$saveLocally = F3(
-	function (newNote, remoteSaveStatus, model) {
+var $author$project$Save$saveLocally = F4(
+	function (newNote, remoteSaveStatus, saveType, model) {
 		return _Utils_Tuple2(
 			_Utils_update(
 				model,
@@ -6202,7 +6238,7 @@ var $author$project$Save$saveLocally = F3(
 					successMessage: $elm$core$Maybe$Just(
 						$author$project$ElmCommon$SuccessMessage('Saved Note'))
 				}),
-			$author$project$Save$saveRemoteUpdateToLocalStorage(newNote));
+			A2($author$project$Save$saveNoteToLocalStorage, newNote, saveType));
 	});
 var $author$project$SlateError$showSlateError = function (_v0) {
 	var errorId = _v0.errorId;
@@ -6261,13 +6297,13 @@ var $author$project$Save$handleNoteSaveResponse = F2(
 					var noteText = _v2.a;
 					var newNote = $author$project$Save$NoteWithId(
 						A2($author$project$Note$updateNoteIdVersion, noteIdVersion, noteText));
-					return A3($author$project$Save$saveLocally, newNote, result, model);
+					return A4($author$project$Save$saveLocally, newNote, result, $author$project$Save$SaveNewNoteToLocalAfterRemoteSave, model);
 				} else {
 					var fullNote = _v2.a;
 					if (A2($author$project$Note$isSameNoteId, fullNote, noteIdVersion)) {
 						var newNote = $author$project$Save$NoteWithId(
 							A2($author$project$Note$updateNoteVersion, noteIdVersion, fullNote));
-						return A3($author$project$Save$saveLocally, newNote, result, model);
+						return A4($author$project$Save$saveLocally, newNote, result, $author$project$Save$UpdateNoteToLocalAfterRemoteSave, model);
 					} else {
 						return $author$project$ElmCommon$onlyModel(model);
 					}
@@ -7147,9 +7183,9 @@ var $author$project$Save$handleRemoteSave = function (model) {
 			updatedModel,
 			$author$project$Save$performRemoteSaveNote(model.note)));
 };
-var $author$project$Save$noteSavedToLocalStorageResponseKey = $author$project$Ports$ResponseKey('NoteSavedToLocalStorage');
+var $author$project$Save$SaveNoteToLocalBeforeRemoteSave = {$: 'SaveNoteToLocalBeforeRemoteSave'};
 var $author$project$Save$handleSavingNote = function (model) {
-	var saveNoteToLocalCmd = A2($author$project$Save$saveEditingNoteToLocalStorage, $author$project$Save$noteSavedToLocalStorageResponseKey, model.note);
+	var saveNoteToLocalCmd = A2($author$project$Save$saveNoteToLocalStorage, model.note, $author$project$Save$SaveNoteToLocalBeforeRemoteSave);
 	var newModel = _Utils_update(
 		model,
 		{
@@ -7188,6 +7224,8 @@ var $author$project$Save$update = F2(
 				return $author$project$Save$handleRemoteSave(model);
 			case 'RemoteNoteIdVersionSavedToLocalStorage':
 				return $author$project$Save$handleNoteIdVersionSavedToLocalStorage(model);
+			case 'RemoteNewNoteSavedToToLocalStorage':
+				return $author$project$Save$handleNewNoteSavedToLocalStorage(model);
 			case 'JSNotificationError':
 				var error = msg.a;
 				return A2($author$project$Save$handleJSError, model, error);
@@ -7568,6 +7606,8 @@ var $author$project$Save$viewSaveButton = F2(
 				case 'SavingNoteRemotely':
 					return true;
 				case 'SavingNoteLocally':
+					return true;
+				case 'UpdatingSessionCache':
 					return true;
 				default:
 					return false;
