@@ -56,6 +56,22 @@ function handleStorage(action, cb) {
       const result = execute(action, responseKey, resultTransformer);
 
       cb(result);
+    } else if (storageAction === "add_to_array") {
+      const action = function() {
+        const cacheString        = store.getItem(storage.storageKey);
+        const cacheArrayObj      = JSON.parse(cacheString)
+        cacheArrayObj.unshift(storage.data);
+        const updatedCacheString = JSON.stringify(cacheArrayObj);
+        store.setItem(storage.storageKey, updatedCacheString);
+      };
+
+      const resultTransformer = function(result) {
+        return result;
+      }
+
+      const result = execute(action, responseKey, resultTransformer);
+
+      cb(result);
     } else if (storageAction === "clear") {
 
       const action = function() {

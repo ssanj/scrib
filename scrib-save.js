@@ -5919,6 +5919,97 @@ var $author$project$Save$handleNewNote = function (model) {
 var $author$project$ElmCommon$InformationMessage = function (infoMessage) {
 	return {infoMessage: infoMessage};
 };
+var $author$project$StorageKeys$Add = function (a) {
+	return {$: 'Add', a: a};
+};
+var $author$project$StorageKeys$ArrayType = {$: 'ArrayType'};
+var $author$project$Ports$JsStorageValue = F3(
+	function (storageArea, storageAction, value) {
+		return {storageAction: storageAction, storageArea: storageArea, value: value};
+	});
+var $author$project$Ports$WithStorage = F2(
+	function (a, b) {
+		return {$: 'WithStorage', a: a, b: b};
+	});
+var $elm$json$Json$Encode$int = _Json_wrap;
+var $author$project$Note$encodeFullNote = function (_v0) {
+	var noteText = _v0.a;
+	var noteId = _v0.b.noteId;
+	var noteVersion = _v0.b.noteVersion;
+	return $elm$json$Json$Encode$object(
+		_List_fromArray(
+			[
+				_Utils_Tuple2(
+				'noteText',
+				$elm$json$Json$Encode$string(noteText)),
+				_Utils_Tuple2(
+				'noteId',
+				$elm$json$Json$Encode$int(noteId)),
+				_Utils_Tuple2(
+				'noteVersion',
+				$elm$json$Json$Encode$int(noteVersion))
+			]));
+};
+var $author$project$Note$encodeLightNote = function (_v0) {
+	var noteText = _v0.a;
+	return $elm$json$Json$Encode$object(
+		_List_fromArray(
+			[
+				_Utils_Tuple2(
+				'noteText',
+				$elm$json$Json$Encode$string(noteText))
+			]));
+};
+var $author$project$Save$encodeSaveNote = function (note) {
+	if (note.$ === 'NoteWithoutId') {
+		var lightNote = note.a;
+		return $author$project$Note$encodeLightNote(lightNote);
+	} else {
+		var fullNote = note.a;
+		return $author$project$Note$encodeFullNote(fullNote);
+	}
+};
+var $author$project$Save$remoteNewNoteSyncedToSessionStorageResponseKey = $author$project$Ports$ResponseKey('NewNoteSyncedToSessionStorage');
+var $author$project$StorageKeys$Session = {$: 'Session'};
+var $author$project$StorageKeys$StorageArea = F2(
+	function (a, b) {
+		return {$: 'StorageArea', a: a, b: b};
+	});
+var $author$project$StorageKeys$StorageKey = function (a) {
+	return {$: 'StorageKey', a: a};
+};
+var $author$project$StorageKeys$viewTopNotesStorageArea = A2(
+	$author$project$StorageKeys$StorageArea,
+	$author$project$StorageKeys$Session,
+	$author$project$StorageKeys$StorageKey('scrib.view'));
+var $author$project$Save$syncWithSessionCache = function (note) {
+	var storageArea = $author$project$StorageKeys$viewTopNotesStorageArea;
+	var saveSelectedNoteValue = A3(
+		$author$project$Ports$JsStorageValue,
+		storageArea,
+		$author$project$StorageKeys$Add($author$project$StorageKeys$ArrayType),
+		note);
+	var responseKey = $author$project$Save$remoteNewNoteSyncedToSessionStorageResponseKey;
+	var saveSelectedNoteCommand = A2(
+		$author$project$Ports$WithStorage,
+		saveSelectedNoteValue,
+		$elm$core$Maybe$Just(responseKey));
+	return $author$project$Save$scribMessage(
+		A2($author$project$Ports$encodeJsCommand, saveSelectedNoteCommand, $author$project$Save$encodeSaveNote));
+};
+var $author$project$Save$handleNewNoteSavedToLocalStorage = function (model) {
+	var newModel = _Utils_update(
+		model,
+		{
+			doing: $author$project$Save$Idle,
+			infoMessage: $elm$core$Maybe$Just(
+				$author$project$ElmCommon$InformationMessage('New Note Saved Locally')),
+			successMessage: $elm$core$Maybe$Nothing
+		});
+	return _Utils_Tuple2(
+		newModel,
+		$author$project$Save$syncWithSessionCache(model.note));
+};
 var $author$project$Save$InlineInfoTimedOut = {$: 'InlineInfoTimedOut'};
 var $author$project$FP$const = F2(
 	function (a, _v0) {
@@ -5935,19 +6026,6 @@ var $author$project$Notifications$addTimeoutForInlineMessage = F2(
 			sleepTask);
 	});
 var $author$project$Save$inlineInfoSuccessTimeout = $author$project$ElmCommon$Seconds(1);
-var $author$project$Save$handleNewNoteSavedToLocalStorage = function (model) {
-	var newModel = _Utils_update(
-		model,
-		{
-			doing: $author$project$Save$Idle,
-			infoMessage: $elm$core$Maybe$Just(
-				$author$project$ElmCommon$InformationMessage('New Note Saved Locally')),
-			successMessage: $elm$core$Maybe$Nothing
-		});
-	return _Utils_Tuple2(
-		newModel,
-		A2($author$project$Notifications$addTimeoutForInlineMessage, $author$project$Save$inlineInfoSuccessTimeout, $author$project$Save$InlineInfoTimedOut));
-};
 var $author$project$Save$handleNoteIdVersionSavedToLocalStorage = function (model) {
 	var newModel = _Utils_update(
 		model,
@@ -6142,64 +6220,11 @@ var $author$project$Save$SavingNoteLocally = {$: 'SavingNoteLocally'};
 var $author$project$ElmCommon$SuccessMessage = function (successMessage) {
 	return {successMessage: successMessage};
 };
-var $author$project$Ports$JsStorageValue = F3(
-	function (storageArea, storageAction, value) {
-		return {storageAction: storageAction, storageArea: storageArea, value: value};
-	});
 var $author$project$StorageKeys$Save = {$: 'Save'};
-var $author$project$Ports$WithStorage = F2(
-	function (a, b) {
-		return {$: 'WithStorage', a: a, b: b};
-	});
-var $elm$json$Json$Encode$int = _Json_wrap;
-var $author$project$Note$encodeFullNote = function (_v0) {
-	var noteText = _v0.a;
-	var noteId = _v0.b.noteId;
-	var noteVersion = _v0.b.noteVersion;
-	return $elm$json$Json$Encode$object(
-		_List_fromArray(
-			[
-				_Utils_Tuple2(
-				'noteText',
-				$elm$json$Json$Encode$string(noteText)),
-				_Utils_Tuple2(
-				'noteId',
-				$elm$json$Json$Encode$int(noteId)),
-				_Utils_Tuple2(
-				'noteVersion',
-				$elm$json$Json$Encode$int(noteVersion))
-			]));
-};
-var $author$project$Note$encodeLightNote = function (_v0) {
-	var noteText = _v0.a;
-	return $elm$json$Json$Encode$object(
-		_List_fromArray(
-			[
-				_Utils_Tuple2(
-				'noteText',
-				$elm$json$Json$Encode$string(noteText))
-			]));
-};
-var $author$project$Save$encodeSaveNote = function (note) {
-	if (note.$ === 'NoteWithoutId') {
-		var lightNote = note.a;
-		return $author$project$Note$encodeLightNote(lightNote);
-	} else {
-		var fullNote = note.a;
-		return $author$project$Note$encodeFullNote(fullNote);
-	}
-};
 var $author$project$Save$noteSavedToLocalStorageResponseKey = $author$project$Ports$ResponseKey('NoteSavedToLocalStorage');
 var $author$project$Save$remoteNewNoteSavedToToLocalStorageResponseKey = $author$project$Ports$ResponseKey('RemoteNewNoteSavedToToLocalStorage');
 var $author$project$Save$remoteNoteIdVersionSavedToLocalStorageResponseKey = $author$project$Ports$ResponseKey('RemoteNoteIdVersionSavedToLocalStorage');
 var $author$project$StorageKeys$Local = {$: 'Local'};
-var $author$project$StorageKeys$StorageArea = F2(
-	function (a, b) {
-		return {$: 'StorageArea', a: a, b: b};
-	});
-var $author$project$StorageKeys$StorageKey = function (a) {
-	return {$: 'StorageKey', a: a};
-};
 var $author$project$StorageKeys$savedNoteStorageArea = A2(
 	$author$project$StorageKeys$StorageArea,
 	$author$project$StorageKeys$Local,

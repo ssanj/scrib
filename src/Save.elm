@@ -402,7 +402,7 @@ handleNewNoteSavedToLocalStorage model =
           , infoMessage    = Just <| InformationMessage "New Note Saved Locally"
           , doing          = Idle
         }
-  in (newModel, addTimeoutForInlineMessage inlineInfoSuccessTimeout InlineInfoTimedOut) --TODO: we also need to sync cache
+  in (newModel, syncWithSessionCache model.note)
 
 handleEditingNote : Model -> String -> (Model, Cmd Msg)
 handleEditingNote model newNoteText =
@@ -537,20 +537,6 @@ saveLocally newNote remoteSaveStatus saveType model =
   , saveNoteToLocalStorage newNote saveType
   )
 
---saveLocally : NoteWithContent -> RemoteSaveStatus -> Model -> (Model, Cmd Msg)
---saveLocally newNote remoteSaveStatus model =
---  (
---    {
---      model |
---        note              = newNote
---      , remoteSaveStatus  = Just remoteSaveStatus
---      , doing             = SavingNoteLocally
---      , noteContentStatus = UpToDate
---      , successMessage    = Just <| SuccessMessage "Saved Note"
---    }
---  , saveRemoteUpdateToLocalStorage newNote
---  )
-
 
 handleSuccessMessageTimeout : Model -> (Model, Cmd Msg)
 handleSuccessMessageTimeout model = onlyModel { model | successMessage = Nothing }
@@ -558,6 +544,7 @@ handleSuccessMessageTimeout model = onlyModel { model | successMessage = Nothing
 
 handleInfoMessageTimeout : Model -> (Model, Cmd Msg)
 handleInfoMessageTimeout model = onlyModel { model | infoMessage = Nothing }
+
 
 -- VIEW HELPERS
 
@@ -723,8 +710,8 @@ remoteNoteIdVersionSavedToLocalStorageResponseKey = P.ResponseKey "RemoteNoteIdV
 remoteNewNoteSavedToToLocalStorageResponseKey : P.ResponseKey
 remoteNewNoteSavedToToLocalStorageResponseKey = P.ResponseKey "RemoteNewNoteSavedToToLocalStorage"
 
---remoteNewNoteSavedToSessionStorageResponseKey : P.ResponseKey
---remoteNewNoteSavedToSessionStorageResponseKey = P.ResponseKey "RemoteNewNoteSavedToSessionStorage"
+remoteNewNoteSyncedToSessionStorageResponseKey : P.ResponseKey
+remoteNewNoteSyncedToSessionStorageResponseKey = P.ResponseKey "NewNoteSyncedToSessionStorage"
 
 saveNoteToLocalStorage : NoteWithContent -> SaveType -> Cmd Msg
 saveNoteToLocalStorage note saveType =
@@ -738,6 +725,16 @@ saveNoteToLocalStorage note saveType =
       saveSelectedNoteCommand = P.WithStorage saveSelectedNoteValue (Just responseKey)
   in scribMessage <| P.encodeJsCommand saveSelectedNoteCommand encodeSaveNote
 
+
+syncWithSessionCache : NoteWithContent ->Cmd Msg
+syncWithSessionCache note =
+  let storageArea             = viewTopNotesStorageArea
+      saveSelectedNoteValue   = P.JsStorageValue storageArea (Add ArrayType) note
+      responseKey             = remoteNewNoteSyncedToSessionStorageResponseKey
+      saveSelectedNoteCommand = P.WithStorage saveSelectedNoteValue (Just responseKey)
+  in scribMessage <| P.encodeJsCommand saveSelectedNoteCommand encodeSaveNote
+
+
 -- SUBSCRIPTION HELPERS
 
 
@@ -747,6 +744,7 @@ subscriptionSuccess (S.JsResponse (P.ResponseKey key) result) =
     "NoteSavedToLocalStorage"                -> TesterMsg (Seconds 2) NoteSavedToLocalStorage
     "RemoteNoteIdVersionSavedToLocalStorage" -> RemoteNoteIdVersionSavedToLocalStorage
     "RemoteNewNoteSavedToToLocalStorage"     -> RemoteNewNoteSavedToToLocalStorage
+    --"NewNoteSyncedToSessionStorage"          -> RemoteNewNoteSavedToToLocalStorage
     otherKey                                 -> subscriptionFailure <| ("Unhandled JS notification: " ++ otherKey)
 
 subscriptionFailure : String -> Msg
