@@ -91,6 +91,7 @@ type Msg = NoteSavedMsg
          | NoteSaveResponseMsg RemoteSaveStatus
          | NoteSavedToLocalStorage
          | RemoteNoteIdVersionSavedToLocalStorage
+         | RemoteNewNoteSavedToSessionStorage
          | JSNotificationError String
          | InlineSuccessMessageTimedOut
          | InlineInfoTimedOut
@@ -133,12 +134,13 @@ update msg model =
     ViewNoteMsg                            -> handleGoingToView model
     NoteSavedToLocalStorage                -> handleRemoteSave model
     RemoteNoteIdVersionSavedToLocalStorage -> handleNoteIdVersionSavedToLocalStorage model
+    RemoteNewNoteSavedToSessionStorage     -> onlyModel model
     (JSNotificationError error)            -> handleJSError model error
     InlineSuccessMessageTimedOut           -> handleSuccessMessageTimeout model
     InlineInfoTimedOut                     -> handleInfoMessageTimeout model
     TesterMsg timeout realMessage          -> handleTesterMessage model timeout realMessage
     ErrorModalClosed                       -> handleErrorModalClose model
-    (NoteSaveResponseMsg noteResponse)    -> handleNoteSaveResponse model noteResponse
+    (NoteSaveResponseMsg noteResponse)     -> handleNoteSaveResponse model noteResponse
 
 
 handleErrorModalClose : SaveModelCommand
@@ -348,7 +350,7 @@ processSaveNoteResults = TesterMsg (Seconds 2) << NoteSaveResponseMsg
 
 handleSavingNote: Model -> (Model, Cmd Msg)
 handleSavingNote model =
-  let saveNoteToLocalCmd = saveEditingNoteToLocalStorage noteSavedToLocalStorageResponseKey model.note
+  let saveNoteToLocalCmd = saveRemoteUpdateToLocalStorage model.note
       newModel           =
         {
           model |
@@ -518,6 +520,20 @@ saveLocally newNote remoteSaveStatus model =
   , saveRemoteUpdateToLocalStorage newNote
   )
 
+--saveLocally : NoteWithContent -> RemoteSaveStatus -> Model -> (Model, Cmd Msg)
+--saveLocally newNote remoteSaveStatus model =
+--  (
+--    {
+--      model |
+--        note              = newNote
+--      , remoteSaveStatus  = Just remoteSaveStatus
+--      , doing             = SavingNoteLocally
+--      , noteContentStatus = UpToDate
+--      , successMessage    = Just <| SuccessMessage "Saved Note"
+--    }
+--  , saveRemoteUpdateToLocalStorage newNote
+--  )
+
 
 handleSuccessMessageTimeout : Model -> (Model, Cmd Msg)
 handleSuccessMessageTimeout model = onlyModel { model | successMessage = Nothing }
@@ -686,15 +702,14 @@ noteSavedToLocalStorageResponseKey = P.ResponseKey "NoteSavedToLocalStorage"
 remoteNoteIdVersionSavedToLocalStorageResponseKey : P.ResponseKey
 remoteNoteIdVersionSavedToLocalStorageResponseKey = P.ResponseKey "RemoteNoteIdVersionSavedToLocalStorage"
 
+remoteNewNoteSavedToSessionStorageResponseKey : P.ResponseKey
+remoteNewNoteSavedToSessionStorageResponseKey = P.ResponseKey "RemoteNewNoteSavedToSessionStorage"
+
 saveRemoteUpdateToLocalStorage : NoteWithContent -> Cmd Msg
 saveRemoteUpdateToLocalStorage note =
-  saveEditingNoteToLocalStorage remoteNoteIdVersionSavedToLocalStorageResponseKey note
-
-saveEditingNoteToLocalStorage : P.ResponseKey -> NoteWithContent -> Cmd Msg
-saveEditingNoteToLocalStorage responseKey note =
   let storageArea             = savedNoteStorageArea
       saveSelectedNoteValue   = P.JsStorageValue storageArea Save note
-      saveSelectedNoteCommand = P.WithStorage saveSelectedNoteValue (Just responseKey)
+      saveSelectedNoteCommand = P.WithStorage saveSelectedNoteValue (Just remoteNoteIdVersionSavedToLocalStorageResponseKey)
   in scribMessage <| P.encodeJsCommand saveSelectedNoteCommand encodeSaveNote
 
 
@@ -706,6 +721,7 @@ subscriptionSuccess (S.JsResponse (P.ResponseKey key) result) =
   case (key) of
     "NoteSavedToLocalStorage"                -> TesterMsg (Seconds 2) NoteSavedToLocalStorage
     "RemoteNoteIdVersionSavedToLocalStorage" -> RemoteNoteIdVersionSavedToLocalStorage
+    "RemoteNewNoteSavedToSessionStorage"     -> RemoteNewNoteSavedToSessionStorage
     otherKey                                 -> subscriptionFailure <| ("Unhandled JS notification: " ++ otherKey)
 
 subscriptionFailure : String -> Msg
