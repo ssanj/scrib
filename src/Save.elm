@@ -99,6 +99,7 @@ type Msg = NoteSavedMsg
          | RemoteNoteIdVersionSavedToLocalStorage
          | RemoteNewNoteSavedToToLocalStorage
          | NewNoteSyncedToSessionStorage
+         | UpdatedNoteSyncedToSessionStorage
          | JSNotificationError String
          | InlineSuccessMessageTimedOut
          | InlineInfoTimedOut
@@ -143,6 +144,7 @@ update msg model =
     RemoteNoteIdVersionSavedToLocalStorage -> handleNoteIdVersionSavedToLocalStorage model
     RemoteNewNoteSavedToToLocalStorage     -> handleNewNoteSavedToLocalStorage model
     NewNoteSyncedToSessionStorage          -> handleNewNoteSyncedToSessionStorage model
+    UpdatedNoteSyncedToSessionStorage      -> handleUpdatedNoteSyncedToSessionStorage model
     (JSNotificationError error)            -> handleJSError model error
     InlineSuccessMessageTimedOut           -> handleSuccessMessageTimeout model
     InlineInfoTimedOut                     -> handleInfoMessageTimeout model
@@ -415,6 +417,18 @@ handleNewNoteSyncedToSessionStorage model =
           model |
             successMessage = Nothing
           , infoMessage    = Just <| InformationMessage "New Note Synced to Session"
+          , doing          = Idle
+        }
+  in (newModel, addTimeoutForInlineMessage inlineInfoSuccessTimeout InlineInfoTimedOut)
+
+
+handleUpdatedNoteSyncedToSessionStorage : ModelCommand Model Msg
+handleUpdatedNoteSyncedToSessionStorage model =
+  let newModel =
+        {
+          model |
+            successMessage = Nothing
+          , infoMessage    = Just <| InformationMessage "Updated Note Synced to Session"
           , doing          = Idle
         }
   in (newModel, addTimeoutForInlineMessage inlineInfoSuccessTimeout InlineInfoTimedOut)
@@ -773,6 +787,7 @@ subscriptionSuccess (S.JsResponse (P.ResponseKey key) result) =
     "RemoteNoteIdVersionSavedToLocalStorage" -> RemoteNoteIdVersionSavedToLocalStorage
     "RemoteNewNoteSavedToToLocalStorage"     -> RemoteNewNoteSavedToToLocalStorage
     "NewNoteSyncedToSessionStorage"          -> NewNoteSyncedToSessionStorage
+    "UpdatedNoteSyncedToSessionStorage"      -> UpdatedNoteSyncedToSessionStorage
     otherKey                                 -> subscriptionFailure <| ("Unhandled JS notification: " ++ otherKey)
 
 subscriptionFailure : String -> Msg

@@ -5841,6 +5841,7 @@ var $author$project$Save$TesterMsg = F2(
 	function (a, b) {
 		return {$: 'TesterMsg', a: a, b: b};
 	});
+var $author$project$Save$UpdatedNoteSyncedToSessionStorage = {$: 'UpdatedNoteSyncedToSessionStorage'};
 var $author$project$Save$subscriptionSuccess = function (_v0) {
 	var key = _v0.a.a;
 	var result = _v0.b;
@@ -5856,6 +5857,8 @@ var $author$project$Save$subscriptionSuccess = function (_v0) {
 			return $author$project$Save$RemoteNewNoteSavedToToLocalStorage;
 		case 'NewNoteSyncedToSessionStorage':
 			return $author$project$Save$NewNoteSyncedToSessionStorage;
+		case 'UpdatedNoteSyncedToSessionStorage':
+			return $author$project$Save$UpdatedNoteSyncedToSessionStorage;
 		default:
 			var otherKey = key;
 			return $author$project$Save$subscriptionFailure('Unhandled JS notification: ' + otherKey);
@@ -7277,6 +7280,19 @@ var $author$project$Save$handleTesterMessage = F3(
 			model,
 			A2($author$project$Notifications$addTimeoutForInlineMessage, timeout, realMsg));
 	});
+var $author$project$Save$handleUpdatedNoteSyncedToSessionStorage = function (model) {
+	var newModel = _Utils_update(
+		model,
+		{
+			doing: $author$project$Save$Idle,
+			infoMessage: $elm$core$Maybe$Just(
+				$author$project$ElmCommon$InformationMessage('Updated Note Synced to Session')),
+			successMessage: $elm$core$Maybe$Nothing
+		});
+	return _Utils_Tuple2(
+		newModel,
+		A2($author$project$Notifications$addTimeoutForInlineMessage, $author$project$Save$inlineInfoSuccessTimeout, $author$project$Save$InlineInfoTimedOut));
+};
 var $author$project$Save$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
@@ -7297,6 +7313,8 @@ var $author$project$Save$update = F2(
 				return $author$project$Save$handleNewNoteSavedToLocalStorage(model);
 			case 'NewNoteSyncedToSessionStorage':
 				return $author$project$Save$handleNewNoteSyncedToSessionStorage(model);
+			case 'UpdatedNoteSyncedToSessionStorage':
+				return $author$project$Save$handleUpdatedNoteSyncedToSessionStorage(model);
 			case 'JSNotificationError':
 				var error = msg.a;
 				return A2($author$project$Save$handleJSError, model, error);
