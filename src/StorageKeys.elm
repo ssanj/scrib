@@ -14,7 +14,7 @@ module StorageKeys exposing
     , StorageArea
     , StorageType(..)
     , StorageAction(..)
-    , AddType(..)
+    , StorageValueType(..)
   )
 
 import ElmCommon exposing (Encoder)
@@ -39,10 +39,10 @@ outputKey = JsonKey "output"
 keyValue : JsonKey -> String
 keyValue (JsonKey value) = value
 
-type StorageKey = StorageKey String
-type StorageType = Local | Session
-type AddType = ArrayType | HashType
-type StorageAction = Save | Delete | Add AddType
+type StorageKey       = StorageKey String
+type StorageType      = Local | Session
+type StorageValueType = ArrayType | HashType
+type StorageAction    = Save | Delete | Add StorageValueType | Update StorageValueType
 
 type StorageArea = StorageArea StorageType StorageKey
 
@@ -64,10 +64,12 @@ encodeStorageType st =
 encodeStorageAction : Encoder StorageAction
 encodeStorageAction storageAction =
   case storageAction of
-    Save            -> E.string "save"
-    Delete          -> E.string "delete"
-    (Add ArrayType) -> E.string "add_to_array"
-    (Add HashType)  -> E.string "add_to_hash"
+    Save               -> E.string "save"
+    Delete             -> E.string "delete"
+    (Add ArrayType)    -> E.string "add_to_array"
+    (Add HashType)     -> E.string "add_to_hash"
+    (Update ArrayType) -> E.string "update_to_array"
+    (Update HashType)  -> E.string "update_to_hash"
 
 encodeStorageAreaAction : StorageArea -> StorageAction -> Encoder a -> a -> E.Value
 encodeStorageAreaAction (StorageArea st (StorageKey storageKey)) action payloadEncoder payload =

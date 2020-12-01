@@ -391,7 +391,7 @@ handleNoteIdVersionSavedToLocalStorage model =
           model |
             successMessage = Nothing
           , infoMessage    = Just <| InformationMessage "Updated Note Saved Locally"
-          , doing          = Idle
+          , doing          = UpdatingSessionCache
         }
   in (newModel, addTimeoutForInlineMessage inlineInfoSuccessTimeout InlineInfoTimedOut)
 
@@ -405,7 +405,7 @@ handleNewNoteSavedToLocalStorage model =
           , infoMessage    = Just <| InformationMessage "New Note Saved Locally"
           , doing          = UpdatingSessionCache
         }
-  in (newModel, syncWithSessionCache model.note)
+  in (newModel, syncNewNoteWithSessionCache model.note)
 
 
 handleNewNoteSyncedToSessionStorage : ModelCommand Model Msg
@@ -737,15 +737,23 @@ saveNoteToLocalStorage note saveType =
         case saveType of
           SaveNewNoteToLocalAfterRemoteSave -> remoteNewNoteSavedToToLocalStorageResponseKey
           UpdateNoteToLocalAfterRemoteSave  -> remoteNoteIdVersionSavedToLocalStorageResponseKey
-          SaveNoteToLocalBeforeRemoteSave     -> noteSavedToLocalStorageResponseKey
+          SaveNoteToLocalBeforeRemoteSave   -> noteSavedToLocalStorageResponseKey
       saveSelectedNoteCommand = P.WithStorage saveSelectedNoteValue (Just responseKey)
   in scribMessage <| P.encodeJsCommand saveSelectedNoteCommand encodeSaveNote
 
 
-syncWithSessionCache : NoteWithContent ->Cmd Msg
-syncWithSessionCache note =
+syncNewNoteWithSessionCache : NoteWithContent ->Cmd Msg
+syncNewNoteWithSessionCache note =
   let storageArea             = viewTopNotesStorageArea
       saveSelectedNoteValue   = P.JsStorageValue storageArea (Add ArrayType) note
+      responseKey             = remoteNewNoteSyncedToSessionStorageResponseKey
+      saveSelectedNoteCommand = P.WithStorage saveSelectedNoteValue (Just responseKey)
+  in scribMessage <| P.encodeJsCommand saveSelectedNoteCommand encodeSaveNote
+
+syncUpdateNoteWithSessionCache : NoteWithContent ->Cmd Msg
+syncUpdateNoteWithSessionCache note =
+  let storageArea             = viewTopNotesStorageArea
+      saveSelectedNoteValue   = P.JsStorageValue storageArea (Update ArrayType) note
       responseKey             = remoteNewNoteSyncedToSessionStorageResponseKey
       saveSelectedNoteCommand = P.WithStorage saveSelectedNoteValue (Just responseKey)
   in scribMessage <| P.encodeJsCommand saveSelectedNoteCommand encodeSaveNote
