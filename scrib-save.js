@@ -5610,13 +5610,21 @@ var $author$project$StorageKeys$encodeStorageAction = function (storageAction) {
 			return $elm$json$Json$Encode$string('save');
 		case 'Delete':
 			return $elm$json$Json$Encode$string('delete');
-		default:
+		case 'Add':
 			if (storageAction.a.$ === 'ArrayType') {
 				var _v1 = storageAction.a;
 				return $elm$json$Json$Encode$string('add_to_array');
 			} else {
 				var _v2 = storageAction.a;
 				return $elm$json$Json$Encode$string('add_to_hash');
+			}
+		default:
+			if (storageAction.a.$ === 'ArrayType') {
+				var _v3 = storageAction.a;
+				return $elm$json$Json$Encode$string('update_to_array');
+			} else {
+				var _v4 = storageAction.a;
+				return $elm$json$Json$Encode$string('update_to_hash');
 			}
 	}
 };
@@ -5986,7 +5994,7 @@ var $author$project$StorageKeys$viewTopNotesStorageArea = A2(
 	$author$project$StorageKeys$StorageArea,
 	$author$project$StorageKeys$Session,
 	$author$project$StorageKeys$StorageKey('scrib.view'));
-var $author$project$Save$syncWithSessionCache = function (note) {
+var $author$project$Save$syncNewNoteWithSessionCache = function (note) {
 	var storageArea = $author$project$StorageKeys$viewTopNotesStorageArea;
 	var saveSelectedNoteValue = A3(
 		$author$project$Ports$JsStorageValue,
@@ -6012,7 +6020,7 @@ var $author$project$Save$handleNewNoteSavedToLocalStorage = function (model) {
 		});
 	return _Utils_Tuple2(
 		newModel,
-		$author$project$Save$syncWithSessionCache(model.note));
+		$author$project$Save$syncNewNoteWithSessionCache(model.note));
 };
 var $author$project$Save$InlineInfoTimedOut = {$: 'InlineInfoTimedOut'};
 var $author$project$FP$const = F2(
@@ -6043,18 +6051,37 @@ var $author$project$Save$handleNewNoteSyncedToSessionStorage = function (model) 
 		newModel,
 		A2($author$project$Notifications$addTimeoutForInlineMessage, $author$project$Save$inlineInfoSuccessTimeout, $author$project$Save$InlineInfoTimedOut));
 };
+var $author$project$StorageKeys$Update = function (a) {
+	return {$: 'Update', a: a};
+};
+var $author$project$Save$remoteUpdatedNoteSyncedToSessionStorageResponseKey = $author$project$Ports$ResponseKey('UpdatedNoteSyncedToSessionStorage');
+var $author$project$Save$syncUpdateNoteWithSessionCache = function (note) {
+	var storageArea = $author$project$StorageKeys$viewTopNotesStorageArea;
+	var saveSelectedNoteValue = A3(
+		$author$project$Ports$JsStorageValue,
+		storageArea,
+		$author$project$StorageKeys$Update($author$project$StorageKeys$ArrayType),
+		note);
+	var responseKey = $author$project$Save$remoteUpdatedNoteSyncedToSessionStorageResponseKey;
+	var saveSelectedNoteCommand = A2(
+		$author$project$Ports$WithStorage,
+		saveSelectedNoteValue,
+		$elm$core$Maybe$Just(responseKey));
+	return $author$project$Save$scribMessage(
+		A2($author$project$Ports$encodeJsCommand, saveSelectedNoteCommand, $author$project$Save$encodeSaveNote));
+};
 var $author$project$Save$handleNoteIdVersionSavedToLocalStorage = function (model) {
 	var newModel = _Utils_update(
 		model,
 		{
-			doing: $author$project$Save$Idle,
+			doing: $author$project$Save$UpdatingSessionCache,
 			infoMessage: $elm$core$Maybe$Just(
 				$author$project$ElmCommon$InformationMessage('Updated Note Saved Locally')),
 			successMessage: $elm$core$Maybe$Nothing
 		});
 	return _Utils_Tuple2(
 		newModel,
-		A2($author$project$Notifications$addTimeoutForInlineMessage, $author$project$Save$inlineInfoSuccessTimeout, $author$project$Save$InlineInfoTimedOut));
+		$author$project$Save$syncUpdateNoteWithSessionCache(model.note));
 };
 var $author$project$Save$SaveNewNoteToLocalAfterRemoteSave = {$: 'SaveNewNoteToLocalAfterRemoteSave'};
 var $author$project$Save$UpdateNoteToLocalAfterRemoteSave = {$: 'UpdateNoteToLocalAfterRemoteSave'};

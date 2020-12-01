@@ -72,6 +72,29 @@ function handleStorage(action, cb) {
       const result = execute(action, responseKey, resultTransformer);
 
       cb(result);
+    } else if (storageAction === "update_to_array") {
+      const action = function() {
+        const cacheString        = store.getItem(storage.storageKey);
+        const cacheArrayObj      = JSON.parse(cacheString)
+
+        const foundIndex = cacheArrayObj.findIndex(o => o.noteId === storage.data.noteId)
+
+        if (foundIndex != -1) {
+          cacheArrayObj[foundIndex] = storage.data
+          const updatedCacheString = JSON.stringify(cacheArrayObj);
+          store.setItem(storage.storageKey, updatedCacheString);
+        } else {
+         console.log("update_to_array: Did not find matching item in for: " + JSON.stringify(storage.data));
+        }
+      };
+
+      const resultTransformer = function(result) {
+        return result;
+      }
+
+      const result = execute(action, responseKey, resultTransformer);
+
+      cb(result);
     } else if (storageAction === "clear") {
 
       const action = function() {

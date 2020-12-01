@@ -393,7 +393,7 @@ handleNoteIdVersionSavedToLocalStorage model =
           , infoMessage    = Just <| InformationMessage "Updated Note Saved Locally"
           , doing          = UpdatingSessionCache
         }
-  in (newModel, addTimeoutForInlineMessage inlineInfoSuccessTimeout InlineInfoTimedOut)
+  in (newModel, syncUpdateNoteWithSessionCache model.note)
 
 
 handleNewNoteSavedToLocalStorage : Model -> (Model, Cmd Msg)
@@ -729,6 +729,9 @@ remoteNewNoteSavedToToLocalStorageResponseKey = P.ResponseKey "RemoteNewNoteSave
 remoteNewNoteSyncedToSessionStorageResponseKey : P.ResponseKey
 remoteNewNoteSyncedToSessionStorageResponseKey = P.ResponseKey "NewNoteSyncedToSessionStorage"
 
+remoteUpdatedNoteSyncedToSessionStorageResponseKey : P.ResponseKey
+remoteUpdatedNoteSyncedToSessionStorageResponseKey = P.ResponseKey "UpdatedNoteSyncedToSessionStorage"
+
 saveNoteToLocalStorage : NoteWithContent -> SaveType -> Cmd Msg
 saveNoteToLocalStorage note saveType =
   let storageArea             = savedNoteStorageArea
@@ -750,11 +753,12 @@ syncNewNoteWithSessionCache note =
       saveSelectedNoteCommand = P.WithStorage saveSelectedNoteValue (Just responseKey)
   in scribMessage <| P.encodeJsCommand saveSelectedNoteCommand encodeSaveNote
 
+-- TODO: This is a duplicate of syncNewNoteWithSessionCache with one param different
 syncUpdateNoteWithSessionCache : NoteWithContent ->Cmd Msg
 syncUpdateNoteWithSessionCache note =
   let storageArea             = viewTopNotesStorageArea
       saveSelectedNoteValue   = P.JsStorageValue storageArea (Update ArrayType) note
-      responseKey             = remoteNewNoteSyncedToSessionStorageResponseKey
+      responseKey             = remoteUpdatedNoteSyncedToSessionStorageResponseKey
       saveSelectedNoteCommand = P.WithStorage saveSelectedNoteValue (Just responseKey)
   in scribMessage <| P.encodeJsCommand saveSelectedNoteCommand encodeSaveNote
 
