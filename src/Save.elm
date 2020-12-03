@@ -172,18 +172,23 @@ handleTesterMessage model timeout realMsg =
 
 view : Model -> Html Msg
 view model =
-  section [class "section"]
+  div
+    []
     [
-      div [class "container"]
-        (
-          viewHeadings ++
-          [
-            viewErrors model.errorMessages
-          , viewNoteEditingArea model
-          , createMarkdownPreview model.note
-          ]
-        )
+      section
+        [class "section"]
+        [
+          viewMenu
+        , div [class "container mt-3"]
+              [
+                viewErrors model.errorMessages
+              , viewNoteEditingArea model
+              , createMarkdownPreview model.note
+              ]
+        ]
+    , viewFooter
     ]
+
 
 
 viewErrors : Maybe (N.Nonempty ModalError) -> Html Msg
@@ -579,12 +584,55 @@ handleInfoMessageTimeout model = onlyModel { model | infoMessage = Nothing }
 -- VIEW HELPERS
 
 
-viewHeadings : List (Html msg)
-viewHeadings =
-  [
-    h1 [class "title"] [text "Scrib"]
-  , p [class "subtitle"] [text "Making scribbling effortless"]
-  ]
+viewMenu : Html msg
+viewMenu =
+  nav [ attribute "aria-label" "main navigation", class "navbar", attribute "role" "navigation" ]
+      [ div [ class "navbar-brand" ]
+          [ a [ class "navbar-item", href "https://bulma.io" ]
+              [ img [ attribute "height" "28", src "https://bulma.io/images/bulma-logo.png", attribute "width" "112" ]
+                  []
+              ]
+          , a [ attribute "aria-expanded" "false", attribute "aria-label" "menu", class "navbar-burger burger", attribute "data-target" "navbarBasicExample", attribute "role" "button" ]
+              [ span [ attribute "aria-hidden" "true" ]
+                  []
+              , span [ attribute "aria-hidden" "true" ]
+                  []
+              , span [ attribute "aria-hidden" "true" ]
+                  []
+              ]
+          ]
+      , div [ class "navbar-menu", id "navbarBasicExample" ]
+          [ div [ class "navbar-start" ]
+              [ a [ class "navbar-item", href "/"  ]
+                  [ text "Home          "]
+              , a [ class "navbar-item", href "view.html" ]
+                  [ text "View" ]
+              , a [ class "navbar-item", href "config.html" ]
+                  [ text "Admin          "]
+              ]
+          ]
+      ]
+
+
+viewFooter : Html msg
+viewFooter =
+  nav
+    [ attribute "aria-label" "main navigation", class "content", attribute "role" "navigation" ]
+    [ div
+        [ class "content has-text-centered" ]
+        [ p
+            []
+            [ strong
+                []
+                [ text "Scrib" ]
+            , text " by "
+            , a [ href "https://sanj.ink" ]
+                [ text "Sanj Sahayam" ]
+            , p []
+                [ text "Making scribbling effortless" ]
+            ]
+        ]
+    ]
 
 
 viewNoteEditingArea : Model -> Html Msg
@@ -628,8 +676,6 @@ viewControls doing note contentStatus =
         [
           viewSaveButton doing note
         , viewNewNoteButton doing
-        , button [ id "view-notes-button", class "button", class "is-text", onClick ViewNoteMsg ]
-            [ text "View Notes" ]
         , modifiedTag contentStatus
         ]
     ]

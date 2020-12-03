@@ -7594,36 +7594,203 @@ var $author$project$Save$viewErrors = A2(
 	function (errors) {
 		return A2($author$project$Notifications$viewModalErrors, errors, $author$project$Save$ErrorModalClosed);
 	});
-var $elm$html$Html$h1 = _VirtualDom_node('h1');
-var $author$project$Save$viewHeadings = _List_fromArray(
-	[
-		A2(
-		$elm$html$Html$h1,
-		_List_fromArray(
-			[
-				$elm$html$Html$Attributes$class('title')
-			]),
-		_List_fromArray(
-			[
-				$elm$html$Html$text('Scrib')
-			])),
-		A2(
-		$elm$html$Html$p,
-		_List_fromArray(
-			[
-				$elm$html$Html$Attributes$class('subtitle')
-			]),
-		_List_fromArray(
-			[
-				$elm$html$Html$text('Making scribbling effortless')
-			]))
-	]);
+var $elm$html$Html$a = _VirtualDom_node('a');
+var $elm$html$Html$Attributes$href = function (url) {
+	return A2(
+		$elm$html$Html$Attributes$stringProperty,
+		'href',
+		_VirtualDom_noJavaScriptUri(url));
+};
+var $elm$html$Html$nav = _VirtualDom_node('nav');
+var $elm$html$Html$strong = _VirtualDom_node('strong');
+var $author$project$Save$viewFooter = A2(
+	$elm$html$Html$nav,
+	_List_fromArray(
+		[
+			A2($elm$html$Html$Attributes$attribute, 'aria-label', 'main navigation'),
+			$elm$html$Html$Attributes$class('content'),
+			A2($elm$html$Html$Attributes$attribute, 'role', 'navigation')
+		]),
+	_List_fromArray(
+		[
+			A2(
+			$elm$html$Html$div,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$class('content has-text-centered')
+				]),
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$p,
+					_List_Nil,
+					_List_fromArray(
+						[
+							A2(
+							$elm$html$Html$strong,
+							_List_Nil,
+							_List_fromArray(
+								[
+									$elm$html$Html$text('Scrib')
+								])),
+							$elm$html$Html$text(' by '),
+							A2(
+							$elm$html$Html$a,
+							_List_fromArray(
+								[
+									$elm$html$Html$Attributes$href('https://sanj.ink')
+								]),
+							_List_fromArray(
+								[
+									$elm$html$Html$text('Sanj Sahayam')
+								])),
+							A2(
+							$elm$html$Html$p,
+							_List_Nil,
+							_List_fromArray(
+								[
+									$elm$html$Html$text('Making scribbling effortless')
+								]))
+						]))
+				]))
+		]));
+var $elm$html$Html$img = _VirtualDom_node('img');
+var $elm$html$Html$span = _VirtualDom_node('span');
+var $elm$html$Html$Attributes$src = function (url) {
+	return A2(
+		$elm$html$Html$Attributes$stringProperty,
+		'src',
+		_VirtualDom_noJavaScriptOrHtmlUri(url));
+};
+var $author$project$Save$viewMenu = A2(
+	$elm$html$Html$nav,
+	_List_fromArray(
+		[
+			A2($elm$html$Html$Attributes$attribute, 'aria-label', 'main navigation'),
+			$elm$html$Html$Attributes$class('navbar'),
+			A2($elm$html$Html$Attributes$attribute, 'role', 'navigation')
+		]),
+	_List_fromArray(
+		[
+			A2(
+			$elm$html$Html$div,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$class('navbar-brand')
+				]),
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$a,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('navbar-item'),
+							$elm$html$Html$Attributes$href('https://bulma.io')
+						]),
+					_List_fromArray(
+						[
+							A2(
+							$elm$html$Html$img,
+							_List_fromArray(
+								[
+									A2($elm$html$Html$Attributes$attribute, 'height', '28'),
+									$elm$html$Html$Attributes$src('https://bulma.io/images/bulma-logo.png'),
+									A2($elm$html$Html$Attributes$attribute, 'width', '112')
+								]),
+							_List_Nil)
+						])),
+					A2(
+					$elm$html$Html$a,
+					_List_fromArray(
+						[
+							A2($elm$html$Html$Attributes$attribute, 'aria-expanded', 'false'),
+							A2($elm$html$Html$Attributes$attribute, 'aria-label', 'menu'),
+							$elm$html$Html$Attributes$class('navbar-burger burger'),
+							A2($elm$html$Html$Attributes$attribute, 'data-target', 'navbarBasicExample'),
+							A2($elm$html$Html$Attributes$attribute, 'role', 'button')
+						]),
+					_List_fromArray(
+						[
+							A2(
+							$elm$html$Html$span,
+							_List_fromArray(
+								[
+									A2($elm$html$Html$Attributes$attribute, 'aria-hidden', 'true')
+								]),
+							_List_Nil),
+							A2(
+							$elm$html$Html$span,
+							_List_fromArray(
+								[
+									A2($elm$html$Html$Attributes$attribute, 'aria-hidden', 'true')
+								]),
+							_List_Nil),
+							A2(
+							$elm$html$Html$span,
+							_List_fromArray(
+								[
+									A2($elm$html$Html$Attributes$attribute, 'aria-hidden', 'true')
+								]),
+							_List_Nil)
+						]))
+				])),
+			A2(
+			$elm$html$Html$div,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$class('navbar-menu'),
+					$elm$html$Html$Attributes$id('navbarBasicExample')
+				]),
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$div,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('navbar-start')
+						]),
+					_List_fromArray(
+						[
+							A2(
+							$elm$html$Html$a,
+							_List_fromArray(
+								[
+									$elm$html$Html$Attributes$class('navbar-item'),
+									$elm$html$Html$Attributes$href('/')
+								]),
+							_List_fromArray(
+								[
+									$elm$html$Html$text('Home          ')
+								])),
+							A2(
+							$elm$html$Html$a,
+							_List_fromArray(
+								[
+									$elm$html$Html$Attributes$class('navbar-item'),
+									$elm$html$Html$Attributes$href('view.html')
+								]),
+							_List_fromArray(
+								[
+									$elm$html$Html$text('View')
+								])),
+							A2(
+							$elm$html$Html$a,
+							_List_fromArray(
+								[
+									$elm$html$Html$Attributes$class('navbar-item'),
+									$elm$html$Html$Attributes$href('config.html')
+								]),
+							_List_fromArray(
+								[
+									$elm$html$Html$text('Admin          ')
+								]))
+						]))
+				]))
+		]));
 var $author$project$ElmCommon$plainDiv = $elm$html$Html$div(_List_Nil);
-var $author$project$Save$ViewNoteMsg = {$: 'ViewNoteMsg'};
 var $author$project$ElmCommon$addClasses = function (classes) {
 	return A2($elm$core$List$map, $elm$html$Html$Attributes$class, classes);
 };
-var $elm$html$Html$span = _VirtualDom_node('span');
 var $author$project$Save$modifiedTag = function (contentStatus) {
 	if (contentStatus.$ === 'UpToDate') {
 		return A2(
@@ -7745,19 +7912,6 @@ var $author$project$Save$viewControls = F3(
 						[
 							A2($author$project$Save$viewSaveButton, doing, note),
 							$author$project$Save$viewNewNoteButton(doing),
-							A2(
-							$elm$html$Html$button,
-							_List_fromArray(
-								[
-									$elm$html$Html$Attributes$id('view-notes-button'),
-									$elm$html$Html$Attributes$class('button'),
-									$elm$html$Html$Attributes$class('is-text'),
-									$elm$html$Html$Events$onClick($author$project$Save$ViewNoteMsg)
-								]),
-							_List_fromArray(
-								[
-									$elm$html$Html$text('View Notes')
-								])),
 							$author$project$Save$modifiedTag(contentStatus)
 						]))
 				]));
@@ -7892,27 +8046,33 @@ var $author$project$Save$viewNoteEditingArea = function (model) {
 };
 var $author$project$Save$view = function (model) {
 	return A2(
-		$elm$html$Html$section,
-		_List_fromArray(
-			[
-				$elm$html$Html$Attributes$class('section')
-			]),
+		$elm$html$Html$div,
+		_List_Nil,
 		_List_fromArray(
 			[
 				A2(
-				$elm$html$Html$div,
+				$elm$html$Html$section,
 				_List_fromArray(
 					[
-						$elm$html$Html$Attributes$class('container')
+						$elm$html$Html$Attributes$class('section')
 					]),
-				_Utils_ap(
-					$author$project$Save$viewHeadings,
-					_List_fromArray(
-						[
-							$author$project$Save$viewErrors(model.errorMessages),
-							$author$project$Save$viewNoteEditingArea(model),
-							$author$project$Save$createMarkdownPreview(model.note)
-						])))
+				_List_fromArray(
+					[
+						$author$project$Save$viewMenu,
+						A2(
+						$elm$html$Html$div,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('container mt-3')
+							]),
+						_List_fromArray(
+							[
+								$author$project$Save$viewErrors(model.errorMessages),
+								$author$project$Save$viewNoteEditingArea(model),
+								$author$project$Save$createMarkdownPreview(model.note)
+							]))
+					])),
+				$author$project$Save$viewFooter
 			]));
 };
 var $author$project$Save$main = $elm$browser$Browser$element(
