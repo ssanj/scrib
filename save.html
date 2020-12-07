@@ -7,8 +7,7 @@
   <link rel="stylesheet" href="md.css">
   <script src="scrib-save.js"></script>
   <script src="ports.js"></script>
-</head>
-
+  <script src="ui.js"></script>
 <body>
   <div id="myapp"></div>
   <script>
@@ -33,6 +32,11 @@
       const apiKey         = localStorage.getItem(appApiKey);
       return { "note": noteForEditing , "apiKey": apiKey};
     }
+
+    document.addEventListener('DOMContentLoaded', () => burgerMenu(document));
   </script>
+</head>
+
+
 </body>
 </html>

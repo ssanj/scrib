@@ -1,4 +1,4 @@
 #!/bin/bash
 
-cp config.html save.html view.html scrib-save.js scrib-view.js ports.js md.css /Volumes/Work/projects/code/haskell/toy/slate/static/
+cp config.html save.html view.html scrib-save.js scrib-view.js ports.js ui.js md.css /Volumes/Work/projects/code/haskell/toy/slate/static/
 echo "copied resources"
