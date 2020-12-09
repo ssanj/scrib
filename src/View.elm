@@ -120,46 +120,60 @@ view model =
   let (maybeInlineErrors, maybeModalErrors) = maybe (Nothing, Nothing) getErrors model.appErrors
       notesList                             = choseWhichNotes (noteSelection model)
   in
-    div []
-      [ section [ class "section" ]
-        [ div [ class "container" ]
-          [ h1 [ class "title" ]
-            [ text "Scrib" ]
-          , p [ class "subtitle" ]
-            [ text "Making scribbling effortless" ]
-          , div []
-            [ article [ class "panel", class "is-primary" ]
-              [ p [ class "panel-heading" ]
-                [ text "Saved Notes"
-                , text " "
-                , span [class "tab", class "is-medium"] [text <| getNoteCount notesList]
-                ]
-              , p [ class "panel-tabs" ]
-                [ button [ class "button", class "is-text", onClick AddNote]
-                  [ text "Add Note" ]
-                , button [ class "button", class "is-text", onClick NotesRefreshed ]
-                  [ text "Refresh" ]
-                ]
-              , div [ class "panel-block" ]
-                [ p [ class "control has-icons-left" ]
-                  [ input [ class "input", class "is-primary", placeholder "Search", type_ "text", onInput SearchEdited, value <| getQueryText model.query ]
-                    []
-                  , span [ class "icon is-left" ]
-                    [ i [ attribute "aria-hidden" "true", class "fas", class "fa-search" ]
-                      []
-                    ]
-                  ]
-                ]
-              , viewInlineErrorsIfAny maybeInlineErrors
-              , viewInformationIfAny (model.infoMessage)
-              , viewNotesList notesList
-              ]
+    plainDiv
+      [
+        section [class "section"]
+          ([ viewMenu ]                                                              ++
+          (viewSearchArea notesList model.query maybeInlineErrors model.infoMessage) ++
+          [
+            viewModalErrorsIfAny maybeModalErrors ErrorModalClosed
+          , createMarkdownPreview model.selectedNote
+          ])
+      , viewFooter
+      ]
+
+viewFooter : Html msg
+viewFooter =
+  nav
+    [ attribute "aria-label" "main navigation", class "content", attribute "role" "navigation" ]
+    [ div
+        [ class "content has-text-centered" ]
+        [ p
+            []
+            [ strong
+                []
+                [ text "Scrib" ]
+            , text " by "
+            , a [ href "https://sanj.ink" ]
+                [ text "Sanj Sahayam" ]
+            , p []
+                [ text "Making scribbling effortless" ]
             ]
-          ]
         ]
-     , viewModalErrorsIfAny maybeModalErrors ErrorModalClosed
-     , createMarkdownPreview model.selectedNote
-     ]
+    ]
+
+viewSearchArea : List SC.NoteFull ->  Maybe String -> Maybe InlineError -> Maybe InformationMessage -> List (Html Msg)
+viewSearchArea notesList maybeQuery  maybeInlineErrors maybeInfoMessage =
+    [
+      viewSearchBar maybeQuery
+    , viewInlineErrorsIfAny maybeInlineErrors
+    , viewInformationIfAny maybeInfoMessage
+    , viewNotesList notesList
+    ]
+
+
+viewSearchBar : Maybe String -> Html Msg
+viewSearchBar maybeQuery  =
+  div [ class "panel-block" ]
+    [ p [ class "control has-icons-left" ]
+      [ input [ class "input", class "is-primary", placeholder "Search", type_ "text", onInput SearchEdited, value <| getQueryText maybeQuery ]
+        []
+      , span [ class "icon is-left" ]
+        [ i [ attribute "aria-hidden" "true", class "fas", class "fa-search" ]
+          []
+        ]
+      ]
+    ]
 
 
 -- PORTS
@@ -388,6 +402,37 @@ handleJSError model error = (model, logMessage error)
 
 -- VIEW HELPERS
 
+
+viewMenu : Html Msg
+viewMenu =
+  nav [ attribute "aria-label" "main navigation", class "navbar", attribute "role" "navigation" ]
+      [ div [ class "navbar-brand" ]
+          [ a [ class "navbar-item", href "https://bulma.io" ]
+              [ img [ attribute "height" "28", src "https://bulma.io/images/bulma-logo.png", attribute "width" "112" ]
+                  []
+              ]
+          , a [ attribute "aria-expanded" "false", attribute "aria-label" "menu", class "navbar-burger burger", attribute "data-target" "navbarBasicExample", attribute "role" "button" ]
+              [ span [ attribute "aria-hidden" "true" ]
+                  []
+              , span [ attribute "aria-hidden" "true" ]
+                  []
+              , span [ attribute "aria-hidden" "true" ]
+                  []
+              ]
+          ]
+      , div [ class "navbar-menu", id "navbarBasicExample" ]
+          [ div [ class "navbar-start" ]
+              [ a [ class "navbar-item", href "/"  ]
+                  [ text "Home          "]
+              , a [ class "navbar-item", href "save.html" ]
+                  [ text "New Note" ]
+              , a [ class "navbar-item", onClick NotesRefreshed]
+                  [ text "Refresh" ]
+              , a [ class "navbar-item", href "config.html" ]
+                  [ text "Admin          "]
+              ]
+          ]
+      ]
 
 getQueryText : Maybe String -> String
 getQueryText = maybe "" identity

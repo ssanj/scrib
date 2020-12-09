@@ -5584,10 +5584,27 @@ var $author$project$Ports$encodePortWithMarkdownCommand = F3(
 var $author$project$Ports$markdownPreviewPort = $author$project$Ports$PortTypeName('markdown_action');
 var $author$project$Ports$markdownPreviewCommand = $author$project$Ports$encodePortWithMarkdownCommand($author$project$Ports$markdownPreviewPort);
 var $author$project$StorageKeys$encodeStorageAction = function (storageAction) {
-	if (storageAction.$ === 'Save') {
-		return $elm$json$Json$Encode$string('save');
-	} else {
-		return $elm$json$Json$Encode$string('delete');
+	switch (storageAction.$) {
+		case 'Save':
+			return $elm$json$Json$Encode$string('save');
+		case 'Delete':
+			return $elm$json$Json$Encode$string('delete');
+		case 'Add':
+			if (storageAction.a.$ === 'ArrayType') {
+				var _v1 = storageAction.a;
+				return $elm$json$Json$Encode$string('add_to_array');
+			} else {
+				var _v2 = storageAction.a;
+				return $elm$json$Json$Encode$string('add_to_hash');
+			}
+		default:
+			if (storageAction.a.$ === 'ArrayType') {
+				var _v3 = storageAction.a;
+				return $elm$json$Json$Encode$string('update_to_array');
+			} else {
+				var _v4 = storageAction.a;
+				return $elm$json$Json$Encode$string('update_to_hash');
+			}
 	}
 };
 var $author$project$StorageKeys$encodeStorageType = function (st) {
@@ -7258,22 +7275,7 @@ var $author$project$View$update = F2(
 				return $author$project$View$handleInlineInfoTimeout(model);
 		}
 	});
-var $author$project$View$AddNote = {$: 'AddNote'};
 var $author$project$View$ErrorModalClosed = {$: 'ErrorModalClosed'};
-var $author$project$View$NotesRefreshed = {$: 'NotesRefreshed'};
-var $author$project$View$SearchEdited = function (a) {
-	return {$: 'SearchEdited', a: a};
-};
-var $elm$html$Html$article = _VirtualDom_node('article');
-var $elm$virtual_dom$VirtualDom$attribute = F2(
-	function (key, value) {
-		return A2(
-			_VirtualDom_attribute,
-			_VirtualDom_noOnOrFormAction(key),
-			_VirtualDom_noJavaScriptOrHtmlUri(value));
-	});
-var $elm$html$Html$Attributes$attribute = $elm$virtual_dom$VirtualDom$attribute;
-var $elm$html$Html$button = _VirtualDom_node('button');
 var $author$project$View$choseWhichNotes = function (_v0) {
 	var retrievedNotes = _v0.retrievedNotes;
 	var searchResultNotes = _v0.searchResultNotes;
@@ -7295,6 +7297,7 @@ var $elm$html$Html$Attributes$class = $elm$html$Html$Attributes$stringProperty('
 var $author$project$View$NoteEdited = function (a) {
 	return {$: 'NoteEdited', a: a};
 };
+var $elm$html$Html$button = _VirtualDom_node('button');
 var $elm$html$Html$div = _VirtualDom_node('div');
 var $author$project$Note$getNoteFullText = function (_v0) {
 	var noteText = _v0.a;
@@ -7489,104 +7492,229 @@ var $author$project$Notifications$getErrors = function (appErrors) {
 	var maybeInlineError = $author$project$Notifications$getInlineError(appErrors);
 	return _Utils_Tuple2(maybeInlineError, maybeModalErrors);
 };
-var $mgold$elm_nonempty_list$List$Nonempty$length = function (_v0) {
-	var x = _v0.a;
-	var xs = _v0.b;
-	return $elm$core$List$length(xs) + 1;
-};
-var $author$project$View$listFold = F3(
-	function (onEmpty, onFull, elements) {
-		return A3(
-			$author$project$FP$maybe,
-			onEmpty,
-			onFull,
-			$mgold$elm_nonempty_list$List$Nonempty$fromList(elements));
-	});
-var $author$project$View$getNoteCount = A2(
-	$author$project$View$listFold,
-	'-',
-	A2($elm$core$Basics$composeL, $elm$core$String$fromInt, $mgold$elm_nonempty_list$List$Nonempty$length));
-var $author$project$View$getQueryText = A2($author$project$FP$maybe, '', $elm$core$Basics$identity);
-var $elm$html$Html$h1 = _VirtualDom_node('h1');
-var $elm$html$Html$i = _VirtualDom_node('i');
-var $elm$html$Html$input = _VirtualDom_node('input');
 var $author$project$View$noteSelection = function (_v0) {
 	var retrievedNotes = _v0.retrievedNotes;
 	var searchResultNotes = _v0.searchResultNotes;
 	var whichNotes = _v0.whichNotes;
 	return {retrievedNotes: retrievedNotes, searchResultNotes: searchResultNotes, whichNotes: whichNotes};
 };
-var $elm$html$Html$Events$alwaysStop = function (x) {
-	return _Utils_Tuple2(x, true);
-};
-var $elm$virtual_dom$VirtualDom$MayStopPropagation = function (a) {
-	return {$: 'MayStopPropagation', a: a};
-};
-var $elm$html$Html$Events$stopPropagationOn = F2(
-	function (event, decoder) {
-		return A2(
-			$elm$virtual_dom$VirtualDom$on,
-			event,
-			$elm$virtual_dom$VirtualDom$MayStopPropagation(decoder));
-	});
-var $elm$json$Json$Decode$at = F2(
-	function (fields, decoder) {
-		return A3($elm$core$List$foldr, $elm$json$Json$Decode$field, decoder, fields);
-	});
-var $elm$html$Html$Events$targetValue = A2(
-	$elm$json$Json$Decode$at,
-	_List_fromArray(
-		['target', 'value']),
-	$elm$json$Json$Decode$string);
-var $elm$html$Html$Events$onInput = function (tagger) {
-	return A2(
-		$elm$html$Html$Events$stopPropagationOn,
-		'input',
-		A2(
-			$elm$json$Json$Decode$map,
-			$elm$html$Html$Events$alwaysStop,
-			A2($elm$json$Json$Decode$map, tagger, $elm$html$Html$Events$targetValue)));
-};
-var $elm$html$Html$p = _VirtualDom_node('p');
-var $elm$html$Html$Attributes$placeholder = $elm$html$Html$Attributes$stringProperty('placeholder');
+var $author$project$ElmCommon$plainDiv = $elm$html$Html$div(_List_Nil);
 var $elm$html$Html$section = _VirtualDom_node('section');
+var $elm$html$Html$a = _VirtualDom_node('a');
+var $elm$virtual_dom$VirtualDom$attribute = F2(
+	function (key, value) {
+		return A2(
+			_VirtualDom_attribute,
+			_VirtualDom_noOnOrFormAction(key),
+			_VirtualDom_noJavaScriptOrHtmlUri(value));
+	});
+var $elm$html$Html$Attributes$attribute = $elm$virtual_dom$VirtualDom$attribute;
+var $elm$html$Html$Attributes$href = function (url) {
+	return A2(
+		$elm$html$Html$Attributes$stringProperty,
+		'href',
+		_VirtualDom_noJavaScriptUri(url));
+};
+var $elm$html$Html$nav = _VirtualDom_node('nav');
+var $elm$html$Html$p = _VirtualDom_node('p');
+var $elm$html$Html$strong = _VirtualDom_node('strong');
+var $author$project$View$viewFooter = A2(
+	$elm$html$Html$nav,
+	_List_fromArray(
+		[
+			A2($elm$html$Html$Attributes$attribute, 'aria-label', 'main navigation'),
+			$elm$html$Html$Attributes$class('content'),
+			A2($elm$html$Html$Attributes$attribute, 'role', 'navigation')
+		]),
+	_List_fromArray(
+		[
+			A2(
+			$elm$html$Html$div,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$class('content has-text-centered')
+				]),
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$p,
+					_List_Nil,
+					_List_fromArray(
+						[
+							A2(
+							$elm$html$Html$strong,
+							_List_Nil,
+							_List_fromArray(
+								[
+									$elm$html$Html$text('Scrib')
+								])),
+							$elm$html$Html$text(' by '),
+							A2(
+							$elm$html$Html$a,
+							_List_fromArray(
+								[
+									$elm$html$Html$Attributes$href('https://sanj.ink')
+								]),
+							_List_fromArray(
+								[
+									$elm$html$Html$text('Sanj Sahayam')
+								])),
+							A2(
+							$elm$html$Html$p,
+							_List_Nil,
+							_List_fromArray(
+								[
+									$elm$html$Html$text('Making scribbling effortless')
+								]))
+						]))
+				]))
+		]));
+var $author$project$View$NotesRefreshed = {$: 'NotesRefreshed'};
+var $elm$html$Html$img = _VirtualDom_node('img');
 var $elm$html$Html$span = _VirtualDom_node('span');
-var $elm$html$Html$Attributes$type_ = $elm$html$Html$Attributes$stringProperty('type');
-var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty('value');
-var $author$project$ElmCommon$addClasses = function (classes) {
-	return A2($elm$core$List$map, $elm$html$Html$Attributes$class, classes);
-};
-var $author$project$ElmCommon$addInlineInfoFlash = function (_v0) {
-	var infoMessage = _v0.infoMessage;
+var $elm$html$Html$Attributes$src = function (url) {
 	return A2(
-		$elm$html$Html$div,
-		$author$project$ElmCommon$addClasses(
-			_List_fromArray(
-				['px-1', 'py-1', 'has-background-info', 'has-text-white'])),
-		_List_fromArray(
-			[
-				$elm$html$Html$text(infoMessage)
-			]));
+		$elm$html$Html$Attributes$stringProperty,
+		'src',
+		_VirtualDom_noJavaScriptOrHtmlUri(url));
 };
+var $author$project$View$viewMenu = A2(
+	$elm$html$Html$nav,
+	_List_fromArray(
+		[
+			A2($elm$html$Html$Attributes$attribute, 'aria-label', 'main navigation'),
+			$elm$html$Html$Attributes$class('navbar'),
+			A2($elm$html$Html$Attributes$attribute, 'role', 'navigation')
+		]),
+	_List_fromArray(
+		[
+			A2(
+			$elm$html$Html$div,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$class('navbar-brand')
+				]),
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$a,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('navbar-item'),
+							$elm$html$Html$Attributes$href('https://bulma.io')
+						]),
+					_List_fromArray(
+						[
+							A2(
+							$elm$html$Html$img,
+							_List_fromArray(
+								[
+									A2($elm$html$Html$Attributes$attribute, 'height', '28'),
+									$elm$html$Html$Attributes$src('https://bulma.io/images/bulma-logo.png'),
+									A2($elm$html$Html$Attributes$attribute, 'width', '112')
+								]),
+							_List_Nil)
+						])),
+					A2(
+					$elm$html$Html$a,
+					_List_fromArray(
+						[
+							A2($elm$html$Html$Attributes$attribute, 'aria-expanded', 'false'),
+							A2($elm$html$Html$Attributes$attribute, 'aria-label', 'menu'),
+							$elm$html$Html$Attributes$class('navbar-burger burger'),
+							A2($elm$html$Html$Attributes$attribute, 'data-target', 'navbarBasicExample'),
+							A2($elm$html$Html$Attributes$attribute, 'role', 'button')
+						]),
+					_List_fromArray(
+						[
+							A2(
+							$elm$html$Html$span,
+							_List_fromArray(
+								[
+									A2($elm$html$Html$Attributes$attribute, 'aria-hidden', 'true')
+								]),
+							_List_Nil),
+							A2(
+							$elm$html$Html$span,
+							_List_fromArray(
+								[
+									A2($elm$html$Html$Attributes$attribute, 'aria-hidden', 'true')
+								]),
+							_List_Nil),
+							A2(
+							$elm$html$Html$span,
+							_List_fromArray(
+								[
+									A2($elm$html$Html$Attributes$attribute, 'aria-hidden', 'true')
+								]),
+							_List_Nil)
+						]))
+				])),
+			A2(
+			$elm$html$Html$div,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$class('navbar-menu'),
+					$elm$html$Html$Attributes$id('navbarBasicExample')
+				]),
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$div,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('navbar-start')
+						]),
+					_List_fromArray(
+						[
+							A2(
+							$elm$html$Html$a,
+							_List_fromArray(
+								[
+									$elm$html$Html$Attributes$class('navbar-item'),
+									$elm$html$Html$Attributes$href('/')
+								]),
+							_List_fromArray(
+								[
+									$elm$html$Html$text('Home          ')
+								])),
+							A2(
+							$elm$html$Html$a,
+							_List_fromArray(
+								[
+									$elm$html$Html$Attributes$class('navbar-item'),
+									$elm$html$Html$Attributes$href('save.html')
+								]),
+							_List_fromArray(
+								[
+									$elm$html$Html$text('New Note')
+								])),
+							A2(
+							$elm$html$Html$a,
+							_List_fromArray(
+								[
+									$elm$html$Html$Attributes$class('navbar-item'),
+									$elm$html$Html$Events$onClick($author$project$View$NotesRefreshed)
+								]),
+							_List_fromArray(
+								[
+									$elm$html$Html$text('Refresh')
+								])),
+							A2(
+							$elm$html$Html$a,
+							_List_fromArray(
+								[
+									$elm$html$Html$Attributes$class('navbar-item'),
+									$elm$html$Html$Attributes$href('config.html')
+								]),
+							_List_fromArray(
+								[
+									$elm$html$Html$text('Admin          ')
+								]))
+						]))
+				]))
+		]));
 var $author$project$ElmCommon$emptyDiv = A2($elm$html$Html$div, _List_Nil, _List_Nil);
-var $author$project$View$viewInformationIfAny = A2($author$project$FP$maybe, $author$project$ElmCommon$emptyDiv, $author$project$ElmCommon$addInlineInfoFlash);
-var $author$project$ElmCommon$addInlineErrorFlash = function (_v0) {
-	var errorMessage = _v0.errorMessage;
-	return A2(
-		$elm$html$Html$div,
-		$author$project$ElmCommon$addClasses(
-			_List_fromArray(
-				['px-1', 'py-1', 'has-background-danger', 'has-text-white'])),
-		_List_fromArray(
-			[
-				$elm$html$Html$text(errorMessage)
-			]));
-};
-var $author$project$Notifications$viewInlineError = function (_v0) {
-	var errorMessage = _v0.a;
-	return $author$project$ElmCommon$addInlineErrorFlash(errorMessage);
-};
-var $author$project$View$viewInlineErrorsIfAny = A2($author$project$FP$maybe, $author$project$ElmCommon$emptyDiv, $author$project$Notifications$viewInlineError);
 var $mgold$elm_nonempty_list$List$Nonempty$map = F2(
 	function (f, _v0) {
 		var x = _v0.a;
@@ -7596,6 +7724,7 @@ var $mgold$elm_nonempty_list$List$Nonempty$map = F2(
 			f(x),
 			A2($elm$core$List$map, f, xs));
 	});
+var $elm$html$Html$article = _VirtualDom_node('article');
 var $elm$core$Tuple$second = function (_v0) {
 	var y = _v0.b;
 	return y;
@@ -7722,10 +7851,43 @@ var $author$project$View$viewModalErrorsIfAny = F2(
 			},
 			maybeError);
 	});
+var $author$project$ElmCommon$addClasses = function (classes) {
+	return A2($elm$core$List$map, $elm$html$Html$Attributes$class, classes);
+};
+var $author$project$ElmCommon$addInlineInfoFlash = function (_v0) {
+	var infoMessage = _v0.infoMessage;
+	return A2(
+		$elm$html$Html$div,
+		$author$project$ElmCommon$addClasses(
+			_List_fromArray(
+				['px-1', 'py-1', 'has-background-info', 'has-text-white'])),
+		_List_fromArray(
+			[
+				$elm$html$Html$text(infoMessage)
+			]));
+};
+var $author$project$View$viewInformationIfAny = A2($author$project$FP$maybe, $author$project$ElmCommon$emptyDiv, $author$project$ElmCommon$addInlineInfoFlash);
+var $author$project$ElmCommon$addInlineErrorFlash = function (_v0) {
+	var errorMessage = _v0.errorMessage;
+	return A2(
+		$elm$html$Html$div,
+		$author$project$ElmCommon$addClasses(
+			_List_fromArray(
+				['px-1', 'py-1', 'has-background-danger', 'has-text-white'])),
+		_List_fromArray(
+			[
+				$elm$html$Html$text(errorMessage)
+			]));
+};
+var $author$project$Notifications$viewInlineError = function (_v0) {
+	var errorMessage = _v0.a;
+	return $author$project$ElmCommon$addInlineErrorFlash(errorMessage);
+};
+var $author$project$View$viewInlineErrorsIfAny = A2($author$project$FP$maybe, $author$project$ElmCommon$emptyDiv, $author$project$Notifications$viewInlineError);
 var $author$project$View$NoteSelected = function (a) {
 	return {$: 'NoteSelected', a: a};
 };
-var $elm$html$Html$a = _VirtualDom_node('a');
+var $elm$html$Html$i = _VirtualDom_node('i');
 var $author$project$View$onlyHeading = function (note) {
 	return A3(
 		$author$project$FP$maybe,
@@ -7786,6 +7948,106 @@ var $author$project$View$viewNotesList = function (notes) {
 			]),
 		A2($elm$core$List$map, $author$project$View$createNoteItem, notes));
 };
+var $author$project$View$SearchEdited = function (a) {
+	return {$: 'SearchEdited', a: a};
+};
+var $author$project$View$getQueryText = A2($author$project$FP$maybe, '', $elm$core$Basics$identity);
+var $elm$html$Html$input = _VirtualDom_node('input');
+var $elm$html$Html$Events$alwaysStop = function (x) {
+	return _Utils_Tuple2(x, true);
+};
+var $elm$virtual_dom$VirtualDom$MayStopPropagation = function (a) {
+	return {$: 'MayStopPropagation', a: a};
+};
+var $elm$html$Html$Events$stopPropagationOn = F2(
+	function (event, decoder) {
+		return A2(
+			$elm$virtual_dom$VirtualDom$on,
+			event,
+			$elm$virtual_dom$VirtualDom$MayStopPropagation(decoder));
+	});
+var $elm$json$Json$Decode$at = F2(
+	function (fields, decoder) {
+		return A3($elm$core$List$foldr, $elm$json$Json$Decode$field, decoder, fields);
+	});
+var $elm$html$Html$Events$targetValue = A2(
+	$elm$json$Json$Decode$at,
+	_List_fromArray(
+		['target', 'value']),
+	$elm$json$Json$Decode$string);
+var $elm$html$Html$Events$onInput = function (tagger) {
+	return A2(
+		$elm$html$Html$Events$stopPropagationOn,
+		'input',
+		A2(
+			$elm$json$Json$Decode$map,
+			$elm$html$Html$Events$alwaysStop,
+			A2($elm$json$Json$Decode$map, tagger, $elm$html$Html$Events$targetValue)));
+};
+var $elm$html$Html$Attributes$placeholder = $elm$html$Html$Attributes$stringProperty('placeholder');
+var $elm$html$Html$Attributes$type_ = $elm$html$Html$Attributes$stringProperty('type');
+var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty('value');
+var $author$project$View$viewSearchBar = function (maybeQuery) {
+	return A2(
+		$elm$html$Html$div,
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$class('panel-block')
+			]),
+		_List_fromArray(
+			[
+				A2(
+				$elm$html$Html$p,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('control has-icons-left')
+					]),
+				_List_fromArray(
+					[
+						A2(
+						$elm$html$Html$input,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('input'),
+								$elm$html$Html$Attributes$class('is-primary'),
+								$elm$html$Html$Attributes$placeholder('Search'),
+								$elm$html$Html$Attributes$type_('text'),
+								$elm$html$Html$Events$onInput($author$project$View$SearchEdited),
+								$elm$html$Html$Attributes$value(
+								$author$project$View$getQueryText(maybeQuery))
+							]),
+						_List_Nil),
+						A2(
+						$elm$html$Html$span,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('icon is-left')
+							]),
+						_List_fromArray(
+							[
+								A2(
+								$elm$html$Html$i,
+								_List_fromArray(
+									[
+										A2($elm$html$Html$Attributes$attribute, 'aria-hidden', 'true'),
+										$elm$html$Html$Attributes$class('fas'),
+										$elm$html$Html$Attributes$class('fa-search')
+									]),
+								_List_Nil)
+							]))
+					]))
+			]));
+};
+var $author$project$View$viewSearchArea = F4(
+	function (notesList, maybeQuery, maybeInlineErrors, maybeInfoMessage) {
+		return _List_fromArray(
+			[
+				$author$project$View$viewSearchBar(maybeQuery),
+				$author$project$View$viewInlineErrorsIfAny(maybeInlineErrors),
+				$author$project$View$viewInformationIfAny(maybeInfoMessage),
+				$author$project$View$viewNotesList(notesList)
+			]);
+	});
 var $author$project$View$view = function (model) {
 	var notesList = $author$project$View$choseWhichNotes(
 		$author$project$View$noteSelection(model));
@@ -7796,9 +8058,7 @@ var $author$project$View$view = function (model) {
 		model.appErrors);
 	var maybeInlineErrors = _v0.a;
 	var maybeModalErrors = _v0.b;
-	return A2(
-		$elm$html$Html$div,
-		_List_Nil,
+	return $author$project$ElmCommon$plainDiv(
 		_List_fromArray(
 			[
 				A2(
@@ -7807,164 +8067,17 @@ var $author$project$View$view = function (model) {
 					[
 						$elm$html$Html$Attributes$class('section')
 					]),
-				_List_fromArray(
-					[
-						A2(
-						$elm$html$Html$div,
+				_Utils_ap(
+					_List_fromArray(
+						[$author$project$View$viewMenu]),
+					_Utils_ap(
+						A4($author$project$View$viewSearchArea, notesList, model.query, maybeInlineErrors, model.infoMessage),
 						_List_fromArray(
 							[
-								$elm$html$Html$Attributes$class('container')
-							]),
-						_List_fromArray(
-							[
-								A2(
-								$elm$html$Html$h1,
-								_List_fromArray(
-									[
-										$elm$html$Html$Attributes$class('title')
-									]),
-								_List_fromArray(
-									[
-										$elm$html$Html$text('Scrib')
-									])),
-								A2(
-								$elm$html$Html$p,
-								_List_fromArray(
-									[
-										$elm$html$Html$Attributes$class('subtitle')
-									]),
-								_List_fromArray(
-									[
-										$elm$html$Html$text('Making scribbling effortless')
-									])),
-								A2(
-								$elm$html$Html$div,
-								_List_Nil,
-								_List_fromArray(
-									[
-										A2(
-										$elm$html$Html$article,
-										_List_fromArray(
-											[
-												$elm$html$Html$Attributes$class('panel'),
-												$elm$html$Html$Attributes$class('is-primary')
-											]),
-										_List_fromArray(
-											[
-												A2(
-												$elm$html$Html$p,
-												_List_fromArray(
-													[
-														$elm$html$Html$Attributes$class('panel-heading')
-													]),
-												_List_fromArray(
-													[
-														$elm$html$Html$text('Saved Notes'),
-														$elm$html$Html$text(' '),
-														A2(
-														$elm$html$Html$span,
-														_List_fromArray(
-															[
-																$elm$html$Html$Attributes$class('tab'),
-																$elm$html$Html$Attributes$class('is-medium')
-															]),
-														_List_fromArray(
-															[
-																$elm$html$Html$text(
-																$author$project$View$getNoteCount(notesList))
-															]))
-													])),
-												A2(
-												$elm$html$Html$p,
-												_List_fromArray(
-													[
-														$elm$html$Html$Attributes$class('panel-tabs')
-													]),
-												_List_fromArray(
-													[
-														A2(
-														$elm$html$Html$button,
-														_List_fromArray(
-															[
-																$elm$html$Html$Attributes$class('button'),
-																$elm$html$Html$Attributes$class('is-text'),
-																$elm$html$Html$Events$onClick($author$project$View$AddNote)
-															]),
-														_List_fromArray(
-															[
-																$elm$html$Html$text('Add Note')
-															])),
-														A2(
-														$elm$html$Html$button,
-														_List_fromArray(
-															[
-																$elm$html$Html$Attributes$class('button'),
-																$elm$html$Html$Attributes$class('is-text'),
-																$elm$html$Html$Events$onClick($author$project$View$NotesRefreshed)
-															]),
-														_List_fromArray(
-															[
-																$elm$html$Html$text('Refresh')
-															]))
-													])),
-												A2(
-												$elm$html$Html$div,
-												_List_fromArray(
-													[
-														$elm$html$Html$Attributes$class('panel-block')
-													]),
-												_List_fromArray(
-													[
-														A2(
-														$elm$html$Html$p,
-														_List_fromArray(
-															[
-																$elm$html$Html$Attributes$class('control has-icons-left')
-															]),
-														_List_fromArray(
-															[
-																A2(
-																$elm$html$Html$input,
-																_List_fromArray(
-																	[
-																		$elm$html$Html$Attributes$class('input'),
-																		$elm$html$Html$Attributes$class('is-primary'),
-																		$elm$html$Html$Attributes$placeholder('Search'),
-																		$elm$html$Html$Attributes$type_('text'),
-																		$elm$html$Html$Events$onInput($author$project$View$SearchEdited),
-																		$elm$html$Html$Attributes$value(
-																		$author$project$View$getQueryText(model.query))
-																	]),
-																_List_Nil),
-																A2(
-																$elm$html$Html$span,
-																_List_fromArray(
-																	[
-																		$elm$html$Html$Attributes$class('icon is-left')
-																	]),
-																_List_fromArray(
-																	[
-																		A2(
-																		$elm$html$Html$i,
-																		_List_fromArray(
-																			[
-																				A2($elm$html$Html$Attributes$attribute, 'aria-hidden', 'true'),
-																				$elm$html$Html$Attributes$class('fas'),
-																				$elm$html$Html$Attributes$class('fa-search')
-																			]),
-																		_List_Nil)
-																	]))
-															]))
-													])),
-												$author$project$View$viewInlineErrorsIfAny(maybeInlineErrors),
-												$author$project$View$viewInformationIfAny(model.infoMessage),
-												$author$project$View$viewNotesList(notesList)
-											]))
-									]))
-							]))
-					])),
-				A2($author$project$View$viewModalErrorsIfAny, maybeModalErrors, $author$project$View$ErrorModalClosed),
-				$author$project$View$createMarkdownPreview(model.selectedNote)
+								A2($author$project$View$viewModalErrorsIfAny, maybeModalErrors, $author$project$View$ErrorModalClosed),
+								$author$project$View$createMarkdownPreview(model.selectedNote)
+							])))),
+				$author$project$View$viewFooter
 			]));
 };
 var $author$project$View$main = $elm$browser$Browser$element(
