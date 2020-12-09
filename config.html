@@ -4,14 +4,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Scrib</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.0/css/bulma.min.css">
-    <link rel="stylesheet" href="md.css">
+  <link rel="stylesheet" href="md.css">
+  <script src="ui.js"></script>
 </head>
   <body>
   <section class="section">
     <nav class="navbar" role="navigation" aria-label="main navigation">
       <div class="navbar-brand">
         <a class="navbar-item" href="https://bulma.io">
-          <img src="https://bulma.io/images/bulma-logo.png" alt="Bulma: Free, open source, and modern CSS framework based on Flexbox" width="112" height="28">
+          <img src="scrib.png" alt="Scrib - making scribbling effortless">
         </a>
         <a class="navbar-item" href="index.html">
           Home
@@ -67,6 +68,8 @@
         localStorage.setItem(appApiKey, apiKeyTextInput.value);
         debugApiKey.innerHTML = localStorage.getItem(appApiKey);
       });
+
+      document.addEventListener('DOMContentLoaded', () => burgerMenu(document));
   </script>
   </body>
 </html>

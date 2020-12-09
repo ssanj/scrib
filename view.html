@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="md.css">
     <script src="scrib-view.js"></script>
     <script src="ports.js"></script>
+    <script src="ui.js"></script>
     <style>
       #notes-list {
         height: 20em;
@@ -43,6 +44,7 @@
       return { "top_notes" : notes, "apiKey" :  apiKey };
     }
 
+    document.addEventListener('DOMContentLoaded', () => burgerMenu(document));
   </script>
   </body>
 </html>

@@ -408,7 +408,7 @@ viewMenu =
   nav [ attribute "aria-label" "main navigation", class "navbar", attribute "role" "navigation" ]
       [ div [ class "navbar-brand" ]
           [ a [ class "navbar-item", href "https://bulma.io" ]
-              [ img [ attribute "height" "28", src "https://bulma.io/images/bulma-logo.png", attribute "width" "112" ]
+              [ img [ attribute "height" "28", src "scrib.png"]
                   []
               ]
           , a [ attribute "aria-expanded" "false", attribute "aria-label" "menu", class "navbar-burger burger", attribute "data-target" "navbarBasicExample", attribute "role" "button" ]

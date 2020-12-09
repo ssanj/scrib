@@ -7694,8 +7694,7 @@ var $author$project$Save$viewMenu = A2(
 							_List_fromArray(
 								[
 									A2($elm$html$Html$Attributes$attribute, 'height', '28'),
-									$elm$html$Html$Attributes$src('https://bulma.io/images/bulma-logo.png'),
-									A2($elm$html$Html$Attributes$attribute, 'width', '112')
+									$elm$html$Html$Attributes$src('scrib.png')
 								]),
 							_List_Nil)
 						])),
