@@ -9,7 +9,7 @@ import Notifications   exposing (..)
 
 import Html.Events     exposing (onClick, onInput)
 import FP              exposing (maybe, const, collect, maybeToList, find)
-import ApiKey          exposing (ApiKey, ApiKeyWithPayload, apiKeyHeader, decodeApiKeyWithPayload, performApiKey)
+import ApiKey          exposing (ApiKey, ApiKeyWithPayload, apiKeyHeader, acceptGzipHeader, decodeApiKeyWithPayload, performApiKey)
 import Markdown
 
 import Browser.Navigation
@@ -309,7 +309,7 @@ getTopRemoteNotes: ApiKey -> Cmd Msg
 getTopRemoteNotes apiKey =
   Http.request {
    method    = "GET"
-  , headers  = [apiKeyHeader apiKey]
+  , headers  = [apiKeyHeader apiKey, acceptGzipHeader]
   , url      = "/notes"
   , body     = Http.emptyBody
   , expect   = Http.expectJson (RemoteData.fromResult >> TopNotesResponse) SC.decodeFullNotes
@@ -321,7 +321,7 @@ searchRemoteNotes: String -> ApiKey -> Cmd Msg
 searchRemoteNotes query apiKey =
   Http.request {
    method    = "GET"
-  , headers  = [apiKeyHeader apiKey]
+  , headers  = [apiKeyHeader apiKey, acceptGzipHeader]
   , url      = "/search?q=" ++ query
   , body     = Http.emptyBody
   , expect   = Http.expectJson (RemoteData.fromResult >> SearchNotesResponse) SC.decodeFullNotes

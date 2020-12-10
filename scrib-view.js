@@ -5716,6 +5716,7 @@ var $elm$http$Http$Header = F2(
 		return {$: 'Header', a: a, b: b};
 	});
 var $elm$http$Http$header = $elm$http$Http$Header;
+var $author$project$ApiKey$acceptGzipHeader = A2($elm$http$Http$header, 'ACCEPT-ENCODING', 'gzip');
 var $author$project$ApiKey$apiKeyHeader = function (apiKey) {
 	return A2($elm$http$Http$header, 'X-API-KEY', apiKey.value);
 };
@@ -6527,7 +6528,8 @@ var $author$project$View$getTopRemoteNotes = function (apiKey) {
 				$author$project$Note$decodeFullNotes),
 			headers: _List_fromArray(
 				[
-					$author$project$ApiKey$apiKeyHeader(apiKey)
+					$author$project$ApiKey$apiKeyHeader(apiKey),
+					$author$project$ApiKey$acceptGzipHeader
 				]),
 			method: 'GET',
 			timeout: $elm$core$Maybe$Nothing,
@@ -6997,7 +6999,8 @@ var $author$project$View$searchRemoteNotes = F2(
 					$author$project$Note$decodeFullNotes),
 				headers: _List_fromArray(
 					[
-						$author$project$ApiKey$apiKeyHeader(apiKey)
+						$author$project$ApiKey$apiKeyHeader(apiKey),
+						$author$project$ApiKey$acceptGzipHeader
 					]),
 				method: 'GET',
 				timeout: $elm$core$Maybe$Nothing,

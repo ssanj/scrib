@@ -10,6 +10,9 @@ type alias ApiKey = { value: String }
 apiKeyHeader: ApiKey -> Http.Header
 apiKeyHeader apiKey = Http.header "X-API-KEY" apiKey.value
 
+acceptGzipHeader: Http.Header
+acceptGzipHeader = Http.header "ACCEPT-ENCODING" "gzip"
+
 decodeApiKey : D.Decoder ApiKey
 decodeApiKey = D.map ApiKey D.string
 

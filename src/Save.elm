@@ -7,7 +7,7 @@ import ElmCommon       exposing (..)
 import StorageKeys     exposing (..)
 import Notifications   exposing (..)
 
-import ApiKey          exposing (ApiKey, ApiKeyWithPayload, decodeApiKey, apiKeyHeader, decodeApiKeyWithPayload, performApiKey)
+import ApiKey          exposing (ApiKey, ApiKeyWithPayload, decodeApiKey, apiKeyHeader, acceptGzipHeader, decodeApiKeyWithPayload, performApiKey)
 import Html.Events     exposing (onClick, onInput)
 import FP              exposing (maybe, const)
 
@@ -106,8 +106,6 @@ type Msg = NoteSavedMsg
          | TesterMsg Seconds Msg
          | ErrorModalClosed
 
--- TODO: Remove TesterMsg once we are done testing
-
 -- MAIN
 
 
@@ -148,10 +146,13 @@ update msg model =
     (JSNotificationError error)            -> handleJSError model error
     InlineSuccessMessageTimedOut           -> handleSuccessMessageTimeout model
     InlineInfoTimedOut                     -> handleInfoMessageTimeout model
-    TesterMsg timeout realMessage          -> handleTesterMessage model timeout realMessage
+    TesterMsg timeout realMessage          -> noop model
     ErrorModalClosed                       -> handleErrorModalClose model
     (NoteSaveResponseMsg noteResponse)     -> handleNoteSaveResponse model noteResponse
 
+
+noop : ModelCommand Model Msg
+noop = onlyModel
 
 handleErrorModalClose : SaveModelCommand
 handleErrorModalClose model = onlyModel { model | errorMessages = Nothing }
@@ -252,7 +253,7 @@ performRemoteSaveNote: NoteWithContent -> ApiKey -> Cmd Msg
 performRemoteSaveNote note apiKey =
   Http.request {
    method    = "POST"
-  , headers  = [ apiKeyHeader apiKey ]
+  , headers  = [ apiKeyHeader apiKey, acceptGzipHeader ]
   , url      = "/note"
   , body     = Http.jsonBody <| encodeSaveNote note
   , expect   = Http.expectStringResponse processSaveNoteResults (responseToHttpResponse SL.decodeSlateError SC.decoderNoteIdVersion) -- Http.expectJson processSaveNoteResults SC.decoderNoteIdVersion
@@ -357,7 +358,7 @@ inlineInfoSuccessTimeout = Seconds 1
 -- REMOTE HELPERS
 
 processSaveNoteResults : RemoteSaveStatus -> Msg
-processSaveNoteResults = TesterMsg (Seconds 2) << NoteSaveResponseMsg
+processSaveNoteResults = NoteSaveResponseMsg
 
 
 -- UPDATE HELPERS
@@ -829,7 +830,7 @@ syncUpdateNoteWithSessionCache note =
 subscriptionSuccess : S.JsResponse E.Value -> Msg
 subscriptionSuccess (S.JsResponse (P.ResponseKey key) result) =
   case (key) of
-    "NoteSavedToLocalStorage"                -> TesterMsg (Seconds 2) NoteSavedToLocalStorage
+    "NoteSavedToLocalStorage"                -> NoteSavedToLocalStorage
     "RemoteNoteIdVersionSavedToLocalStorage" -> RemoteNoteIdVersionSavedToLocalStorage
     "RemoteNewNoteSavedToToLocalStorage"     -> RemoteNewNoteSavedToToLocalStorage
     "NewNoteSyncedToSessionStorage"          -> NewNoteSyncedToSessionStorage

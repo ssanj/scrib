@@ -5834,23 +5834,13 @@ var $author$project$Save$NewNoteSyncedToSessionStorage = {$: 'NewNoteSyncedToSes
 var $author$project$Save$NoteSavedToLocalStorage = {$: 'NoteSavedToLocalStorage'};
 var $author$project$Save$RemoteNewNoteSavedToToLocalStorage = {$: 'RemoteNewNoteSavedToToLocalStorage'};
 var $author$project$Save$RemoteNoteIdVersionSavedToLocalStorage = {$: 'RemoteNoteIdVersionSavedToLocalStorage'};
-var $author$project$ElmCommon$Seconds = function (seconds) {
-	return {seconds: seconds};
-};
-var $author$project$Save$TesterMsg = F2(
-	function (a, b) {
-		return {$: 'TesterMsg', a: a, b: b};
-	});
 var $author$project$Save$UpdatedNoteSyncedToSessionStorage = {$: 'UpdatedNoteSyncedToSessionStorage'};
 var $author$project$Save$subscriptionSuccess = function (_v0) {
 	var key = _v0.a.a;
 	var result = _v0.b;
 	switch (key) {
 		case 'NoteSavedToLocalStorage':
-			return A2(
-				$author$project$Save$TesterMsg,
-				$author$project$ElmCommon$Seconds(2),
-				$author$project$Save$NoteSavedToLocalStorage);
+			return $author$project$Save$NoteSavedToLocalStorage;
 		case 'RemoteNoteIdVersionSavedToLocalStorage':
 			return $author$project$Save$RemoteNoteIdVersionSavedToLocalStorage;
 		case 'RemoteNewNoteSavedToToLocalStorage':
@@ -6040,6 +6030,9 @@ var $author$project$Notifications$addTimeoutForInlineMessage = F2(
 			$author$project$FP$const(msg),
 			sleepTask);
 	});
+var $author$project$ElmCommon$Seconds = function (seconds) {
+	return {seconds: seconds};
+};
 var $author$project$Save$inlineInfoSuccessTimeout = $author$project$ElmCommon$Seconds(1);
 var $author$project$Save$handleNewNoteSyncedToSessionStorage = function (model) {
 	var newModel = _Utils_update(
@@ -6414,6 +6407,7 @@ var $elm$http$Http$Header = F2(
 		return {$: 'Header', a: a, b: b};
 	});
 var $elm$http$Http$header = $elm$http$Http$Header;
+var $author$project$ApiKey$acceptGzipHeader = A2($elm$http$Http$header, 'ACCEPT-ENCODING', 'gzip');
 var $author$project$ApiKey$apiKeyHeader = function (apiKey) {
 	return A2($elm$http$Http$header, 'X-API-KEY', apiKey.value);
 };
@@ -6990,11 +6984,7 @@ var $elm$http$Http$jsonBody = function (value) {
 var $author$project$Save$NoteSaveResponseMsg = function (a) {
 	return {$: 'NoteSaveResponseMsg', a: a};
 };
-var $author$project$Save$processSaveNoteResults = A2(
-	$elm$core$Basics$composeL,
-	$author$project$Save$TesterMsg(
-		$author$project$ElmCommon$Seconds(2)),
-	$author$project$Save$NoteSaveResponseMsg);
+var $author$project$Save$processSaveNoteResults = $author$project$Save$NoteSaveResponseMsg;
 var $elm$http$Http$Request = function (a) {
 	return {$: 'Request', a: a};
 };
@@ -7231,7 +7221,8 @@ var $author$project$Save$performRemoteSaveNote = F2(
 					A2($author$project$Save$responseToHttpResponse, $author$project$SlateError$decodeSlateError, $author$project$Note$decoderNoteIdVersion)),
 				headers: _List_fromArray(
 					[
-						$author$project$ApiKey$apiKeyHeader(apiKey)
+						$author$project$ApiKey$apiKeyHeader(apiKey),
+						$author$project$ApiKey$acceptGzipHeader
 					]),
 				method: 'POST',
 				timeout: $elm$core$Maybe$Nothing,
@@ -7274,12 +7265,6 @@ var $author$project$Save$handleSuccessMessageTimeout = function (model) {
 			model,
 			{successMessage: $elm$core$Maybe$Nothing}));
 };
-var $author$project$Save$handleTesterMessage = F3(
-	function (model, timeout, realMsg) {
-		return _Utils_Tuple2(
-			model,
-			A2($author$project$Notifications$addTimeoutForInlineMessage, timeout, realMsg));
-	});
 var $author$project$Save$handleUpdatedNoteSyncedToSessionStorage = function (model) {
 	var newModel = _Utils_update(
 		model,
@@ -7293,6 +7278,7 @@ var $author$project$Save$handleUpdatedNoteSyncedToSessionStorage = function (mod
 		newModel,
 		A2($author$project$Notifications$addTimeoutForInlineMessage, $author$project$Save$inlineInfoSuccessTimeout, $author$project$Save$InlineInfoTimedOut));
 };
+var $author$project$Save$noop = $author$project$ElmCommon$onlyModel;
 var $author$project$Save$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
@@ -7325,7 +7311,7 @@ var $author$project$Save$update = F2(
 			case 'TesterMsg':
 				var timeout = msg.a;
 				var realMessage = msg.b;
-				return A3($author$project$Save$handleTesterMessage, model, timeout, realMessage);
+				return $author$project$Save$noop(model);
 			case 'ErrorModalClosed':
 				return $author$project$Save$handleErrorModalClose(model);
 			default:
