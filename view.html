@@ -38,6 +38,8 @@
       });
 
      function initLoad(appKey) {
+      //clear out any previously saved edits
+      localStorage.removeItem(appEditKey);
       const storedData = sessionStorage.getItem(appKey);
       const notes      = storedData ? JSON.parse(storedData) : null;
       const apiKey     = localStorage.getItem(appApiKey);
