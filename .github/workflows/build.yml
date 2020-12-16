@@ -35,7 +35,7 @@ jobs:
       - name: Install Elm Test
         shell: bash
         run: |
-          npm install -g elm-test
+          sudo npm install -g elm-test
           elm-test --version
 
       - name: Run Tests
