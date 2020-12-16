@@ -30,7 +30,18 @@ jobs:
         run: |
           elm make src/Save.elm --optimize --output=scrib-save.js
           elm make src/View.elm --optimize --output=scrib-view.js
-          pwd
+          ls -l ~
+
+      - name: Install Elm Test
+        shell: bash
+        run: |
+          npm install -g elm-test
+          elm-test --version
+
+      - name: Run Tests
+        shell: bash
+        run: |
+          elm-test
 
       # - name: Copy Make Files
       #   shell: bash
