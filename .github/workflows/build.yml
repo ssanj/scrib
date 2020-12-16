@@ -18,7 +18,7 @@ jobs:
         run: |
           mkdir elm-compiler
           cd elm-compiler
-          curl -L -o elm.gz https://github.com/elm/compiler/releases/download/$ELM_VERSION/binary-for-linux-64-bit.gz
+          curl -L -o elm.gz "https://github.com/elm/compiler/releases/download/$ELM_VERSION/binary-for-linux-64-bit.gz"
           gunzip elm.gz
           chmod +x elm
           elm --help
