@@ -1,8 +1,8 @@
-name: Scrib Build
+name: Scrib Release
 on:
   push:
-    branch:
-      - main
+    tags:
+      - "v*"
 
 jobs:
   build:
@@ -43,13 +43,24 @@ jobs:
           elm make src/View.elm --optimize --output=scrib-view.js
           ls -l ~
 
-      - name: Install Elm Test
+      - name: Copy Make Files
         shell: bash
         run: |
-          npm install -g --unsafe-perm elm-test
-          elm-test --version
+          mkdir dist
+          cp config.html save.html view.html scrib-save.js scrib-view.js ports.js ui.js md.css scrib.png version dist/
+          ls -l dist/
 
-      - name: Run Tests
+      - name: Zip Dist Files
+        id: create-artifact
         shell: bash
         run: |
-          elm-test
+          cd dist
+          zip ../scrib.zip *
+          unzip -lf ../scrib.zip
+          echo "::set-output name=artifact-name::scrib.zip"
+
+      - uses: fnkr/github-action-ghr@v1.3
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GHR_PATH: "${{ steps.create-artifact.outputs.artifact-name }}"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
