@@ -1,0 +1,24 @@
+name: Scrib Build
+on:
+  push:
+    branch:
+      - main
+
+jobs:
+  build:
+    name: Make Scrib
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - shell: bash
+        env:
+          ELM_VERSION: '0.19.1'
+        run: |
+          mkdir elm-compiler
+          cd elm-compiler
+          curl -L -o elm.gz https://github.com/elm/compiler/releases/download/$ELM_VERSION/binary-for-linux-64-bit.gz
+          gunzip elm.gz
+          chmod +x elm
+          elm --help
