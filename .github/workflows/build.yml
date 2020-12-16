@@ -12,7 +12,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - shell: bash
+      - name: Install Elm
+        shell: bash
         env:
           ELM_VERSION: '0.19.1'
         run: |
@@ -21,5 +22,17 @@ jobs:
           curl -L -o elm.gz "https://github.com/elm/compiler/releases/download/$ELM_VERSION/binary-for-linux-64-bit.gz"
           gunzip elm.gz
           chmod +x elm
-          ls -l .
-          ./elm --help
+          ./elm --version
+
+      - name: Make Sources
+        shell: bash
+        run: |
+          ./elm make src/Save.elm --optimize --output=scrib-save.js
+          ./elm make src/View.elm --optimize --output=scrib-view.js
+
+      - name: Copy Make Files
+        shell: bash
+        run: |
+          mkdir dist
+          cp config.html save.html view.html scrib-save.js scrib-view.js ports.js ui.js md.css scrib.png dist/
+          ls -l dist/
