@@ -25,11 +25,12 @@ jobs:
           sudo mv elm /usr/local/bin/
           elm --version
 
-      # - name: Make Sources
-      #   shell: bash
-      #   run: |
-      #     elm make src/Save.elm --optimize --output=scrib-save.js
-      #     elm make src/View.elm --optimize --output=scrib-view.js
+      - name: Make Sources
+        shell: bash
+        run: |
+          elm make src/Save.elm --optimize --output=scrib-save.js
+          elm make src/View.elm --optimize --output=scrib-view.js
+          pwd
 
       # - name: Copy Make Files
       #   shell: bash
