@@ -8,6 +8,8 @@ jobs:
   build:
     name: Make Scrib
     runs-on: ubuntu-latest
+    env:
+      ELM_VERSION: '0.19.1'
 
     steps:
       - uses: actions/checkout@v2
@@ -17,10 +19,14 @@ jobs:
           node-version: '12'
       - run: npm install
 
+      - uses: actions/cache@v2.1.3
+        name: Cache them builds
+        with:
+          path: ~/.elm
+          key: Linux-elm-$ELM_VERSION
+
       - name: Install Elm
         shell: bash
-        env:
-          ELM_VERSION: '0.19.1'
         run: |
           mkdir elm-compiler
           cd elm-compiler
@@ -53,6 +59,11 @@ jobs:
         run: |
           mkdir dist
           cp config.html save.html view.html scrib-save.js scrib-view.js ports.js ui.js md.css scrib.png dist/
-          ls -la
-          ls -la ~/.elm
           ls -l dist/
+
+      - name: Zip Dist Files
+        shell: bash
+        run: |
+          cd dist
+          zip ../scrib.zip *
+          unzip -lf ../scrib.zip
