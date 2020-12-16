@@ -4,7 +4,6 @@ import Html            exposing (Html, div, text, Attribute, article, p, strong,
 import Html.Attributes exposing (class, classList, id, attribute)
 import Html.Events     exposing (onClick)
 import Json.Encode     exposing (Value)
-import Debug
 
 import List.Nonempty as N
 import Json.Decode   as D
@@ -23,12 +22,6 @@ type alias Seconds = { seconds : Int }
 type alias Encoder a = a -> Value
 
 type alias ModelCommand model msg = model -> (model, Cmd msg)
-
-debug : String -> ()
-debug message = Debug.log message ()
-
-debugWith : String -> a -> a
-debugWith = Debug.log
 
 onlyModel : a -> (a, Cmd msg)
 onlyModel model = (model, Cmd.none)
