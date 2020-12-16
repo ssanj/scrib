@@ -12,6 +12,11 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '12'
+      - run: npm install
+
       - name: Install Elm
         shell: bash
         env:
@@ -35,7 +40,7 @@ jobs:
       - name: Install Elm Test
         shell: bash
         run: |
-          sudo npm install -g elm-test
+          npm install -g --unsafe-perm elm-test
           elm-test --version
 
       - name: Run Tests
