@@ -1,4 +1,15 @@
 #!/bin/bash
 
-cp config.html save.html view.html scrib-save.js scrib-view.js ports.js ui.js md.css scrib.png /Volumes/Work/projects/code/haskell/toy/slate/static/
+cp config.html \
+   index.html \
+   save.html \
+   view.html \
+   scrib-save.js \
+   scrib-view.js \
+   ports.js \
+   ui.js \
+   md.css \
+   scrib.png \
+   resources/favicon/* \
+   /Volumes/Work/projects/code/haskell/toy/slate/static/
 echo "copied resources"
