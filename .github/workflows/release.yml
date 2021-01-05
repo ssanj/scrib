@@ -39,15 +39,14 @@ jobs:
       - name: Make Sources
         shell: bash
         run: |
-          elm make src/Save.elm --optimize --output=scrib-save.js
-          elm make src/View.elm --optimize --output=scrib-view.js
-          ls -l ~
+          ./build-optimized.sh Save scrib-save
+          ./build-optimized.sh View scrib-view
 
       - name: Copy Make Files
         shell: bash
         run: |
           mkdir dist
-          cp config.html save.html view.html scrib-save.js scrib-view.js ports.js ui.js md.css scrib.png version dist/
+          ./copy-static dist
           ls -l dist/
 
       - name: Zip Dist Files
