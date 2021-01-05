@@ -39,8 +39,8 @@ jobs:
       - name: Make Sources
         shell: bash
         run: |
-          elm make src/Save.elm --optimize --output=scrib-save.js
-          elm make src/View.elm --optimize --output=scrib-view.js
+          build-optimized.sh Save scrib-save
+          build-optimized.sh View scrib-view
           ls -l ~
 
       - name: Install Elm Test
