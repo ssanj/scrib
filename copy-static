@@ -2,16 +2,18 @@
 
 TARGET_DIR='/Volumes/Work/projects/code/haskell/toy/slate/static/'
 
-cp scrib-save.js \
-   scrib-view.js \
-   ports.js \
+cp ports.js \
    ui.js \
    version \
    $TARGET_DIR
 
-cp -r resources/favicon/* $TARGET_DIR
-cp -r resources/html/* $TARGET_DIR
+# Copied with contents only
+cp resources/favicon/* $TARGET_DIR
+cp resources/html/* $TARGET_DIR
+
+# Copied with parent folder
 cp -r resources/fonts $TARGET_DIR
+cp -r resources/js $TARGET_DIR
 cp -r resources/css $TARGET_DIR
 
 echo "copied resources"

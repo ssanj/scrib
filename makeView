@@ -1,4 +1,4 @@
 #!/bin/bash
 
-elm make src/View.elm --report=json --output=scrib-view.js 2>&1 | sharpen
+elm make src/View.elm --report=json --output=resources/js/scrib-view.js 2>&1 | sharpen
 

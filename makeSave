@@ -1,4 +1,4 @@
 #!/bin/bash
 
-elm make src/Save.elm --report=json --output=scrib-save.js 2>&1 | sharpen
+elm make src/Save.elm --report=json --output=resources/js/scrib-save.js 2>&1 | sharpen
 
