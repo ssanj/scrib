@@ -7651,7 +7651,7 @@ var $author$project$View$viewMenu = A2(
 								]),
 							_List_fromArray(
 								[
-									$elm$html$Html$text('Home          ')
+									$elm$html$Html$text('Home')
 								])),
 							A2(
 							$elm$html$Html$a,
@@ -7684,7 +7684,7 @@ var $author$project$View$viewMenu = A2(
 								]),
 							_List_fromArray(
 								[
-									$elm$html$Html$text('Admin          ')
+									$elm$html$Html$text('Config')
 								]))
 						]))
 				]))
