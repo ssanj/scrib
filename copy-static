@@ -1,16 +1,21 @@
 #!/bin/bash
 
-TARGET_DIR='/Volumes/Work/projects/code/haskell/toy/slate/static/'
+if [ "$#" -ne 1 ]; then
+    echo "Please supply a target directory to copy the static resources to"
+    exit 1
+fi
 
-cp version $TARGET_DIR
+TARGET_DIR="$1"
+
+cp version "$TARGET_DIR"
 
 # Copied with contents only
-cp resources/favicon/* $TARGET_DIR
-cp resources/html/* $TARGET_DIR
+cp resources/favicon/* "$TARGET_DIR"
+cp resources/html/* "$TARGET_DIR"
 
 # Copied with parent folder
-cp -r resources/fonts $TARGET_DIR
-cp -r resources/js $TARGET_DIR
-cp -r resources/css $TARGET_DIR
+cp -r resources/fonts "$TARGET_DIR"
+cp -r resources/js "$TARGET_DIR"
+cp -r resources/css "$TARGET_DIR"
 
 echo "copied resources"

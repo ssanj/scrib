@@ -1,0 +1,3 @@
+#!/bin/bash
+
+copy-static '/Volumes/Work/projects/code/haskell/toy/slate/static/'

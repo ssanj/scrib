@@ -2,4 +2,4 @@
 
 build View scrib-view
 build Save scrib-save
-copy-static
+local-copy-static
