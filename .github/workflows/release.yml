@@ -47,7 +47,6 @@ jobs:
         run: |
           mkdir dist
           ./copy-static dist
-          tree dist/
 
       - name: Zip Dist Files
         id: create-artifact
