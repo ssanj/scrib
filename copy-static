@@ -8,12 +8,12 @@ cp config.html \
    scrib-view.js \
    ports.js \
    ui.js \
-   md.css \
    scrib.png \
    version \
    resources/favicon/* \
    /Volumes/Work/projects/code/haskell/toy/slate/static/
 
 cp -r resources/fonts /Volumes/Work/projects/code/haskell/toy/slate/static/
+cp -r resources/css /Volumes/Work/projects/code/haskell/toy/slate/static/
 
 echo "copied resources"

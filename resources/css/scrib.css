@@ -1,0 +1,13 @@
+@font-face {
+    font-family: 'Leckerli One';
+    src: url('../fonts/LeckerliOne-Regular.woff2') format('woff2'),
+         url('../fonts/LeckerliOne-Regular.woff')  format('woff'),
+         url('../fonts/LeckerliOne-Regular.ttf')   format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+.scrib-footer {
+  font-family: 'Leckerli One', cursive;
+}
