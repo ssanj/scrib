@@ -2,10 +2,7 @@
 
 TARGET_DIR='/Volumes/Work/projects/code/haskell/toy/slate/static/'
 
-cp ports.js \
-   ui.js \
-   version \
-   $TARGET_DIR
+cp version $TARGET_DIR
 
 # Copied with contents only
 cp resources/favicon/* $TARGET_DIR
