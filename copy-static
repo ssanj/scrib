@@ -1,19 +1,17 @@
 #!/bin/bash
 
-cp config.html \
-   index.html \
-   save.html \
-   view.html \
-   scrib-save.js \
+TARGET_DIR='/Volumes/Work/projects/code/haskell/toy/slate/static/'
+
+cp scrib-save.js \
    scrib-view.js \
    ports.js \
    ui.js \
-   scrib.png \
    version \
-   resources/favicon/* \
-   /Volumes/Work/projects/code/haskell/toy/slate/static/
+   $TARGET_DIR
 
-cp -r resources/fonts /Volumes/Work/projects/code/haskell/toy/slate/static/
-cp -r resources/css /Volumes/Work/projects/code/haskell/toy/slate/static/
+cp -r resources/favicon/* $TARGET_DIR
+cp -r resources/html/* $TARGET_DIR
+cp -r resources/fonts $TARGET_DIR
+cp -r resources/css $TARGET_DIR
 
 echo "copied resources"

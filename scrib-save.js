@@ -7640,14 +7640,7 @@ var $author$project$Save$viewFooter = A2(
 						]))
 				]))
 		]));
-var $elm$html$Html$img = _VirtualDom_node('img');
 var $elm$html$Html$span = _VirtualDom_node('span');
-var $elm$html$Html$Attributes$src = function (url) {
-	return A2(
-		$elm$html$Html$Attributes$stringProperty,
-		'src',
-		_VirtualDom_noJavaScriptOrHtmlUri(url));
-};
 var $author$project$Save$viewMenu = A2(
 	$elm$html$Html$nav,
 	_List_fromArray(
@@ -7666,24 +7659,6 @@ var $author$project$Save$viewMenu = A2(
 				]),
 			_List_fromArray(
 				[
-					A2(
-					$elm$html$Html$a,
-					_List_fromArray(
-						[
-							$elm$html$Html$Attributes$class('navbar-item'),
-							$elm$html$Html$Attributes$href('https://bulma.io')
-						]),
-					_List_fromArray(
-						[
-							A2(
-							$elm$html$Html$img,
-							_List_fromArray(
-								[
-									A2($elm$html$Html$Attributes$attribute, 'height', '28'),
-									$elm$html$Html$Attributes$src('scrib.png')
-								]),
-							_List_Nil)
-						])),
 					A2(
 					$elm$html$Html$a,
 					_List_fromArray(
