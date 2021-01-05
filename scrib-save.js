@@ -7588,7 +7588,6 @@ var $elm$html$Html$Attributes$href = function (url) {
 		_VirtualDom_noJavaScriptUri(url));
 };
 var $elm$html$Html$nav = _VirtualDom_node('nav');
-var $elm$html$Html$strong = _VirtualDom_node('strong');
 var $author$project$Save$viewFooter = A2(
 	$elm$html$Html$nav,
 	_List_fromArray(
@@ -7609,17 +7608,23 @@ var $author$project$Save$viewFooter = A2(
 				[
 					A2(
 					$elm$html$Html$p,
-					_List_Nil,
 					_List_fromArray(
 						[
-							A2(
-							$elm$html$Html$strong,
-							_List_Nil,
-							_List_fromArray(
-								[
-									$elm$html$Html$text('Scrib')
-								])),
-							$elm$html$Html$text(' by '),
+							$elm$html$Html$Attributes$class('scrib-footer')
+						]),
+					_List_fromArray(
+						[
+							$elm$html$Html$text('scribble effortlessly')
+						])),
+					A2(
+					$elm$html$Html$div,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('is-size-7')
+						]),
+					_List_fromArray(
+						[
+							$elm$html$Html$text('crafted by '),
 							A2(
 							$elm$html$Html$a,
 							_List_fromArray(
@@ -7629,13 +7634,6 @@ var $author$project$Save$viewFooter = A2(
 							_List_fromArray(
 								[
 									$elm$html$Html$text('Sanj Sahayam')
-								])),
-							A2(
-							$elm$html$Html$p,
-							_List_Nil,
-							_List_fromArray(
-								[
-									$elm$html$Html$text('Making scribbling effortless')
 								]))
 						]))
 				]))

@@ -139,16 +139,20 @@ viewFooter =
     [ div
         [ class "content has-text-centered" ]
         [ p
-            []
-            [ strong
-                []
-                [ text "Scrib" ]
-            , text " by "
-            , a [ href "https://sanj.ink" ]
-                [ text "Sanj Sahayam" ]
-            , p []
-                [ text "Making scribbling effortless" ]
+            [ class "scrib-footer"]
+            [
+              text "scribble effortlessly"
             ]
+        , div
+          [ class "is-size-7" ]
+          [
+            text "crafted by "
+          , a
+              [ href "https://sanj.ink"]
+              [
+                text "Sanj Sahayam"
+              ]
+          ]
         ]
     ]
 
