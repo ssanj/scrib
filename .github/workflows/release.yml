@@ -47,14 +47,14 @@ jobs:
         run: |
           mkdir dist
           ./copy-static dist
-          ls -l dist/
+          tree dist/
 
       - name: Zip Dist Files
         id: create-artifact
         shell: bash
         run: |
           cd dist
-          zip ../scrib.zip *
+          zip -r ../scrib.zip *
           unzip -lf ../scrib.zip
           echo "::set-output name=artifact-name::scrib.zip"
 
