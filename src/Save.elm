@@ -7,7 +7,7 @@ import ElmCommon       exposing (..)
 import StorageKeys     exposing (..)
 import Notifications   exposing (..)
 
-import ApiKey          exposing (ApiKey, ApiKeyWithPayload, decodeApiKey, apiKeyHeader, acceptGzipHeader, decodeApiKeyWithPayload, performApiKey)
+import ApiKey          exposing (ApiKey, ApiKeyWithPayload, decodeApiKey, apiKeyHeader, decodeApiKeyWithPayload, performApiKey)
 import Html.Events     exposing (onClick, onInput)
 import FP              exposing (maybe, const)
 
@@ -253,7 +253,7 @@ performRemoteSaveNote: NoteWithContent -> ApiKey -> Cmd Msg
 performRemoteSaveNote note apiKey =
   Http.request {
    method    = "POST"
-  , headers  = [ apiKeyHeader apiKey, acceptGzipHeader ]
+  , headers  = [ apiKeyHeader apiKey ]
   , url      = "/note"
   , body     = Http.jsonBody <| encodeSaveNote note
   , expect   = Http.expectStringResponse processSaveNoteResults (responseToHttpResponse SL.decodeSlateError SC.decoderNoteIdVersion) -- Http.expectJson processSaveNoteResults SC.decoderNoteIdVersion
