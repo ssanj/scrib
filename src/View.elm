@@ -522,7 +522,7 @@ viewMarkdownPreview fullNote =
     , div [ id "preview" ]
       [ div [ id markdownViewId ]
         [Markdown.toHtml [] (SC.getNoteFullText fullNote)]
-      , button [ class "button", class "is-info", onClick (NoteEdited fullNote) ]
+      , button [ class "button", class "is-info mt-2", onClick (NoteEdited fullNote) ]
         [ text "Edit" ]
       ]
     ]

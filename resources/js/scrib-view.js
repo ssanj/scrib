@@ -7367,7 +7367,7 @@ var $author$project$View$viewMarkdownPreview = function (fullNote) {
 						_List_fromArray(
 							[
 								$elm$html$Html$Attributes$class('button'),
-								$elm$html$Html$Attributes$class('is-info'),
+								$elm$html$Html$Attributes$class('is-info mt-2'),
 								$elm$html$Html$Events$onClick(
 								$author$project$View$NoteEdited(fullNote))
 							]),
