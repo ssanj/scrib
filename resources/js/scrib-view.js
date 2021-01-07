@@ -7952,7 +7952,17 @@ var $author$project$View$createNoteItem = function (fullNote) {
 			]));
 };
 var $author$project$View$viewNotesList = function (notes) {
-	return A2(
+	return $elm$core$List$isEmpty(notes) ? A2(
+		$elm$html$Html$div,
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$id('notes-list'),
+				$elm$html$Html$Attributes$class('has-text-centered pt-2')
+			]),
+		_List_fromArray(
+			[
+				$elm$html$Html$text('No results found. Please try a different search.')
+			])) : A2(
 		$elm$html$Html$div,
 		_List_fromArray(
 			[

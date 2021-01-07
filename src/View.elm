@@ -454,7 +454,16 @@ listFold onEmpty onFull elements =
   maybe onEmpty onFull <| N.fromList elements
 
 viewNotesList: List SC.NoteFull -> Html Msg
-viewNotesList notes = div [ id "notes-list" ] (List.map createNoteItem notes)
+viewNotesList notes =
+  if List.isEmpty notes
+  then
+    div
+      [ id "notes-list", class "has-text-centered pt-2"]
+      [
+        text "No results found. Please try a different search."
+      ]
+  else
+    div [ id "notes-list" ] (List.map createNoteItem notes)
 
 getInformationFromRemoteNotesData : RemoteNotesData -> Maybe InformationMessage
 getInformationFromRemoteNotesData remoteNotesData =
