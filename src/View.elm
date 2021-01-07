@@ -434,7 +434,7 @@ viewMenu =
           ]
       , div [ class "navbar-menu", id "navbarBasicExample" ]
           [ div [ class "navbar-start" ]
-              [ a [ class "navbar-item", href "/" ]
+              [ a [ class "navbar-item", href "index.html" ]
                   [ text "Home" ]
               , a [ class "navbar-item", href "save.html" ]
                   [ text "New Note" ]

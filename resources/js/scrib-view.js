@@ -7644,7 +7644,7 @@ var $author$project$View$viewMenu = A2(
 							_List_fromArray(
 								[
 									$elm$html$Html$Attributes$class('navbar-item'),
-									$elm$html$Html$Attributes$href('/')
+									$elm$html$Html$Attributes$href('index.html')
 								]),
 							_List_fromArray(
 								[
