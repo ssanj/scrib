@@ -7856,6 +7856,46 @@ var $author$project$Notifications$viewInlineError = function (_v0) {
 	return $author$project$ElmCommon$addInlineErrorFlash(errorMessage);
 };
 var $author$project$View$viewInlineErrorsIfAny = A2($author$project$FP$maybe, $author$project$ElmCommon$emptyDiv, $author$project$Notifications$viewInlineError);
+var $mgold$elm_nonempty_list$List$Nonempty$length = function (_v0) {
+	var x = _v0.a;
+	var xs = _v0.b;
+	return $elm$core$List$length(xs) + 1;
+};
+var $author$project$View$listFold = F3(
+	function (onEmpty, onFull, elements) {
+		return A3(
+			$author$project$FP$maybe,
+			onEmpty,
+			onFull,
+			$mgold$elm_nonempty_list$List$Nonempty$fromList(elements));
+	});
+var $author$project$View$getNoteCount = A2(
+	$author$project$View$listFold,
+	'-',
+	A2($elm$core$Basics$composeL, $elm$core$String$fromInt, $mgold$elm_nonempty_list$List$Nonempty$length));
+var $author$project$View$viewNotesCount = function (notesList) {
+	return A2(
+		$elm$html$Html$div,
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$class('has-text-right mt-1')
+			]),
+		_List_fromArray(
+			[
+				A2(
+				$elm$html$Html$span,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('tag'),
+						$elm$html$Html$Attributes$class('is-small is-info')
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text(
+						$author$project$View$getNoteCount(notesList))
+					]))
+			]));
+};
 var $author$project$View$NoteSelected = function (a) {
 	return {$: 'NoteSelected', a: a};
 };
@@ -8017,7 +8057,8 @@ var $author$project$View$viewSearchArea = F4(
 				$author$project$View$viewSearchBar(maybeQuery),
 				$author$project$View$viewInlineErrorsIfAny(maybeInlineErrors),
 				$author$project$View$viewInformationIfAny(maybeInfoMessage),
-				$author$project$View$viewNotesList(notesList)
+				$author$project$View$viewNotesList(notesList),
+				$author$project$View$viewNotesCount(notesList)
 			]);
 	});
 var $author$project$View$view = function (model) {

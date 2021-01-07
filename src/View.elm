@@ -163,8 +163,20 @@ viewSearchArea notesList maybeQuery  maybeInlineErrors maybeInfoMessage =
     , viewInlineErrorsIfAny maybeInlineErrors
     , viewInformationIfAny maybeInfoMessage
     , viewNotesList notesList
+    , viewNotesCount notesList
     ]
 
+
+viewNotesCount : List SC.NoteFull -> Html msg
+viewNotesCount notesList =
+  div
+    [class "has-text-right mt-1"]
+    [
+      span [class "tag", class "is-small is-info"] [text <| getNoteCount notesList]
+    ]
+
+getNoteCount: List SC.NoteFull -> String
+getNoteCount = listFold "-" (String.fromInt << N.length)
 
 viewSearchBar : Maybe String -> Html Msg
 viewSearchBar maybeQuery  =
@@ -437,10 +449,7 @@ viewMenu =
 getQueryText : Maybe String -> String
 getQueryText = maybe "" identity
 
-getNoteCount: List SC.NoteFull -> String
-getNoteCount = listFold "-" (String.fromInt << N.length)
-
-listFold: b -> (N.Nonempty a -> b) -> List a -> b
+listFold : b -> (N.Nonempty a -> b) -> List a -> b
 listFold onEmpty onFull elements =
   maybe onEmpty onFull <| N.fromList elements
 
