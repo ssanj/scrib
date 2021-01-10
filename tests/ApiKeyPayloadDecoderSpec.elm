@@ -1,4 +1,4 @@
-module ApiKeyPayloadDecoder exposing (..)
+module ApiKeyPayloadDecoderSpec exposing (..)
 
 import Test exposing (..)
 
