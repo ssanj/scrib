@@ -11,3 +11,7 @@
 .scrib-footer {
   font-family: 'Leckerli One', cursive;
 }
+
+.is-small-8 {
+  font-size: .5rem!important;
+}

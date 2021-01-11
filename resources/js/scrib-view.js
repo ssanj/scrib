@@ -7899,7 +7899,186 @@ var $author$project$View$viewNotesCount = function (notesList) {
 var $author$project$View$NoteSelected = function (a) {
 	return {$: 'NoteSelected', a: a};
 };
+var $author$project$TagExtractor$TitleTag = function (a) {
+	return {$: 'TitleTag', a: a};
+};
+var $author$project$TagExtractor$TitleText = function (a) {
+	return {$: 'TitleText', a: a};
+};
+var $elm$core$String$fromList = _String_fromList;
+var $elm$core$Basics$neq = _Utils_notEqual;
+var $author$project$FP$dropWhileExcluding = F2(
+	function (predicate, list) {
+		dropWhileExcluding:
+		while (true) {
+			if (!list.b) {
+				return _List_Nil;
+			} else {
+				var x = list.a;
+				var xs = list.b;
+				if (predicate(x)) {
+					var $temp$predicate = predicate,
+						$temp$list = xs;
+					predicate = $temp$predicate;
+					list = $temp$list;
+					continue dropWhileExcluding;
+				} else {
+					return xs;
+				}
+			}
+		}
+	});
+var $author$project$FP$takeWhile = function (predicate) {
+	var takeWhileMemo = F2(
+		function (memo, list) {
+			takeWhileMemo:
+			while (true) {
+				if (!list.b) {
+					return $elm$core$List$reverse(memo);
+				} else {
+					var x = list.a;
+					var xs = list.b;
+					if (predicate(x)) {
+						var $temp$memo = A2($elm$core$List$cons, x, memo),
+							$temp$list = xs;
+						memo = $temp$memo;
+						list = $temp$list;
+						continue takeWhileMemo;
+					} else {
+						return $elm$core$List$reverse(memo);
+					}
+				}
+			}
+		});
+	return takeWhileMemo(_List_Nil);
+};
+var $author$project$FP$partitionExcluding = F2(
+	function (predicate, values) {
+		return _Utils_Tuple2(
+			A2($author$project$FP$takeWhile, predicate, values),
+			A2($author$project$FP$dropWhileExcluding, predicate, values));
+	});
+var $elm$core$String$foldr = _String_foldr;
+var $elm$core$String$toList = function (string) {
+	return A3($elm$core$String$foldr, $elm$core$List$cons, _List_Nil, string);
+};
+var $author$project$TagExtractor$extractTags = function (title) {
+	var extractTitleTypes = function (titleChars) {
+		var _v0 = A2(
+			$author$project$FP$partitionExcluding,
+			function (c) {
+				return !_Utils_eq(
+					c,
+					_Utils_chr('['));
+			},
+			titleChars);
+		var prefix = _v0.a;
+		var prefixRem = _v0.b;
+		var _v1 = A2(
+			$author$project$FP$partitionExcluding,
+			function (c) {
+				return !_Utils_eq(
+					c,
+					_Utils_chr(']'));
+			},
+			prefixRem);
+		var tag = _v1.a;
+		var tagRem = _v1.b;
+		var restOfList = $elm$core$List$isEmpty(tagRem) ? _List_Nil : extractTitleTypes(tagRem);
+		var _v2 = _Utils_Tuple2(prefix, tag);
+		if (!_v2.a.b) {
+			if (!_v2.b.b) {
+				return restOfList;
+			} else {
+				var hasTag = _v2.b;
+				return A2(
+					$elm$core$List$cons,
+					$author$project$TagExtractor$TitleTag(
+						$elm$core$String$fromList(hasTag)),
+					restOfList);
+			}
+		} else {
+			if (!_v2.b.b) {
+				var hasPrefix = _v2.a;
+				return A2(
+					$elm$core$List$cons,
+					$author$project$TagExtractor$TitleText(
+						$elm$core$String$fromList(hasPrefix)),
+					restOfList);
+			} else {
+				var hasPrefix = _v2.a;
+				var hasTag = _v2.b;
+				return A2(
+					$elm$core$List$cons,
+					$author$project$TagExtractor$TitleText(
+						$elm$core$String$fromList(hasPrefix)),
+					A2(
+						$elm$core$List$cons,
+						$author$project$TagExtractor$TitleTag(
+							$elm$core$String$fromList(hasTag)),
+						restOfList));
+			}
+		}
+	};
+	return extractTitleTypes(
+		$elm$core$String$toList(title));
+};
 var $elm$html$Html$i = _VirtualDom_node('i');
+var $author$project$View$processHeadingWithTags = function (titles) {
+	if (!titles.b) {
+		return _List_Nil;
+	} else {
+		if (titles.a.$ === 'TitleText') {
+			var value = titles.a.a;
+			var xs = titles.b;
+			return A2(
+				$elm$core$List$cons,
+				$elm$html$Html$text(value),
+				$author$project$View$processHeadingWithTags(xs));
+		} else {
+			var value = titles.a.a;
+			var xs = titles.b;
+			return A2(
+				$elm$core$List$cons,
+				A2(
+					$elm$html$Html$span,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('tag is-success is-small-8 is-rounded mr-1')
+						]),
+					_List_fromArray(
+						[
+							$elm$html$Html$text(value)
+						])),
+				$author$project$View$processHeadingWithTags(xs));
+		}
+	}
+};
+var $author$project$View$createHeader = function (title) {
+	var headingWithTags = $author$project$TagExtractor$extractTags(title);
+	var heading = $author$project$View$processHeadingWithTags(headingWithTags);
+	return A2(
+		$elm$core$List$cons,
+		A2(
+			$elm$html$Html$span,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$class('panel-icon')
+				]),
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$i,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('fas'),
+							$elm$html$Html$Attributes$class('fa-book'),
+							A2($elm$html$Html$Attributes$attribute, 'aria-hidden', 'true')
+						]),
+					_List_Nil)
+				])),
+		heading);
+};
 var $author$project$View$onlyHeading = function (note) {
 	return A3(
 		$author$project$FP$maybe,
@@ -7917,6 +8096,9 @@ var $elm$core$String$replace = F3(
 	});
 var $author$project$View$removeHeading = A2($elm$core$String$replace, '# ', '');
 var $author$project$View$createNoteItem = function (fullNote) {
+	var title = $author$project$View$removeHeading(
+		$author$project$View$onlyHeading(
+			$author$project$Note$getNoteFullText(fullNote)));
 	return A2(
 		$elm$html$Html$a,
 		_List_fromArray(
@@ -7925,31 +8107,7 @@ var $author$project$View$createNoteItem = function (fullNote) {
 				$elm$html$Html$Events$onClick(
 				$author$project$View$NoteSelected(fullNote))
 			]),
-		_List_fromArray(
-			[
-				A2(
-				$elm$html$Html$span,
-				_List_fromArray(
-					[
-						$elm$html$Html$Attributes$class('panel-icon')
-					]),
-				_List_fromArray(
-					[
-						A2(
-						$elm$html$Html$i,
-						_List_fromArray(
-							[
-								$elm$html$Html$Attributes$class('fas'),
-								$elm$html$Html$Attributes$class('fa-book'),
-								A2($elm$html$Html$Attributes$attribute, 'aria-hidden', 'true')
-							]),
-						_List_Nil)
-					])),
-				$elm$html$Html$text(
-				$author$project$View$removeHeading(
-					$author$project$View$onlyHeading(
-						$author$project$Note$getNoteFullText(fullNote))))
-			]));
+		$author$project$View$createHeader(title));
 };
 var $author$project$View$viewNotesList = function (notes) {
 	return $elm$core$List$isEmpty(notes) ? A2(

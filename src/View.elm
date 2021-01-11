@@ -6,6 +6,7 @@ import Html.Attributes exposing (..)
 import ElmCommon       exposing (..)
 import StorageKeys     exposing (..)
 import Notifications   exposing (..)
+import TagExtractor    exposing (..)
 
 import Html.Events     exposing (onClick, onInput)
 import FP              exposing (maybe, const, collect, maybeToList, find)
@@ -500,13 +501,40 @@ createMarkdownPreview = maybe viewMarkdownPreviewDefault viewMarkdownPreview
 
 createNoteItem: SC.NoteFull -> Html Msg
 createNoteItem fullNote =
-  a [class "panel-block", onClick (NoteSelected fullNote)]
-  [ span [class "panel-icon"]
-    [ i [ class "fas", class "fa-book", attribute "aria-hidden" "true"]
-      []
-    ]
-  , text <| removeHeading <| onlyHeading (SC.getNoteFullText fullNote)
-   ]
+  let title = removeHeading <| onlyHeading (SC.getNoteFullText fullNote)
+  in
+    a
+      [class "panel-block", onClick (NoteSelected fullNote)]
+      (createHeader title)
+
+createHeader : String -> List (Html msg)
+createHeader title =
+  let headingWithTags = extractTags title
+      heading = processHeadingWithTags headingWithTags
+  in
+      (
+        span
+          [ class "panel-icon" ]
+          [
+            i
+              [ class "fas", class "fa-book", attribute "aria-hidden" "true"]
+              []
+          ]
+      ) :: heading
+
+processHeadingWithTags : List TitleType -> List (Html msg)
+processHeadingWithTags titles =
+  case titles of
+    []    -> []
+    (TitleText value):: xs -> text value :: processHeadingWithTags xs
+    (TitleTag value) :: xs ->
+      (
+        span
+          [class "tag is-success is-small-8 is-rounded mr-1"]
+          [
+            text value
+          ]
+      ) :: processHeadingWithTags xs
 
 onlyHeading : String -> String
 onlyHeading note = maybe "-no title-" identity (List.head <| String.split "\n" note)
