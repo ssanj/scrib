@@ -6,9 +6,39 @@
   <link rel="stylesheet" href="css/bulma.min.css">
   <link rel="stylesheet" href="css/md.css">
   <link rel="stylesheet" href="css/scrib.css">
+  <script src="js/scrib-config.js"></script>
+  <script src="js/ports.js"></script>
   <script src="js/ui.js"></script>
 </head>
   <body>
+  <div id="myapp"></div>
+  <script>
+
+      //TODO: We should try and move this to ports
+      //We could also create a namespace for ports and do something like
+      //const ports = initPorts();
+      //ports.appEditKey
+      const appApiKey  = 'scrib.api.key';
+
+      const app = Elm.Config.init({
+        flags: initLoad(),
+        node: document.getElementById('myapp')
+      });
+
+      // app.ports.scribMessage.subscribe(function(action){
+      //   portActions(action, app.ports.jsMessage.send);
+      // });
+
+     function initLoad() {
+      return {};
+      // const apiKey     = localStorage.getItem(appApiKey);
+      // return { "top_notes" : notes, "apiKey" :  apiKey };
+    }
+
+    // document.addEventListener('DOMContentLoaded', () => burgerMenu(document));
+  </script>
+  </body>
+<!--   <body>
   <section class="section">
     <nav class="navbar" role="navigation" aria-label="main navigation">
       <div class="navbar-brand">
@@ -31,11 +61,6 @@
     </nav>
     <div class="container">
       <div>
-<!--         <article class="panel is-primary">
-          <p class="panel-heading">
-            Config
-          </p>
- -->
           <div class="field">
             <label class="px-1">Please enter an API Key</label>
             <div class="control px-1">
@@ -78,5 +103,5 @@
 
       document.addEventListener('DOMContentLoaded', () => burgerMenu(document));
   </script>
-  </body>
+  </body> -->
 </html>

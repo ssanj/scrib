@@ -1,0 +1,4 @@
+#!/bin/bash
+
+elm make src/Config.elm --report=json --output=resources/js/scrib-config.js 2>&1 | sharpen
+
