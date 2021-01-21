@@ -32,13 +32,14 @@ type alias Model =
   {
     informationMessage: String
   , apiKey: Maybe ApiKey
+  , apiKeyInput: Maybe String
   }
 
 
 -- MSG
 
 
-type Msg = ChangeMe
+type Msg = ApiKeyEdited String
 
 
 -- MAIN
@@ -69,44 +70,100 @@ init apiKeyJson =
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-     ChangeMe                   -> onlyModel model
+     ApiKeyEdited _                  -> onlyModel model
+
 
 -- VIEW
 
 view : Model -> Html Msg
-view { informationMessage, apiKey } =
+view { informationMessage, apiKey, apiKeyInput } =
   div
-  []
-  [
-    text informationMessage
-  , text ("ApiKey" ++ maybe "-" .value apiKey)
-  ]
-
---viewFooter : Html msg
---viewFooter =
---  nav
---    [ attribute "aria-label" "main navigation", class "content", attribute "role" "navigation" ]
---    [ div
---        [ class "content has-text-centered" ]
---        [ p
---            [ class "scrib-footer"]
---            [
---              text "scribble effortlessly"
---            ]
---        , div
---          [ class "is-size-7" ]
---          [
---            text "crafted by "
---          , a
---              [ href "https://sanj.ink"]
---              [
---                text "Sanj Sahayam"
---              ]
---          ]
---        ]
---    ]
+    []
+    [
+      viewMenu
+    , viewWelcomeMessage informationMessage
+    , viewApiKeyInput apiKeyInput
+    , viewFooter
+    ]
 
 
+-- VIEW HELPERS
+
+viewMenu : Html msg
+viewMenu =
+  nav [ attribute "aria-label" "main navigation", class "navbar", attribute "role" "navigation" ]
+      [ div [ class "navbar-brand" ]
+          [ a [ attribute "aria-expanded" "false", attribute "aria-label" "menu", class "navbar-burger burger", attribute "data-target" "navbarBasicExample", attribute "role" "button" ]
+              [ span [ attribute "aria-hidden" "true" ]
+                  []
+              , span [ attribute "aria-hidden" "true" ]
+                  []
+              , span [ attribute "aria-hidden" "true" ]
+                  []
+              ]
+          ]
+      , div [ class "navbar-menu", id "navbarBasicExample" ]
+          [ div [ class "navbar-start" ]
+              [ a [ class "navbar-item", href "index.html" ]
+                  [ text "Home" ]
+              , a [ class "navbar-item", href "view.html" ]
+                  [ text "View Notes" ]
+              , a [ class "navbar-item", href "save.html" ]
+                  [ text "New Note" ]
+              ]
+          ]
+      ]
+
+
+viewWelcomeMessage : String -> Html msg
+viewWelcomeMessage message =
+  div
+    []
+    [
+      text message
+    ]
+
+viewApiKeyInput : Maybe String -> Html Msg
+viewApiKeyInput maybeApiKeyText  =
+  div [ class "panel-block" ]
+    [ p [ class "control has-icons-left" ]
+      [ input [ class "input", class "is-primary", placeholder "Api Key", type_ "text", onInput ApiKeyEdited, value <| getApiKeyText maybeApiKeyText ]
+        []
+      , span [ class "icon is-left" ]
+        [ i [ attribute "aria-hidden" "true", class "fas", class "fa-search" ]
+          []
+        ]
+      ]
+    ]
+
+
+viewFooter : Html msg
+viewFooter =
+  nav
+    [ attribute "aria-label" "main navigation", class "content", attribute "role" "navigation" ]
+    [ div
+        [ class "content has-text-centered" ]
+        [ p
+            [ class "scrib-footer"]
+            [
+              text "scribble effortlessly"
+            ]
+        , div
+          [ class "is-size-7" ]
+          [
+            text "crafted by "
+          , a
+              [ href "https://sanj.ink"]
+              [
+                text "Sanj Sahayam"
+              ]
+          ]
+        ]
+    ]
+
+
+getApiKeyText : Maybe String -> String
+getApiKeyText = maybe "" identity
 
 -- PORTS
 
@@ -125,20 +182,29 @@ subscriptions _ = Sub.none
 
 -- MODEL HELPERS
 
+emptyModel : Model
+emptyModel =
+  {
+    informationMessage = ""
+  , apiKey             = Nothing
+  , apiKeyInput        = Nothing
+  }
+
 
 -- INIT HELPERS
 
 
 handleInitSuccess : ApiKey  -> (Model, Cmd Msg)
 handleInitSuccess loadedApiKey  =
-  onlyModel { informationMessage = "You have a key!", apiKey = Just loadedApiKey }
+  onlyModel { emptyModel | informationMessage = "You have a key!", apiKey = Just loadedApiKey }
 
--- TODO: Maybe we give the user the option of choosing to go to the config page
--- via an OK button or similar
--- We also want to completely get rid of logMessage
+
 handleInitError : D.Error -> (Model, Cmd Msg)
 handleInitError _ =
-  onlyModel { informationMessage = "Please enter an apiKey below", apiKey = Nothing }
+  onlyModel { emptyModel |
+                informationMessage = "Welcome to Scrib! Please enter an API Key below to start using the app"
+            }
+
 
 handleDecodeResult : Result D.Error a -> (a -> b) -> (D.Error -> b) -> b
 handleDecodeResult result success failure =
@@ -152,34 +218,6 @@ handleDecodeResult result success failure =
 
 -- UPDATE HELPERS
 
-
--- VIEW HELPERS
-
-
---viewMenu : Html Msg
---viewMenu =
---  nav [ attribute "aria-label" "main navigation", class "navbar", attribute "role" "navigation" ]
---      [ div [ class "navbar-brand" ]
---          [ a [ attribute "aria-expanded" "false", attribute "aria-label" "menu", class "navbar-burger burger", attribute "data-target" "navbarBasicExample", attribute "role" "button" ]
---              [ span [ attribute "aria-hidden" "true" ]
---                  []
---              , span [ attribute "aria-hidden" "true" ]
---                  []
---              , span [ attribute "aria-hidden" "true" ]
---                  []
---              ]
---          ]
---      , div [ class "navbar-menu", id "navbarBasicExample" ]
---          [ div [ class "navbar-start" ]
---              [ a [ class "navbar-item", href "index.html" ]
---                  [ text "Home" ]
---              , a [ class "navbar-item", href "view.html" ]
---                  [ text "View Notes" ]
---              , a [ class "navbar-item", href "save.html" ]
---                  [ text "New Note" ]
---              ]
---          ]
---      ]
 
 
 -- JS COMMANDS

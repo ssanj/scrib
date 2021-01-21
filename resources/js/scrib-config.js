@@ -5173,6 +5173,7 @@ var $author$project$Config$handleDecodeResult = F3(
 			return failure(error);
 		}
 	});
+var $author$project$Config$emptyModel = {apiKey: $elm$core$Maybe$Nothing, apiKeyInput: $elm$core$Maybe$Nothing, informationMessage: ''};
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
 var $author$project$ElmCommon$onlyModel = function (model) {
@@ -5180,14 +5181,18 @@ var $author$project$ElmCommon$onlyModel = function (model) {
 };
 var $author$project$Config$handleInitError = function (_v0) {
 	return $author$project$ElmCommon$onlyModel(
-		{apiKey: $elm$core$Maybe$Nothing, informationMessage: 'Please enter an apiKey below'});
+		_Utils_update(
+			$author$project$Config$emptyModel,
+			{informationMessage: 'Welcome to Scrib! Please enter an API Key below to start using the app'}));
 };
 var $author$project$Config$handleInitSuccess = function (loadedApiKey) {
 	return $author$project$ElmCommon$onlyModel(
-		{
-			apiKey: $elm$core$Maybe$Just(loadedApiKey),
-			informationMessage: 'You have a key!'
-		});
+		_Utils_update(
+			$author$project$Config$emptyModel,
+			{
+				apiKey: $elm$core$Maybe$Just(loadedApiKey),
+				informationMessage: 'You have a key!'
+			}));
 };
 var $author$project$Config$init = function (apiKeyJson) {
 	var decodeResult = A2($elm$json$Json$Decode$decodeValue, $author$project$ApiKey$decodeApiKeyOnly, apiKeyJson);
@@ -5204,6 +5209,26 @@ var $author$project$Config$update = F2(
 	});
 var $elm$json$Json$Decode$value = _Json_decodeValue;
 var $elm$html$Html$div = _VirtualDom_node('div');
+var $author$project$Config$ApiKeyEdited = function (a) {
+	return {$: 'ApiKeyEdited', a: a};
+};
+var $elm$virtual_dom$VirtualDom$attribute = F2(
+	function (key, value) {
+		return A2(
+			_VirtualDom_attribute,
+			_VirtualDom_noOnOrFormAction(key),
+			_VirtualDom_noJavaScriptOrHtmlUri(value));
+	});
+var $elm$html$Html$Attributes$attribute = $elm$virtual_dom$VirtualDom$attribute;
+var $elm$json$Json$Encode$string = _Json_wrap;
+var $elm$html$Html$Attributes$stringProperty = F2(
+	function (key, string) {
+		return A2(
+			_VirtualDom_property,
+			key,
+			$elm$json$Json$Encode$string(string));
+	});
+var $elm$html$Html$Attributes$class = $elm$html$Html$Attributes$stringProperty('className');
 var $author$project$FP$maybe = F3(
 	function (onNothing, onJust, maybeVal) {
 		if (maybeVal.$ === 'Just') {
@@ -5213,25 +5238,286 @@ var $author$project$FP$maybe = F3(
 			return onNothing;
 		}
 	});
+var $author$project$Config$getApiKeyText = A2($author$project$FP$maybe, '', $elm$core$Basics$identity);
+var $elm$html$Html$i = _VirtualDom_node('i');
+var $elm$html$Html$input = _VirtualDom_node('input');
+var $elm$html$Html$Events$alwaysStop = function (x) {
+	return _Utils_Tuple2(x, true);
+};
+var $elm$virtual_dom$VirtualDom$MayStopPropagation = function (a) {
+	return {$: 'MayStopPropagation', a: a};
+};
+var $elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
+var $elm$html$Html$Events$stopPropagationOn = F2(
+	function (event, decoder) {
+		return A2(
+			$elm$virtual_dom$VirtualDom$on,
+			event,
+			$elm$virtual_dom$VirtualDom$MayStopPropagation(decoder));
+	});
+var $elm$json$Json$Decode$at = F2(
+	function (fields, decoder) {
+		return A3($elm$core$List$foldr, $elm$json$Json$Decode$field, decoder, fields);
+	});
+var $elm$html$Html$Events$targetValue = A2(
+	$elm$json$Json$Decode$at,
+	_List_fromArray(
+		['target', 'value']),
+	$elm$json$Json$Decode$string);
+var $elm$html$Html$Events$onInput = function (tagger) {
+	return A2(
+		$elm$html$Html$Events$stopPropagationOn,
+		'input',
+		A2(
+			$elm$json$Json$Decode$map,
+			$elm$html$Html$Events$alwaysStop,
+			A2($elm$json$Json$Decode$map, tagger, $elm$html$Html$Events$targetValue)));
+};
+var $elm$html$Html$p = _VirtualDom_node('p');
+var $elm$html$Html$Attributes$placeholder = $elm$html$Html$Attributes$stringProperty('placeholder');
+var $elm$html$Html$span = _VirtualDom_node('span');
+var $elm$html$Html$Attributes$type_ = $elm$html$Html$Attributes$stringProperty('type');
+var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty('value');
+var $author$project$Config$viewApiKeyInput = function (maybeApiKeyText) {
+	return A2(
+		$elm$html$Html$div,
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$class('panel-block')
+			]),
+		_List_fromArray(
+			[
+				A2(
+				$elm$html$Html$p,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('control has-icons-left')
+					]),
+				_List_fromArray(
+					[
+						A2(
+						$elm$html$Html$input,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('input'),
+								$elm$html$Html$Attributes$class('is-primary'),
+								$elm$html$Html$Attributes$placeholder('Api Key'),
+								$elm$html$Html$Attributes$type_('text'),
+								$elm$html$Html$Events$onInput($author$project$Config$ApiKeyEdited),
+								$elm$html$Html$Attributes$value(
+								$author$project$Config$getApiKeyText(maybeApiKeyText))
+							]),
+						_List_Nil),
+						A2(
+						$elm$html$Html$span,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('icon is-left')
+							]),
+						_List_fromArray(
+							[
+								A2(
+								$elm$html$Html$i,
+								_List_fromArray(
+									[
+										A2($elm$html$Html$Attributes$attribute, 'aria-hidden', 'true'),
+										$elm$html$Html$Attributes$class('fas'),
+										$elm$html$Html$Attributes$class('fa-search')
+									]),
+								_List_Nil)
+							]))
+					]))
+			]));
+};
+var $elm$html$Html$a = _VirtualDom_node('a');
+var $elm$html$Html$Attributes$href = function (url) {
+	return A2(
+		$elm$html$Html$Attributes$stringProperty,
+		'href',
+		_VirtualDom_noJavaScriptUri(url));
+};
+var $elm$html$Html$nav = _VirtualDom_node('nav');
 var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
 var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
-var $author$project$Config$view = function (_v0) {
-	var informationMessage = _v0.informationMessage;
-	var apiKey = _v0.apiKey;
+var $author$project$Config$viewFooter = A2(
+	$elm$html$Html$nav,
+	_List_fromArray(
+		[
+			A2($elm$html$Html$Attributes$attribute, 'aria-label', 'main navigation'),
+			$elm$html$Html$Attributes$class('content'),
+			A2($elm$html$Html$Attributes$attribute, 'role', 'navigation')
+		]),
+	_List_fromArray(
+		[
+			A2(
+			$elm$html$Html$div,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$class('content has-text-centered')
+				]),
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$p,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('scrib-footer')
+						]),
+					_List_fromArray(
+						[
+							$elm$html$Html$text('scribble effortlessly')
+						])),
+					A2(
+					$elm$html$Html$div,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('is-size-7')
+						]),
+					_List_fromArray(
+						[
+							$elm$html$Html$text('crafted by '),
+							A2(
+							$elm$html$Html$a,
+							_List_fromArray(
+								[
+									$elm$html$Html$Attributes$href('https://sanj.ink')
+								]),
+							_List_fromArray(
+								[
+									$elm$html$Html$text('Sanj Sahayam')
+								]))
+						]))
+				]))
+		]));
+var $elm$html$Html$Attributes$id = $elm$html$Html$Attributes$stringProperty('id');
+var $author$project$Config$viewMenu = A2(
+	$elm$html$Html$nav,
+	_List_fromArray(
+		[
+			A2($elm$html$Html$Attributes$attribute, 'aria-label', 'main navigation'),
+			$elm$html$Html$Attributes$class('navbar'),
+			A2($elm$html$Html$Attributes$attribute, 'role', 'navigation')
+		]),
+	_List_fromArray(
+		[
+			A2(
+			$elm$html$Html$div,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$class('navbar-brand')
+				]),
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$a,
+					_List_fromArray(
+						[
+							A2($elm$html$Html$Attributes$attribute, 'aria-expanded', 'false'),
+							A2($elm$html$Html$Attributes$attribute, 'aria-label', 'menu'),
+							$elm$html$Html$Attributes$class('navbar-burger burger'),
+							A2($elm$html$Html$Attributes$attribute, 'data-target', 'navbarBasicExample'),
+							A2($elm$html$Html$Attributes$attribute, 'role', 'button')
+						]),
+					_List_fromArray(
+						[
+							A2(
+							$elm$html$Html$span,
+							_List_fromArray(
+								[
+									A2($elm$html$Html$Attributes$attribute, 'aria-hidden', 'true')
+								]),
+							_List_Nil),
+							A2(
+							$elm$html$Html$span,
+							_List_fromArray(
+								[
+									A2($elm$html$Html$Attributes$attribute, 'aria-hidden', 'true')
+								]),
+							_List_Nil),
+							A2(
+							$elm$html$Html$span,
+							_List_fromArray(
+								[
+									A2($elm$html$Html$Attributes$attribute, 'aria-hidden', 'true')
+								]),
+							_List_Nil)
+						]))
+				])),
+			A2(
+			$elm$html$Html$div,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$class('navbar-menu'),
+					$elm$html$Html$Attributes$id('navbarBasicExample')
+				]),
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$div,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('navbar-start')
+						]),
+					_List_fromArray(
+						[
+							A2(
+							$elm$html$Html$a,
+							_List_fromArray(
+								[
+									$elm$html$Html$Attributes$class('navbar-item'),
+									$elm$html$Html$Attributes$href('index.html')
+								]),
+							_List_fromArray(
+								[
+									$elm$html$Html$text('Home')
+								])),
+							A2(
+							$elm$html$Html$a,
+							_List_fromArray(
+								[
+									$elm$html$Html$Attributes$class('navbar-item'),
+									$elm$html$Html$Attributes$href('view.html')
+								]),
+							_List_fromArray(
+								[
+									$elm$html$Html$text('View Notes')
+								])),
+							A2(
+							$elm$html$Html$a,
+							_List_fromArray(
+								[
+									$elm$html$Html$Attributes$class('navbar-item'),
+									$elm$html$Html$Attributes$href('save.html')
+								]),
+							_List_fromArray(
+								[
+									$elm$html$Html$text('New Note')
+								]))
+						]))
+				]))
+		]));
+var $author$project$Config$viewWelcomeMessage = function (message) {
 	return A2(
 		$elm$html$Html$div,
 		_List_Nil,
 		_List_fromArray(
 			[
-				$elm$html$Html$text(informationMessage),
-				$elm$html$Html$text(
-				'ApiKey' + A3(
-					$author$project$FP$maybe,
-					'-',
-					function ($) {
-						return $.value;
-					},
-					apiKey))
+				$elm$html$Html$text(message)
+			]));
+};
+var $author$project$Config$view = function (_v0) {
+	var informationMessage = _v0.informationMessage;
+	var apiKey = _v0.apiKey;
+	var apiKeyInput = _v0.apiKeyInput;
+	return A2(
+		$elm$html$Html$div,
+		_List_Nil,
+		_List_fromArray(
+			[
+				$author$project$Config$viewMenu,
+				$author$project$Config$viewWelcomeMessage(informationMessage),
+				$author$project$Config$viewApiKeyInput(apiKeyInput),
+				$author$project$Config$viewFooter
 			]));
 };
 var $author$project$Config$main = $elm$browser$Browser$element(
