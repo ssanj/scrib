@@ -5144,13 +5144,54 @@ var $elm$core$Task$perform = F2(
 				A2($elm$core$Task$map, toMessage, task)));
 	});
 var $elm$browser$Browser$element = _Browser_element;
+var $author$project$StorageKeys$JsonKey = function (a) {
+	return {$: 'JsonKey', a: a};
+};
+var $author$project$StorageKeys$apiKeyKey = $author$project$StorageKeys$JsonKey('apiKey');
+var $author$project$ApiKey$ApiKey = function (value) {
+	return {value: value};
+};
+var $elm$json$Json$Decode$string = _Json_decodeString;
+var $author$project$ApiKey$decodeApiKey = A2($elm$json$Json$Decode$map, $author$project$ApiKey$ApiKey, $elm$json$Json$Decode$string);
+var $elm$json$Json$Decode$field = _Json_decodeField;
+var $author$project$StorageKeys$keyValue = function (_v0) {
+	var value = _v0.a;
+	return value;
+};
+var $author$project$ApiKey$decodeApiKeyOnly = A2(
+	$elm$json$Json$Decode$field,
+	$author$project$StorageKeys$keyValue($author$project$StorageKeys$apiKeyKey),
+	$author$project$ApiKey$decodeApiKey);
+var $elm$json$Json$Decode$decodeValue = _Json_run;
+var $author$project$Config$handleDecodeResult = F3(
+	function (result, success, failure) {
+		if (result.$ === 'Ok') {
+			var value = result.a;
+			return success(value);
+		} else {
+			var error = result.a;
+			return failure(error);
+		}
+	});
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
 var $author$project$ElmCommon$onlyModel = function (model) {
 	return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 };
-var $author$project$Config$init = function (_v0) {
-	return $author$project$ElmCommon$onlyModel(_Utils_Tuple0);
+var $author$project$Config$handleInitError = function (_v0) {
+	return $author$project$ElmCommon$onlyModel(
+		{apiKey: $elm$core$Maybe$Nothing, informationMessage: 'Please enter an apiKey below'});
+};
+var $author$project$Config$handleInitSuccess = function (loadedApiKey) {
+	return $author$project$ElmCommon$onlyModel(
+		{
+			apiKey: $elm$core$Maybe$Just(loadedApiKey),
+			informationMessage: 'You have a key!'
+		});
+};
+var $author$project$Config$init = function (apiKeyJson) {
+	var decodeResult = A2($elm$json$Json$Decode$decodeValue, $author$project$ApiKey$decodeApiKeyOnly, apiKeyJson);
+	return A3($author$project$Config$handleDecodeResult, decodeResult, $author$project$Config$handleInitSuccess, $author$project$Config$handleInitError);
 };
 var $elm$core$Platform$Sub$batch = _Platform_batch;
 var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
@@ -5163,15 +5204,34 @@ var $author$project$Config$update = F2(
 	});
 var $elm$json$Json$Decode$value = _Json_decodeValue;
 var $elm$html$Html$div = _VirtualDom_node('div');
+var $author$project$FP$maybe = F3(
+	function (onNothing, onJust, maybeVal) {
+		if (maybeVal.$ === 'Just') {
+			var a = maybeVal.a;
+			return onJust(a);
+		} else {
+			return onNothing;
+		}
+	});
 var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
 var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
-var $author$project$Config$view = function (model) {
+var $author$project$Config$view = function (_v0) {
+	var informationMessage = _v0.informationMessage;
+	var apiKey = _v0.apiKey;
 	return A2(
 		$elm$html$Html$div,
 		_List_Nil,
 		_List_fromArray(
 			[
-				$elm$html$Html$text('config here')
+				$elm$html$Html$text(informationMessage),
+				$elm$html$Html$text(
+				'ApiKey' + A3(
+					$author$project$FP$maybe,
+					'-',
+					function ($) {
+						return $.value;
+					},
+					apiKey))
 			]));
 };
 var $author$project$Config$main = $elm$browser$Browser$element(

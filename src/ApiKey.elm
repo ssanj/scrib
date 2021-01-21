@@ -38,3 +38,6 @@ decodeApiKeyWithPayload key payloadDecoder =
     -- a missing field
     -- the encoding to fail
     (D.maybe (D.field (keyValue key) payloadDecoder))
+
+decodeApiKeyOnly: D.Decoder ApiKey
+decodeApiKeyOnly = D.field (keyValue apiKeyKey) decodeApiKey

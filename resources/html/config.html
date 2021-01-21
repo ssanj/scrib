@@ -30,9 +30,8 @@
       // });
 
      function initLoad() {
-      return {};
-      // const apiKey     = localStorage.getItem(appApiKey);
-      // return { "top_notes" : notes, "apiKey" :  apiKey };
+      const apiKey     = localStorage.getItem(appApiKey);
+      return { "apiKey" :  apiKey };
     }
 
     // document.addEventListener('DOMContentLoaded', () => burgerMenu(document));

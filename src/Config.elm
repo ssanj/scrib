@@ -10,7 +10,7 @@ import TagExtractor    exposing (..)
 
 import Html.Events     exposing (onClick, onInput)
 import FP              exposing (maybe, const, collect, maybeToList, find)
-import ApiKey          exposing (ApiKey, ApiKeyWithPayload, apiKeyHeader, decodeApiKeyWithPayload, performApiKey)
+import ApiKey          exposing (ApiKey, ApiKeyWithPayload, apiKeyHeader, decodeApiKeyOnly, performApiKey)
 import Markdown
 
 import Browser.Navigation
@@ -28,7 +28,11 @@ import Subs          as S
 -- MODEL
 
 
-type alias Model = ()
+type alias Model =
+  {
+    informationMessage: String
+  , apiKey: Maybe ApiKey
+  }
 
 
 -- MSG
@@ -54,9 +58,9 @@ main =
 
 
 init : E.Value -> (Model, Cmd Msg)
-init _ = onlyModel ()
-    --let decodeResult = D.decodeValue decodeLocalNotes topNotes
-    --in handleDecodeResult decodeResult handleInitSuccess handleInitError
+init apiKeyJson =
+    let decodeResult = D.decodeValue decodeApiKeyOnly apiKeyJson
+    in handleDecodeResult decodeResult handleInitSuccess handleInitError
 
 
 -- UPDATE
@@ -70,7 +74,13 @@ update msg model =
 -- VIEW
 
 view : Model -> Html Msg
-view model = div [] [ text "config here"]
+view { informationMessage, apiKey } =
+  div
+  []
+  [
+    text informationMessage
+  , text ("ApiKey" ++ maybe "-" .value apiKey)
+  ]
 
 --viewFooter : Html msg
 --viewFooter =
@@ -119,45 +129,22 @@ subscriptions _ = Sub.none
 -- INIT HELPERS
 
 
---handleInitSuccess : ApiKeyWithPayload (List SC.NoteFull) -> (Model, Cmd Msg)
---handleInitSuccess { apiKey, payload } =
---  let notes = maybe [] identity payload
---      mc    =
---        if List.isEmpty notes
---        then
---          let model =
---               { emptyModel |
---                    notes       = Loading
---                  , apiKey      = Just apiKey
---               }
---              (newModel, cmdTimeoutInfoMessage) = handleInlineInfo model <| InformationMessage "No cached data, refreshing"
---              commands =
---                [
---                  getTopRemoteNotes apiKey
---                , cmdTimeoutInfoMessage
---                ]
---          in (newModel, Cmd.batch commands)
---        else onlyModel { emptyModel | retrievedNotes = notes, apiKey = Just apiKey }
--- in mc
+handleInitSuccess : ApiKey  -> (Model, Cmd Msg)
+handleInitSuccess loadedApiKey  =
+  onlyModel { informationMessage = "You have a key!", apiKey = Just loadedApiKey }
 
 -- TODO: Maybe we give the user the option of choosing to go to the config page
 -- via an OK button or similar
 -- We also want to completely get rid of logMessage
---handleInitError : D.Error -> (Model, Cmd Msg)
---handleInitError err = (
---                        emptyModel
---                      , Cmd.batch
---                        [
---                          Browser.Navigation.load "config.html"
---                        , logMessage ("Decode of init data failed due to: " ++ D.errorToString err)
---                        ]
---                      )
+handleInitError : D.Error -> (Model, Cmd Msg)
+handleInitError _ =
+  onlyModel { informationMessage = "Please enter an apiKey below", apiKey = Nothing }
 
---handleDecodeResult : Result D.Error a -> (a -> b) -> (D.Error -> b) -> b
---handleDecodeResult result success failure =
---  case result of
---    (Ok value)  -> success value
---    (Err error) -> failure error
+handleDecodeResult : Result D.Error a -> (a -> b) -> (D.Error -> b) -> b
+handleDecodeResult result success failure =
+  case result of
+    (Ok value)  -> success value
+    (Err error) -> failure error
 
 
 -- DECODERS
