@@ -40,6 +40,7 @@ type alias Model =
 
 
 type Msg = ApiKeyEdited String
+         | ApikKeySaved
 
 
 -- MAIN
@@ -70,7 +71,8 @@ init apiKeyJson =
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-     ApiKeyEdited _                  -> onlyModel model
+     ApiKeyEdited _    -> onlyModel model
+     ApikKeySaved      -> onlyModel model
 
 
 -- VIEW
@@ -125,15 +127,15 @@ viewWelcomeMessage message =
 
 viewApiKeyInput : Maybe String -> Html Msg
 viewApiKeyInput maybeApiKeyText  =
-  div [ class "panel-block" ]
-    [ p [ class "control has-icons-left" ]
-      [ input [ class "input", class "is-primary", placeholder "Api Key", type_ "text", onInput ApiKeyEdited, value <| getApiKeyText maybeApiKeyText ]
+  div
+    []
+    [
+      input
+        [ class "input", class "is-primary", placeholder "Api Key", type_ "text", onInput ApiKeyEdited, value <| getApiKeyText maybeApiKeyText ]
         []
-      , span [ class "icon is-left" ]
-        [ i [ attribute "aria-hidden" "true", class "fas", class "fa-search" ]
-          []
-        ]
-      ]
+    , button
+        [ class "button is-info mt-2", onClick ApikKeySaved ]
+        [ text "Save" ]
     ]
 
 

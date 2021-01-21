@@ -5205,21 +5205,19 @@ var $author$project$Config$subscriptions = function (_v0) {
 };
 var $author$project$Config$update = F2(
 	function (msg, model) {
-		return $author$project$ElmCommon$onlyModel(model);
+		if (msg.$ === 'ApiKeyEdited') {
+			return $author$project$ElmCommon$onlyModel(model);
+		} else {
+			return $author$project$ElmCommon$onlyModel(model);
+		}
 	});
 var $elm$json$Json$Decode$value = _Json_decodeValue;
 var $elm$html$Html$div = _VirtualDom_node('div');
 var $author$project$Config$ApiKeyEdited = function (a) {
 	return {$: 'ApiKeyEdited', a: a};
 };
-var $elm$virtual_dom$VirtualDom$attribute = F2(
-	function (key, value) {
-		return A2(
-			_VirtualDom_attribute,
-			_VirtualDom_noOnOrFormAction(key),
-			_VirtualDom_noJavaScriptOrHtmlUri(value));
-	});
-var $elm$html$Html$Attributes$attribute = $elm$virtual_dom$VirtualDom$attribute;
+var $author$project$Config$ApikKeySaved = {$: 'ApikKeySaved'};
+var $elm$html$Html$button = _VirtualDom_node('button');
 var $elm$json$Json$Encode$string = _Json_wrap;
 var $elm$html$Html$Attributes$stringProperty = F2(
 	function (key, string) {
@@ -5239,15 +5237,30 @@ var $author$project$FP$maybe = F3(
 		}
 	});
 var $author$project$Config$getApiKeyText = A2($author$project$FP$maybe, '', $elm$core$Basics$identity);
-var $elm$html$Html$i = _VirtualDom_node('i');
 var $elm$html$Html$input = _VirtualDom_node('input');
+var $elm$virtual_dom$VirtualDom$Normal = function (a) {
+	return {$: 'Normal', a: a};
+};
+var $elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
+var $elm$html$Html$Events$on = F2(
+	function (event, decoder) {
+		return A2(
+			$elm$virtual_dom$VirtualDom$on,
+			event,
+			$elm$virtual_dom$VirtualDom$Normal(decoder));
+	});
+var $elm$html$Html$Events$onClick = function (msg) {
+	return A2(
+		$elm$html$Html$Events$on,
+		'click',
+		$elm$json$Json$Decode$succeed(msg));
+};
 var $elm$html$Html$Events$alwaysStop = function (x) {
 	return _Utils_Tuple2(x, true);
 };
 var $elm$virtual_dom$VirtualDom$MayStopPropagation = function (a) {
 	return {$: 'MayStopPropagation', a: a};
 };
-var $elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
 var $elm$html$Html$Events$stopPropagationOn = F2(
 	function (event, decoder) {
 		return A2(
@@ -5273,63 +5286,52 @@ var $elm$html$Html$Events$onInput = function (tagger) {
 			$elm$html$Html$Events$alwaysStop,
 			A2($elm$json$Json$Decode$map, tagger, $elm$html$Html$Events$targetValue)));
 };
-var $elm$html$Html$p = _VirtualDom_node('p');
 var $elm$html$Html$Attributes$placeholder = $elm$html$Html$Attributes$stringProperty('placeholder');
-var $elm$html$Html$span = _VirtualDom_node('span');
+var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
+var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
 var $elm$html$Html$Attributes$type_ = $elm$html$Html$Attributes$stringProperty('type');
 var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty('value');
 var $author$project$Config$viewApiKeyInput = function (maybeApiKeyText) {
 	return A2(
 		$elm$html$Html$div,
-		_List_fromArray(
-			[
-				$elm$html$Html$Attributes$class('panel-block')
-			]),
+		_List_Nil,
 		_List_fromArray(
 			[
 				A2(
-				$elm$html$Html$p,
+				$elm$html$Html$input,
 				_List_fromArray(
 					[
-						$elm$html$Html$Attributes$class('control has-icons-left')
+						$elm$html$Html$Attributes$class('input'),
+						$elm$html$Html$Attributes$class('is-primary'),
+						$elm$html$Html$Attributes$placeholder('Api Key'),
+						$elm$html$Html$Attributes$type_('text'),
+						$elm$html$Html$Events$onInput($author$project$Config$ApiKeyEdited),
+						$elm$html$Html$Attributes$value(
+						$author$project$Config$getApiKeyText(maybeApiKeyText))
+					]),
+				_List_Nil),
+				A2(
+				$elm$html$Html$button,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('button is-info mt-2'),
+						$elm$html$Html$Events$onClick($author$project$Config$ApikKeySaved)
 					]),
 				_List_fromArray(
 					[
-						A2(
-						$elm$html$Html$input,
-						_List_fromArray(
-							[
-								$elm$html$Html$Attributes$class('input'),
-								$elm$html$Html$Attributes$class('is-primary'),
-								$elm$html$Html$Attributes$placeholder('Api Key'),
-								$elm$html$Html$Attributes$type_('text'),
-								$elm$html$Html$Events$onInput($author$project$Config$ApiKeyEdited),
-								$elm$html$Html$Attributes$value(
-								$author$project$Config$getApiKeyText(maybeApiKeyText))
-							]),
-						_List_Nil),
-						A2(
-						$elm$html$Html$span,
-						_List_fromArray(
-							[
-								$elm$html$Html$Attributes$class('icon is-left')
-							]),
-						_List_fromArray(
-							[
-								A2(
-								$elm$html$Html$i,
-								_List_fromArray(
-									[
-										A2($elm$html$Html$Attributes$attribute, 'aria-hidden', 'true'),
-										$elm$html$Html$Attributes$class('fas'),
-										$elm$html$Html$Attributes$class('fa-search')
-									]),
-								_List_Nil)
-							]))
+						$elm$html$Html$text('Save')
 					]))
 			]));
 };
 var $elm$html$Html$a = _VirtualDom_node('a');
+var $elm$virtual_dom$VirtualDom$attribute = F2(
+	function (key, value) {
+		return A2(
+			_VirtualDom_attribute,
+			_VirtualDom_noOnOrFormAction(key),
+			_VirtualDom_noJavaScriptOrHtmlUri(value));
+	});
+var $elm$html$Html$Attributes$attribute = $elm$virtual_dom$VirtualDom$attribute;
 var $elm$html$Html$Attributes$href = function (url) {
 	return A2(
 		$elm$html$Html$Attributes$stringProperty,
@@ -5337,8 +5339,7 @@ var $elm$html$Html$Attributes$href = function (url) {
 		_VirtualDom_noJavaScriptUri(url));
 };
 var $elm$html$Html$nav = _VirtualDom_node('nav');
-var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
-var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
+var $elm$html$Html$p = _VirtualDom_node('p');
 var $author$project$Config$viewFooter = A2(
 	$elm$html$Html$nav,
 	_List_fromArray(
@@ -5390,6 +5391,7 @@ var $author$project$Config$viewFooter = A2(
 				]))
 		]));
 var $elm$html$Html$Attributes$id = $elm$html$Html$Attributes$stringProperty('id');
+var $elm$html$Html$span = _VirtualDom_node('span');
 var $author$project$Config$viewMenu = A2(
 	$elm$html$Html$nav,
 	_List_fromArray(
