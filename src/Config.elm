@@ -71,9 +71,12 @@ init apiKeyJson =
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-     ApiKeyEdited _    -> onlyModel model
-     ApikKeySaved      -> onlyModel model
+     ApiKeyEdited editedKey -> handleApiKeyEdited model editedKey
+     ApikKeySaved           -> onlyModel model
 
+
+handleApiKeyEdited : Model -> String -> (Model, Cmd Msg)
+handleApiKeyEdited model editedKey = onlyModel { model |  apiKeyInput = Just editedKey }
 
 -- VIEW
 

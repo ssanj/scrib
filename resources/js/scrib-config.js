@@ -5203,10 +5203,20 @@ var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
 var $author$project$Config$subscriptions = function (_v0) {
 	return $elm$core$Platform$Sub$none;
 };
+var $author$project$Config$handleApiKeyEdited = F2(
+	function (model, editedKey) {
+		return $author$project$ElmCommon$onlyModel(
+			_Utils_update(
+				model,
+				{
+					apiKeyInput: $elm$core$Maybe$Just(editedKey)
+				}));
+	});
 var $author$project$Config$update = F2(
 	function (msg, model) {
 		if (msg.$ === 'ApiKeyEdited') {
-			return $author$project$ElmCommon$onlyModel(model);
+			var editedKey = msg.a;
+			return A2($author$project$Config$handleApiKeyEdited, model, editedKey);
 		} else {
 			return $author$project$ElmCommon$onlyModel(model);
 		}
