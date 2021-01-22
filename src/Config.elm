@@ -10,9 +10,10 @@ import TagExtractor    exposing (..)
 
 import Html.Events     exposing (onClick, onInput)
 import FP              exposing (maybe, const, collect, maybeToList, find)
-import ApiKey          exposing (ApiKey, ApiKeyWithPayload, apiKeyHeader, decodeApiKeyOnly, performApiKey)
-import Markdown
+import ApiKey          exposing (ApiKey, ApiKeyWithPayload, decodeApiKeyOnly, encodeApiKey)
+import Debug           exposing (todo)
 
+import Markdown
 import Browser.Navigation
 import Browser
 import Http
@@ -24,6 +25,7 @@ import Json.Encode   as E
 import Note          as SC
 import Ports         as P
 import Subs          as S
+
 
 -- MODEL
 
@@ -41,7 +43,8 @@ type alias Model =
 
 type Msg = ApiKeyEdited String
          | ApikKeySaved
-
+         | ApiKeySavedToLocalStorage
+         | JSNotificationError String
 
 -- MAIN
 
@@ -71,12 +74,10 @@ init apiKeyJson =
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-     ApiKeyEdited editedKey -> handleApiKeyEdited model editedKey
-     ApikKeySaved           -> onlyModel model
-
-
-handleApiKeyEdited : Model -> String -> (Model, Cmd Msg)
-handleApiKeyEdited model editedKey = onlyModel { model |  apiKeyInput = Just editedKey }
+     ApiKeyEdited editedKey    -> handleApiKeyEdited model editedKey
+     ApikKeySaved              -> handleSavingApiKey model
+     ApiKeySavedToLocalStorage -> handleApiKeySavedToLocalStorage model
+     JSNotificationError error -> handleJsNotificationError model error
 
 -- VIEW
 
@@ -181,8 +182,8 @@ port jsMessage : (E.Value -> msg) -> Sub msg
 
 
 subscriptions : Model -> Sub Msg
-subscriptions _ = Sub.none
-  --jsMessage (S.encodeJsResponse subscriptionSuccess subscriptionFailure)
+subscriptions _ =
+  jsMessage (S.encodeJsResponse subscriptionSuccess subscriptionFailure)
 
 
 -- MODEL HELPERS
@@ -224,8 +225,43 @@ handleDecodeResult result success failure =
 -- UPDATE HELPERS
 
 
+handleApiKeyEdited : Model -> String -> (Model, Cmd Msg)
+handleApiKeyEdited model editedKey = onlyModel { model |  apiKeyInput = Just editedKey }
+
+
+handleSavingApiKey : Model -> (Model, Cmd msg)
+handleSavingApiKey model =
+  case model.apiKeyInput of
+    Just apiKey -> (model, saveApiKey <| ApiKey apiKey)
+    Nothing     -> onlyModel model
+
+
+handleApiKeySavedToLocalStorage : Model -> (Model, Cmd msg)
+handleApiKeySavedToLocalStorage = onlyModel
+
+
+handleJsNotificationError : Model -> String -> (Model, Cmd msg)
+handleJsNotificationError model _ = onlyModel model
+
+
+saveApiKey : ApiKey -> Cmd msg
+saveApiKey = saveApiKeyToLocalStorage
+
+
+saveApiKeyToLocalStorage : ApiKey -> Cmd msg
+saveApiKeyToLocalStorage apiKey =
+  let storageArea         = apiKeyStorageArea
+      saveApiKeyNoteValue = P.JsStorageValue storageArea Save apiKey
+      responseKey         = Just apiKeySavedToLocalStorageResponseKey
+      saveApiKeyCommand   = P.WithStorage saveApiKeyNoteValue responseKey
+  in scribMessage <| P.encodeJsCommand saveApiKeyCommand encodeApiKey
+
+
 
 -- JS COMMANDS
+
+apiKeySavedToLocalStorageResponseKey : P.ResponseKey
+apiKeySavedToLocalStorageResponseKey = P.ResponseKey "ApiKeySavedToLocalStorage"
 
 
 --topNotesSavedToSessionStorageResponseKey : P.ResponseKey
@@ -252,13 +288,11 @@ handleDecodeResult result success failure =
 
 -- SUBSCRIPTION HELPERS
 
---subscriptionSuccess : S.JsResponse E.Value -> Msg
---subscriptionSuccess (S.JsResponse (P.ResponseKey key) result) =
---  case (key) of
---    "NoteSavedToLocalStorage"       -> NoteSavedToLocalStorage
---    "NoteRemovedFromLocalStorage"   -> NoteRemovedFromLocalStorage
---    "TopNotesSavedToSessionStorage" -> TopNotesSavedToSessionStorage
---    otherKey                      -> subscriptionFailure <| ("Unhandled JS notification: " ++ otherKey)
+subscriptionSuccess : S.JsResponse E.Value -> Msg
+subscriptionSuccess (S.JsResponse (P.ResponseKey key) result) =
+  case key of
+    "ApiKeySavedToLocalStorage"   -> ApiKeySavedToLocalStorage
+    otherKey                      -> subscriptionFailure <| ("Unhandled JS notification: " ++ otherKey)
 
---subscriptionFailure : String -> Msg
---subscriptionFailure m = JSNotificationError ("subscriptionFailure: " ++ m)
+subscriptionFailure : String -> Msg
+subscriptionFailure m = JSNotificationError ("subscriptionFailure: " ++ m)

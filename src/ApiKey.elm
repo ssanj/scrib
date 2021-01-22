@@ -2,7 +2,9 @@ module ApiKey exposing (..)
 
 import Http
 import Json.Decode as D
+import Json.Encode as E
 import StorageKeys exposing (JsonKey, keyValue, apiKeyKey)
+import ElmCommon   exposing (Encoder)
 
 -- TODO: should this be opaque? We would need to update the http
 type alias ApiKey = { value: String }
@@ -41,3 +43,6 @@ decodeApiKeyWithPayload key payloadDecoder =
 
 decodeApiKeyOnly: D.Decoder ApiKey
 decodeApiKeyOnly = D.field (keyValue apiKeyKey) decodeApiKey
+
+encodeApiKey: Encoder ApiKey
+encodeApiKey { value } = E.string value

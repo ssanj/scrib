@@ -25,9 +25,9 @@
         node: document.getElementById('myapp')
       });
 
-      // app.ports.scribMessage.subscribe(function(action){
-      //   portActions(action, app.ports.jsMessage.send);
-      // });
+      app.ports.scribMessage.subscribe(function(action){
+        portActions(action, app.ports.jsMessage.send);
+      });
 
      function initLoad() {
       const apiKey     = localStorage.getItem(appApiKey);
