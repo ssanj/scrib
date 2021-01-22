@@ -10688,7 +10688,25 @@ var $author$project$Config$handleApiKeyEdited = F2(
 					apiKeyInput: $elm$core$Maybe$Just(editedKey)
 				}));
 	});
-var $author$project$Config$handleApiKeySavedToLocalStorage = $author$project$ElmCommon$onlyModel;
+var $elm$core$Maybe$map = F2(
+	function (f, maybe) {
+		if (maybe.$ === 'Just') {
+			var value = maybe.a;
+			return $elm$core$Maybe$Just(
+				f(value));
+		} else {
+			return $elm$core$Maybe$Nothing;
+		}
+	});
+var $author$project$Config$handleApiKeySavedToLocalStorage = function (model) {
+	return $author$project$ElmCommon$onlyModel(
+		_Utils_update(
+			model,
+			{
+				apiKey: A2($elm$core$Maybe$map, $author$project$ApiKey$ApiKey, model.apiKeyInput),
+				apiKeyInput: $elm$core$Maybe$Nothing
+			}));
+};
 var $author$project$Config$handleJsNotificationError = F2(
 	function (model, _v0) {
 		return $author$project$ElmCommon$onlyModel(model);
@@ -10957,6 +10975,26 @@ var $author$project$Config$viewApiKeyInput = function (maybeApiKeyText) {
 					]))
 			]));
 };
+var $author$project$Config$viewCurrentApiKey = function (maybeApiKey) {
+	if (maybeApiKey.$ === 'Just') {
+		var apiKey = maybeApiKey.a;
+		return A2(
+			$elm$html$Html$div,
+			_List_Nil,
+			_List_fromArray(
+				[
+					$elm$html$Html$text('API Key: ' + apiKey.value)
+				]));
+	} else {
+		return A2(
+			$elm$html$Html$div,
+			_List_Nil,
+			_List_fromArray(
+				[
+					$elm$html$Html$text('no API Key saved')
+				]));
+	}
+};
 var $elm$html$Html$Attributes$attribute = $elm$virtual_dom$VirtualDom$attribute;
 var $elm$html$Html$nav = _VirtualDom_node('nav');
 var $author$project$Config$viewFooter = A2(
@@ -11136,6 +11174,7 @@ var $author$project$Config$view = function (_v0) {
 				$author$project$Config$viewMenu,
 				$author$project$Config$viewWelcomeMessage(informationMessage),
 				$author$project$Config$viewApiKeyInput(apiKeyInput),
+				$author$project$Config$viewCurrentApiKey(apiKey),
 				$author$project$Config$viewFooter
 			]));
 };

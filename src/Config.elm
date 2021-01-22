@@ -89,6 +89,7 @@ view { informationMessage, apiKey, apiKeyInput } =
       viewMenu
     , viewWelcomeMessage informationMessage
     , viewApiKeyInput apiKeyInput
+    , viewCurrentApiKey apiKey
     , viewFooter
     ]
 
@@ -128,6 +129,25 @@ viewWelcomeMessage message =
     [
       text message
     ]
+
+
+viewCurrentApiKey : Maybe ApiKey -> Html msg
+viewCurrentApiKey maybeApiKey =
+  case maybeApiKey of
+    Just apiKey ->
+      div
+        []
+        [
+          text ("API Key: " ++ apiKey.value)
+        ]
+
+    Nothing     ->
+      div
+        []
+        [
+          text "no API Key saved"
+        ]
+
 
 viewApiKeyInput : Maybe String -> Html Msg
 viewApiKeyInput maybeApiKeyText  =
@@ -237,7 +257,7 @@ handleSavingApiKey model =
 
 
 handleApiKeySavedToLocalStorage : Model -> (Model, Cmd msg)
-handleApiKeySavedToLocalStorage = onlyModel
+handleApiKeySavedToLocalStorage model = onlyModel { model | apiKeyInput = Nothing, apiKey = Maybe.map ApiKey model.apiKeyInput }
 
 
 handleJsNotificationError : Model -> String -> (Model, Cmd msg)
