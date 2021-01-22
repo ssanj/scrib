@@ -31,8 +31,8 @@
       const storedData     = localStorage.getItem(appKey);
       //TODO: we should try/catch here.
       const noteForEditing = storedData ? JSON.parse(storedData) : null;
-      const apiKey         = localStorage.getItem(appApiKey);
-      return { "note": noteForEditing , "apiKey": apiKey};
+      const apiKey         = JSON.parse(localStorage.getItem(appApiKey));
+      return { "note": noteForEditing , ...apiKey};
     }
 
     document.addEventListener('DOMContentLoaded', () => burgerMenu(document));
