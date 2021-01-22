@@ -136,14 +136,19 @@ viewCurrentApiKey maybeApiKey =
   case maybeApiKey of
     Just apiKey ->
       div
-        []
+        [ class " mt-1"]
         [
-          text ("API Key: " ++ apiKey.value)
+          text "API Key: "
+        , span
+            [ class "is-italic"]
+            [
+               text apiKey.value
+            ]
         ]
 
     Nothing     ->
       div
-        []
+        [ class "is-italic mt-1"]
         [
           text "no API Key saved"
         ]

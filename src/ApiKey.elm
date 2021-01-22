@@ -45,4 +45,9 @@ decodeApiKeyOnly: D.Decoder ApiKey
 decodeApiKeyOnly = D.field (keyValue apiKeyKey) decodeApiKey
 
 encodeApiKey: Encoder ApiKey
-encodeApiKey { value } = E.string value
+encodeApiKey { value } =
+  E.object
+  [
+    (keyValue apiKeyKey, E.string value)
+  ]
+

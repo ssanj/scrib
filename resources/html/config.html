@@ -31,7 +31,7 @@
 
      function initLoad() {
       const apiKey     = localStorage.getItem(appApiKey);
-      return { "apiKey" :  apiKey };
+      return JSON.parse(apiKey);
     }
 
     // document.addEventListener('DOMContentLoaded', () => burgerMenu(document));
