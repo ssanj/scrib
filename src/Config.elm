@@ -32,7 +32,7 @@ import Subs          as S
 
 type alias Model =
   {
-    informationMessage: String
+    informationMessage: List String
   , apiKey: Maybe ApiKey
   , apiKeyInput: Maybe String
   }
@@ -122,8 +122,15 @@ viewMenu =
       ]
 
 
-viewWelcomeMessage : String -> Html msg
-viewWelcomeMessage message =
+viewWelcomeMessage : List String -> Html msg
+viewWelcomeMessage messages =
+  div
+    []
+    ( List.map createMessageLine messages )
+
+
+createMessageLine : String -> Html msg
+createMessageLine message =
   div
     []
     [
@@ -216,7 +223,7 @@ subscriptions _ =
 emptyModel : Model
 emptyModel =
   {
-    informationMessage = ""
+    informationMessage = []
   , apiKey             = Nothing
   , apiKeyInput        = Nothing
   }
@@ -227,13 +234,13 @@ emptyModel =
 
 handleInitSuccess : ApiKey  -> (Model, Cmd Msg)
 handleInitSuccess loadedApiKey  =
-  onlyModel { emptyModel | informationMessage = "You have a key!", apiKey = Just loadedApiKey }
+  onlyModel { emptyModel | informationMessage = ["If you would like to update your API Key, please enter one below"], apiKey = Just loadedApiKey }
 
 
 handleInitError : D.Error -> (Model, Cmd Msg)
 handleInitError _ =
   onlyModel { emptyModel |
-                informationMessage = "Welcome to Scrib! Please enter an API Key below to start using the app"
+                informationMessage = ["Welcome to Scrib!", "Please enter an API Key below to start using the app"]
             }
 
 

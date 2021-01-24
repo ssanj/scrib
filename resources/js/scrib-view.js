@@ -8044,7 +8044,7 @@ var $author$project$View$processHeadingWithTags = function (titles) {
 					$elm$html$Html$span,
 					_List_fromArray(
 						[
-							$elm$html$Html$Attributes$class('tag is-success is-small-8 is-rounded mr-1')
+							$elm$html$Html$Attributes$class('tag is-success is-small-8 is-rounded mx-1')
 						]),
 					_List_fromArray(
 						[

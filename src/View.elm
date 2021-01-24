@@ -530,7 +530,7 @@ processHeadingWithTags titles =
     (TitleTag value) :: xs ->
       (
         span
-          [class "tag is-success is-small-8 is-rounded mr-1"]
+          [class "tag is-success is-small-8 is-rounded mx-1"]
           [
             text value
           ]

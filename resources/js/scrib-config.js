@@ -5173,7 +5173,7 @@ var $author$project$Config$handleDecodeResult = F3(
 			return failure(error);
 		}
 	});
-var $author$project$Config$emptyModel = {apiKey: $elm$core$Maybe$Nothing, apiKeyInput: $elm$core$Maybe$Nothing, informationMessage: ''};
+var $author$project$Config$emptyModel = {apiKey: $elm$core$Maybe$Nothing, apiKeyInput: $elm$core$Maybe$Nothing, informationMessage: _List_Nil};
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
 var $author$project$ElmCommon$onlyModel = function (model) {
@@ -5183,7 +5183,10 @@ var $author$project$Config$handleInitError = function (_v0) {
 	return $author$project$ElmCommon$onlyModel(
 		_Utils_update(
 			$author$project$Config$emptyModel,
-			{informationMessage: 'Welcome to Scrib! Please enter an API Key below to start using the app'}));
+			{
+				informationMessage: _List_fromArray(
+					['Welcome to Scrib!', 'Please enter an API Key below to start using the app'])
+			}));
 };
 var $author$project$Config$handleInitSuccess = function (loadedApiKey) {
 	return $author$project$ElmCommon$onlyModel(
@@ -5191,7 +5194,8 @@ var $author$project$Config$handleInitSuccess = function (loadedApiKey) {
 			$author$project$Config$emptyModel,
 			{
 				apiKey: $elm$core$Maybe$Just(loadedApiKey),
-				informationMessage: 'You have a key!'
+				informationMessage: _List_fromArray(
+					['If you would like to update your API Key, please enter one below'])
 			}));
 };
 var $author$project$Config$init = function (apiKeyJson) {
@@ -5883,7 +5887,7 @@ var $author$project$Config$viewMenu = A2(
 						]))
 				]))
 		]));
-var $author$project$Config$viewWelcomeMessage = function (message) {
+var $author$project$Config$createMessageLine = function (message) {
 	return A2(
 		$elm$html$Html$div,
 		_List_Nil,
@@ -5891,6 +5895,12 @@ var $author$project$Config$viewWelcomeMessage = function (message) {
 			[
 				$elm$html$Html$text(message)
 			]));
+};
+var $author$project$Config$viewWelcomeMessage = function (messages) {
+	return A2(
+		$elm$html$Html$div,
+		_List_Nil,
+		A2($elm$core$List$map, $author$project$Config$createMessageLine, messages));
 };
 var $author$project$Config$view = function (_v0) {
 	var informationMessage = _v0.informationMessage;
