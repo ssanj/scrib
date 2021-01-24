@@ -231,16 +231,22 @@ emptyModel =
 
 -- INIT HELPERS
 
+updateApiKeyMessage : List String
+updateApiKeyMessage = [ "If you would like to update your API Key, please enter one below" ]
+
+enterAnApiKeyMessage : List String
+enterAnApiKeyMessage = [ "Welcome to Scrib!", "Please enter an API Key below to start using the app" ]
+
 
 handleInitSuccess : ApiKey  -> (Model, Cmd Msg)
 handleInitSuccess loadedApiKey  =
-  onlyModel { emptyModel | informationMessage = ["If you would like to update your API Key, please enter one below"], apiKey = Just loadedApiKey }
+  onlyModel { emptyModel | informationMessage = updateApiKeyMessage, apiKey = Just loadedApiKey }
 
 
 handleInitError : D.Error -> (Model, Cmd Msg)
 handleInitError _ =
   onlyModel { emptyModel |
-                informationMessage = ["Welcome to Scrib!", "Please enter an API Key below to start using the app"]
+                informationMessage = enterAnApiKeyMessage
             }
 
 
@@ -269,7 +275,13 @@ handleSavingApiKey model =
 
 
 handleApiKeySavedToLocalStorage : Model -> (Model, Cmd msg)
-handleApiKeySavedToLocalStorage model = onlyModel { model | apiKeyInput = Nothing, apiKey = Maybe.map ApiKey model.apiKeyInput }
+handleApiKeySavedToLocalStorage model =
+  onlyModel {
+              model |
+                apiKeyInput        = Nothing
+              , apiKey             = Maybe.map ApiKey model.apiKeyInput
+              , informationMessage = updateApiKeyMessage
+            }
 
 
 handleJsNotificationError : Model -> String -> (Model, Cmd msg)
@@ -320,6 +332,8 @@ apiKeySavedToLocalStorageResponseKey = P.ResponseKey "ApiKeySavedToLocalStorage"
 
 -- SUBSCRIPTION HELPERS
 
+-- TODO: The saved API Key should be passed back to us from JS
+-- that way we don't need to handle the Maybe case of Nothing
 subscriptionSuccess : S.JsResponse E.Value -> Msg
 subscriptionSuccess (S.JsResponse (P.ResponseKey key) result) =
   case key of

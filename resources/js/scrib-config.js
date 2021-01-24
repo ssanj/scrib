@@ -5174,6 +5174,8 @@ var $author$project$Config$handleDecodeResult = F3(
 		}
 	});
 var $author$project$Config$emptyModel = {apiKey: $elm$core$Maybe$Nothing, apiKeyInput: $elm$core$Maybe$Nothing, informationMessage: _List_Nil};
+var $author$project$Config$enterAnApiKeyMessage = _List_fromArray(
+	['Welcome to Scrib!', 'Please enter an API Key below to start using the app']);
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
 var $author$project$ElmCommon$onlyModel = function (model) {
@@ -5183,19 +5185,17 @@ var $author$project$Config$handleInitError = function (_v0) {
 	return $author$project$ElmCommon$onlyModel(
 		_Utils_update(
 			$author$project$Config$emptyModel,
-			{
-				informationMessage: _List_fromArray(
-					['Welcome to Scrib!', 'Please enter an API Key below to start using the app'])
-			}));
+			{informationMessage: $author$project$Config$enterAnApiKeyMessage}));
 };
+var $author$project$Config$updateApiKeyMessage = _List_fromArray(
+	['If you would like to update your API Key, please enter one below']);
 var $author$project$Config$handleInitSuccess = function (loadedApiKey) {
 	return $author$project$ElmCommon$onlyModel(
 		_Utils_update(
 			$author$project$Config$emptyModel,
 			{
 				apiKey: $elm$core$Maybe$Just(loadedApiKey),
-				informationMessage: _List_fromArray(
-					['If you would like to update your API Key, please enter one below'])
+				informationMessage: $author$project$Config$updateApiKeyMessage
 			}));
 };
 var $author$project$Config$init = function (apiKeyJson) {
@@ -5322,7 +5322,8 @@ var $author$project$Config$handleApiKeySavedToLocalStorage = function (model) {
 			model,
 			{
 				apiKey: A2($elm$core$Maybe$map, $author$project$ApiKey$ApiKey, model.apiKeyInput),
-				apiKeyInput: $elm$core$Maybe$Nothing
+				apiKeyInput: $elm$core$Maybe$Nothing,
+				informationMessage: $author$project$Config$updateApiKeyMessage
 			}));
 };
 var $author$project$Config$handleJsNotificationError = F2(
