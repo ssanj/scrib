@@ -473,7 +473,7 @@ handleNoteSaveResponse model result =
               remoteSaveStatus  = Nothing
             , doing             = Idle
             , noteContentStatus = NeedsToSave
-            , errorMessages     =  addErrorMessages (fromRemoteError x SL.showSlateError) model.errorMessages
+            , errorMessages     = addErrorMessages (fromRemoteError x SL.showSlateError) model.errorMessages
           }
 
     (Ok (HttpSuccess meta)) ->
