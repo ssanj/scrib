@@ -643,8 +643,8 @@ viewNoteEditingArea model =
       viewInlineInfoIfAny model.infoMessage
     , viewInlineSuccessIfAny model.successMessage
     --, viewInlineErrorIfAny model.appErrors
-    , viewNotesTextArea model.doing model.note
-    , viewControls model.doing model.note model.noteContentStatus
+    , viewNotesTextArea model.doing model.note model.noteContentStatus
+    , viewControls model.doing model.note
     ]
 
 
@@ -656,28 +656,40 @@ viewInlineSuccessIfAny : Maybe SuccessMessage -> Html a
 viewInlineSuccessIfAny = maybe emptyDiv addInlineSuccessFlash
 
 
-viewNotesTextArea: WhatAreWeDoing -> NoteWithContent -> Html Msg
-viewNotesTextArea doing note =
+viewNotesTextArea: WhatAreWeDoing -> NoteWithContent -> ContentStatus -> Html Msg
+viewNotesTextArea doing note contentStatus =
   case doing of
     Idle  ->
-      textarea
-        [id "note-content", class "textarea", rows 10, placeholder "e.g. My awesome idea", onInput NoteEditedMsg, value <| getNoteText note]
-        []
+      let modifiedStyle = modifiedTag contentStatus
+          textAreaNode  =
+            [
+              id "note-content"
+            , class "textarea"
+            , rows 10
+            , placeholder "e.g. My awesome idea"
+            , onInput NoteEditedMsg, value <| getNoteText note
+            ]
+      in textarea
+            (textAreaNode ++ modifiedStyle)
+            []
     _ ->
       textarea [id "note-content", class "textarea", rows 10, disabled  True, value <|  getNoteText note]
         []
 
 
 
-viewControls: WhatAreWeDoing -> NoteWithContent -> ContentStatus -> Html Msg
-viewControls doing note contentStatus =
-  div [class "field", class "is-grouped"]
+viewControls: WhatAreWeDoing -> NoteWithContent -> Html Msg
+viewControls doing note =
+  div
+    []
     [
-      p [class "control"]
+      nav
+        [
+          class "level"
+        ]
         [
           viewSaveButton doing note
         , viewNewNoteButton doing
-        , modifiedTag contentStatus
         ]
     ]
 
@@ -689,30 +701,36 @@ viewNewNoteButton doing =
           Idle  -> True
           _     -> False
   in
-    button
+    div
       [
-        id "new-note"
-      , onClick NewNoteMsg
-      , classList
+        class "level-right"
+      ]
+      [
+        button
           [
-            ("button", True)
-          , ("is-text", True)
-          , ("is-static", not enableButton)
+            id "new-note"
+          , onClick NewNoteMsg
+          , classList
+              [
+                ("button", True)
+              , ("level-item", True)
+              , ("is-info", True)
+              , ("is-static", not enableButton)
+              ]
+          ]
+          [
+            text "New Note"
           ]
       ]
-      [ text "New Note"]
 
-modifiedTag : ContentStatus -> Html a
+modifiedTag : ContentStatus -> List (Attribute msg)
 modifiedTag contentStatus =
   case contentStatus of
-    UpToDate    ->
-        span
-          (addClasses ["tag", "is-success"])
-          [ text "+" ]
-    NeedsToSave    ->
-        span
-          (addClasses ["tag", "is-info"])
-          [ text "*" ]
+    UpToDate    -> []
+    NeedsToSave -> [
+                     style "border-right-width" "1em"
+                   , style "border-right-color" "salmon"
+                   ]
 
 -- TODO: If we have any errors, we should not show spinner
 viewSaveButton: WhatAreWeDoing -> NoteWithContent -> Html Msg
@@ -723,18 +741,29 @@ viewSaveButton doing note =
           SavingNoteLocally    -> True
           UpdatingSessionCache -> True
           Idle                 -> False
-  in button [
-       id "save-note"
-       , onClick NoteSavedMsg
-       , classList
-           [
-             ("button", True)
-           , ("is-success", True)
-           , ("is-static", not (hasContent note))
-           , ("is-loading", showSpinner)
+  in
+    div
+      [
+        class "level-left"
+      ]
+      [
+        button
+          [
+            id "save-note"
+             , onClick NoteSavedMsg
+             , classList
+                 [
+                   ("button", True)
+                 , ("level-item", True)
+                 , ("is-success", True)
+                 , ("mt-1", True)
+                 , ("is-static", not (hasContent note))
+                 , ("is-loading", showSpinner)
+                 ]
            ]
-     ]
-      [text "Save"]
+            [text "Save"]
+      ]
+
 
 
 createMarkdownPreview : NoteWithContent -> Html Msg

@@ -7744,32 +7744,6 @@ var $author$project$Save$viewMenu = A2(
 				]))
 		]));
 var $author$project$ElmCommon$plainDiv = $elm$html$Html$div(_List_Nil);
-var $author$project$ElmCommon$addClasses = function (classes) {
-	return A2($elm$core$List$map, $elm$html$Html$Attributes$class, classes);
-};
-var $author$project$Save$modifiedTag = function (contentStatus) {
-	if (contentStatus.$ === 'UpToDate') {
-		return A2(
-			$elm$html$Html$span,
-			$author$project$ElmCommon$addClasses(
-				_List_fromArray(
-					['tag', 'is-success'])),
-			_List_fromArray(
-				[
-					$elm$html$Html$text('+')
-				]));
-	} else {
-		return A2(
-			$elm$html$Html$span,
-			$author$project$ElmCommon$addClasses(
-				_List_fromArray(
-					['tag', 'is-info'])),
-			_List_fromArray(
-				[
-					$elm$html$Html$text('*')
-				]));
-	}
-};
 var $author$project$Save$NewNoteMsg = {$: 'NewNoteMsg'};
 var $elm$core$Basics$not = _Basics_not;
 var $author$project$Save$viewNewNoteButton = function (doing) {
@@ -7781,22 +7755,32 @@ var $author$project$Save$viewNewNoteButton = function (doing) {
 		}
 	}();
 	return A2(
-		$elm$html$Html$button,
+		$elm$html$Html$div,
 		_List_fromArray(
 			[
-				$elm$html$Html$Attributes$id('new-note'),
-				$elm$html$Html$Events$onClick($author$project$Save$NewNoteMsg),
-				$elm$html$Html$Attributes$classList(
-				_List_fromArray(
-					[
-						_Utils_Tuple2('button', true),
-						_Utils_Tuple2('is-text', true),
-						_Utils_Tuple2('is-static', !enableButton)
-					]))
+				$elm$html$Html$Attributes$class('level-right')
 			]),
 		_List_fromArray(
 			[
-				$elm$html$Html$text('New Note')
+				A2(
+				$elm$html$Html$button,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$id('new-note'),
+						$elm$html$Html$Events$onClick($author$project$Save$NewNoteMsg),
+						$elm$html$Html$Attributes$classList(
+						_List_fromArray(
+							[
+								_Utils_Tuple2('button', true),
+								_Utils_Tuple2('level-item', true),
+								_Utils_Tuple2('is-info', true),
+								_Utils_Tuple2('is-static', !enableButton)
+							]))
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text('New Note')
+					]))
 			]));
 };
 var $author$project$Save$NoteSavedMsg = {$: 'NoteSavedMsg'};
@@ -7826,52 +7810,61 @@ var $author$project$Save$viewSaveButton = F2(
 			}
 		}();
 		return A2(
-			$elm$html$Html$button,
-			_List_fromArray(
-				[
-					$elm$html$Html$Attributes$id('save-note'),
-					$elm$html$Html$Events$onClick($author$project$Save$NoteSavedMsg),
-					$elm$html$Html$Attributes$classList(
-					_List_fromArray(
-						[
-							_Utils_Tuple2('button', true),
-							_Utils_Tuple2('is-success', true),
-							_Utils_Tuple2(
-							'is-static',
-							!$author$project$Save$hasContent(note)),
-							_Utils_Tuple2('is-loading', showSpinner)
-						]))
-				]),
-			_List_fromArray(
-				[
-					$elm$html$Html$text('Save')
-				]));
-	});
-var $author$project$Save$viewControls = F3(
-	function (doing, note, contentStatus) {
-		return A2(
 			$elm$html$Html$div,
 			_List_fromArray(
 				[
-					$elm$html$Html$Attributes$class('field'),
-					$elm$html$Html$Attributes$class('is-grouped')
+					$elm$html$Html$Attributes$class('level-left')
 				]),
 			_List_fromArray(
 				[
 					A2(
-					$elm$html$Html$p,
+					$elm$html$Html$button,
 					_List_fromArray(
 						[
-							$elm$html$Html$Attributes$class('control')
+							$elm$html$Html$Attributes$id('save-note'),
+							$elm$html$Html$Events$onClick($author$project$Save$NoteSavedMsg),
+							$elm$html$Html$Attributes$classList(
+							_List_fromArray(
+								[
+									_Utils_Tuple2('button', true),
+									_Utils_Tuple2('level-item', true),
+									_Utils_Tuple2('is-success', true),
+									_Utils_Tuple2('mt-1', true),
+									_Utils_Tuple2(
+									'is-static',
+									!$author$project$Save$hasContent(note)),
+									_Utils_Tuple2('is-loading', showSpinner)
+								]))
+						]),
+					_List_fromArray(
+						[
+							$elm$html$Html$text('Save')
+						]))
+				]));
+	});
+var $author$project$Save$viewControls = F2(
+	function (doing, note) {
+		return A2(
+			$elm$html$Html$div,
+			_List_Nil,
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$nav,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('level')
 						]),
 					_List_fromArray(
 						[
 							A2($author$project$Save$viewSaveButton, doing, note),
-							$author$project$Save$viewNewNoteButton(doing),
-							$author$project$Save$modifiedTag(contentStatus)
+							$author$project$Save$viewNewNoteButton(doing)
 						]))
 				]));
 	});
+var $author$project$ElmCommon$addClasses = function (classes) {
+	return A2($elm$core$List$map, $elm$html$Html$Attributes$class, classes);
+};
 var $author$project$ElmCommon$addInlineInfoFlash = function (_v0) {
 	var infoMessage = _v0.infoMessage;
 	return A2(
@@ -7919,6 +7912,19 @@ var $author$project$Save$getNoteText = function (note) {
 		return $author$project$Note$getNoteLightText(scNote);
 	}
 };
+var $elm$virtual_dom$VirtualDom$style = _VirtualDom_style;
+var $elm$html$Html$Attributes$style = $elm$virtual_dom$VirtualDom$style;
+var $author$project$Save$modifiedTag = function (contentStatus) {
+	if (contentStatus.$ === 'UpToDate') {
+		return _List_Nil;
+	} else {
+		return _List_fromArray(
+			[
+				A2($elm$html$Html$Attributes$style, 'border-right-width', '1em'),
+				A2($elm$html$Html$Attributes$style, 'border-right-color', 'salmon')
+			]);
+	}
+};
 var $elm$html$Html$Events$alwaysStop = function (x) {
 	return _Utils_Tuple2(x, true);
 };
@@ -7959,21 +7965,23 @@ var $elm$html$Html$Attributes$rows = function (n) {
 };
 var $elm$html$Html$textarea = _VirtualDom_node('textarea');
 var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty('value');
-var $author$project$Save$viewNotesTextArea = F2(
-	function (doing, note) {
+var $author$project$Save$viewNotesTextArea = F3(
+	function (doing, note, contentStatus) {
 		if (doing.$ === 'Idle') {
+			var textAreaNode = _List_fromArray(
+				[
+					$elm$html$Html$Attributes$id('note-content'),
+					$elm$html$Html$Attributes$class('textarea'),
+					$elm$html$Html$Attributes$rows(10),
+					$elm$html$Html$Attributes$placeholder('e.g. My awesome idea'),
+					$elm$html$Html$Events$onInput($author$project$Save$NoteEditedMsg),
+					$elm$html$Html$Attributes$value(
+					$author$project$Save$getNoteText(note))
+				]);
+			var modifiedStyle = $author$project$Save$modifiedTag(contentStatus);
 			return A2(
 				$elm$html$Html$textarea,
-				_List_fromArray(
-					[
-						$elm$html$Html$Attributes$id('note-content'),
-						$elm$html$Html$Attributes$class('textarea'),
-						$elm$html$Html$Attributes$rows(10),
-						$elm$html$Html$Attributes$placeholder('e.g. My awesome idea'),
-						$elm$html$Html$Events$onInput($author$project$Save$NoteEditedMsg),
-						$elm$html$Html$Attributes$value(
-						$author$project$Save$getNoteText(note))
-					]),
+				_Utils_ap(textAreaNode, modifiedStyle),
 				_List_Nil);
 		} else {
 			return A2(
@@ -7996,8 +8004,8 @@ var $author$project$Save$viewNoteEditingArea = function (model) {
 			[
 				$author$project$Save$viewInlineInfoIfAny(model.infoMessage),
 				$author$project$Save$viewInlineSuccessIfAny(model.successMessage),
-				A2($author$project$Save$viewNotesTextArea, model.doing, model.note),
-				A3($author$project$Save$viewControls, model.doing, model.note, model.noteContentStatus)
+				A3($author$project$Save$viewNotesTextArea, model.doing, model.note, model.noteContentStatus),
+				A2($author$project$Save$viewControls, model.doing, model.note)
 			]));
 };
 var $author$project$Save$view = function (model) {
