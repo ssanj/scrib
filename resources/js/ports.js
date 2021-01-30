@@ -29,7 +29,7 @@ function handleStorage(action, cb) {
 
       const result = execute(action, responseKey, resultTransformer);
 
-      cb(result);
+      backgrounded(cb, result);
 
     } else if (storageAction === "delete") {
 
@@ -43,7 +43,7 @@ function handleStorage(action, cb) {
 
       const result = execute(action, responseKey, resultTransformer);
 
-      cb(result);
+      backgrounded(cb, result);
     } else if (storageAction === "load") {
       const action = function() {
         store.getItem(storage.storageKey);
@@ -55,7 +55,7 @@ function handleStorage(action, cb) {
 
       const result = execute(action, responseKey, resultTransformer);
 
-      cb(result);
+      backgrounded(cb, result);
     } else if (storageAction === "add_to_array") {
       const action = function() {
         const cacheString        = store.getItem(storage.storageKey);
@@ -71,7 +71,7 @@ function handleStorage(action, cb) {
 
       const result = execute(action, responseKey, resultTransformer);
 
-      cb(result);
+      backgrounded(cb, result);
     } else if (storageAction === "update_to_array") {
       const action = function() {
         const cacheString        = store.getItem(storage.storageKey);
@@ -94,7 +94,7 @@ function handleStorage(action, cb) {
 
       const result = execute(action, responseKey, resultTransformer);
 
-      cb(result);
+      backgrounded(cb, result);
     } else if (storageAction === "clear") {
 
       const action = function() {
@@ -107,14 +107,19 @@ function handleStorage(action, cb) {
 
       const result = execute(action, responseKey, resultTransformer);
 
-      cb(result);
+      backgrounded(cb, result);
     } else {
       const result = errorPayload(responseKey, "unknown storage action: " + JSON.stringify(action.storage));
 
-      cb(result);
+      backgrounded(cb, result);
     }
 
   }
+}
+
+//try this to see if it fixes the lost callback issue.
+function backgrounded(callback, result) {
+  setTimeout(callback(result), 0);
 }
 
 function execute(f, responseKey, dataTransform) {
