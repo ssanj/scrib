@@ -757,14 +757,15 @@ viewSaveButton doing note =
                  , ("level-item", True)
                  , ("is-success", True)
                  , ("mt-1", True)
-                 , ("is-static", not (hasContent note))
-                 , ("is-loading", showSpinner)
+                 , ("is-static", not (hasContent note) || showSpinner)
                  ]
            ]
-            [text "Save"]
+            [text ("Save" ++ (fromBool showSpinner))]
       ]
 
 
+fromBool : Bool -> String
+fromBool truth = if truth then " ⏱️" else ""
 
 createMarkdownPreview : NoteWithContent -> Html Msg
 createMarkdownPreview note =

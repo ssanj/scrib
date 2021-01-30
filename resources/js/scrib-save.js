@@ -7784,6 +7784,9 @@ var $author$project$Save$viewNewNoteButton = function (doing) {
 			]));
 };
 var $author$project$Save$NoteSavedMsg = {$: 'NoteSavedMsg'};
+var $author$project$Save$fromBool = function (truth) {
+	return truth ? ' ⏱️' : '';
+};
 var $author$project$Save$hasContent = function (note) {
 	if (note.$ === 'NoteWithoutId') {
 		var noteText = note.a;
@@ -7832,13 +7835,13 @@ var $author$project$Save$viewSaveButton = F2(
 									_Utils_Tuple2('mt-1', true),
 									_Utils_Tuple2(
 									'is-static',
-									!$author$project$Save$hasContent(note)),
-									_Utils_Tuple2('is-loading', showSpinner)
+									(!$author$project$Save$hasContent(note)) || showSpinner)
 								]))
 						]),
 					_List_fromArray(
 						[
-							$elm$html$Html$text('Save')
+							$elm$html$Html$text(
+							'Save' + $author$project$Save$fromBool(showSpinner))
 						]))
 				]));
 	});
