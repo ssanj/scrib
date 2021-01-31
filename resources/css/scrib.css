@@ -15,3 +15,7 @@
 .is-small-8 {
   font-size: .5rem!important;
 }
+
+.clipped {
+  overflow-wrap: break-word
+}

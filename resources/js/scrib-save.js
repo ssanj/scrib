@@ -7389,7 +7389,8 @@ var $author$project$Save$viewMarkdownPreview = function (noteText) {
 						$elm$html$Html$div,
 						_List_fromArray(
 							[
-								$elm$html$Html$Attributes$id($author$project$Save$markdownViewId)
+								$elm$html$Html$Attributes$id($author$project$Save$markdownViewId),
+								$elm$html$Html$Attributes$class('clipped')
 							]),
 						_List_fromArray(
 							[

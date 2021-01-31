@@ -760,7 +760,7 @@ viewSaveButton doing note =
                  , ("is-static", not (hasContent note) || showSpinner)
                  ]
            ]
-            [text ("Save" ++ (fromBool showSpinner))]
+           [text ("Save" ++ (fromBool showSpinner))]
       ]
 
 
@@ -792,13 +792,26 @@ viewMarkdownInstructions =
 
 viewMarkdownPreview : String -> Html Msg
 viewMarkdownPreview noteText =
-  div []
-    [ hr []
+  div
+    []
+    [
+      hr
       []
-    , div [ id "preview" ]
-      [ div [ id markdownViewId ]
-        [ Markdown.toHtml [] noteText ]
-      ]
+      []
+    , div
+        [
+          id "preview"
+        ]
+        [
+          div
+            [
+              id markdownViewId
+            , class "clipped"
+            ]
+            [
+              Markdown.toHtml [] noteText
+            ]
+        ]
     ]
 
 markdownViewId : String

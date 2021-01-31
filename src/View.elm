@@ -544,15 +544,35 @@ removeHeading = String.replace "# " ""
 
 viewMarkdownPreview : SC.NoteFull -> Html Msg
 viewMarkdownPreview fullNote =
-  div []
-    [ hr []
-      []
-    , div [ id "preview" ]
-      [ div [ id markdownViewId ]
-        [Markdown.toHtml [] (SC.getNoteFullText fullNote)]
-      , button [ class "button", class "is-info mt-2", onClick (NoteEdited fullNote) ]
-        [ text "Edit" ]
-      ]
+  div
+    []
+    [
+      hr
+        []
+        []
+    , div
+        [
+          id "preview"
+        ]
+        [
+          div
+            [
+              id markdownViewId
+            , class "clipped"
+            ]
+            [
+              Markdown.toHtml [] (SC.getNoteFullText fullNote)
+            ]
+        , button
+            [
+              class "button"
+            , class "is-info mt-2"
+            , onClick (NoteEdited fullNote)
+            ]
+            [
+              text "Edit"
+            ]
+        ]
     ]
 
 viewMarkdownPreviewDefault: Html Msg

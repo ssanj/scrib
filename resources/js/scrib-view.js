@@ -7353,7 +7353,8 @@ var $author$project$View$viewMarkdownPreview = function (fullNote) {
 						$elm$html$Html$div,
 						_List_fromArray(
 							[
-								$elm$html$Html$Attributes$id($author$project$View$markdownViewId)
+								$elm$html$Html$Attributes$id($author$project$View$markdownViewId),
+								$elm$html$Html$Attributes$class('clipped')
 							]),
 						_List_fromArray(
 							[
