@@ -5518,7 +5518,7 @@ var $author$project$Save$UpToDate = {$: 'UpToDate'};
 var $author$project$Note$mkLightNote = $author$project$Note$NoteLight;
 var $author$project$Save$defaultNote = $author$project$Save$NoteWithoutId(
 	$author$project$Note$mkLightNote(''));
-var $author$project$Save$defaultModel = {apiKey: $elm$core$Maybe$Nothing, dataSource: $author$project$Save$InitNote, doing: $author$project$Save$Idle, errorMessages: $elm$core$Maybe$Nothing, infoMessage: $elm$core$Maybe$Nothing, note: $author$project$Save$defaultNote, noteContentStatus: $author$project$Save$UpToDate, remoteSaveStatus: $elm$core$Maybe$Nothing, successMessage: $elm$core$Maybe$Nothing};
+var $author$project$Save$defaultModel = {apiKey: $elm$core$Maybe$Nothing, dataSource: $author$project$Save$InitNote, doing: $author$project$Save$Idle, errorMessages: $elm$core$Maybe$Nothing, infoMessage: $elm$core$Maybe$Nothing, note: $author$project$Save$defaultNote, noteContentStatus: $author$project$Save$UpToDate, remoteSaveStatus: $elm$core$Maybe$Nothing, showPreview: false, successMessage: $elm$core$Maybe$Nothing};
 var $elm$browser$Browser$Navigation$load = _Browser_load;
 var $author$project$Ports$LogConsole = function (a) {
 	return {$: 'LogConsole', a: a};
@@ -6376,6 +6376,12 @@ var $author$project$Save$handleNoteSaveResponse = F2(
 			}
 		}
 	});
+var $author$project$Save$handlePreviewNote = function (model) {
+	return $author$project$ElmCommon$onlyModel(
+		_Utils_update(
+			model,
+			{showPreview: true}));
+};
 var $author$project$Save$SavingNoteRemotely = {$: 'SavingNoteRemotely'};
 var $author$project$ApiKey$performApiKey = F3(
 	function (maybeApiKey, _v0, _v1) {
@@ -7289,6 +7295,8 @@ var $author$project$Save$update = F2(
 				return $author$project$Save$handleNewNote(model);
 			case 'ViewNoteMsg':
 				return $author$project$Save$handleGoingToView(model);
+			case 'PreviewNoteMsg':
+				return $author$project$Save$handlePreviewNote(model);
 			case 'NoteSavedToLocalStorage':
 				return $author$project$Save$handleRemoteSave(model);
 			case 'RemoteNoteIdVersionSavedToLocalStorage':
@@ -7325,6 +7333,8 @@ var $elm$html$Html$Attributes$stringProperty = F2(
 			$elm$json$Json$Encode$string(string));
 	});
 var $elm$html$Html$Attributes$class = $elm$html$Html$Attributes$stringProperty('className');
+var $elm$html$Html$div = _VirtualDom_node('div');
+var $elm$html$Html$section = _VirtualDom_node('section');
 var $author$project$Note$getNoteFullText = function (_v0) {
 	var noteText = _v0.a;
 	return noteText;
@@ -7333,7 +7343,6 @@ var $author$project$Note$getNoteLightText = function (_v0) {
 	var noteText = _v0.a;
 	return noteText;
 };
-var $elm$html$Html$div = _VirtualDom_node('div');
 var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
 var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
 var $author$project$Save$viewMarkdownInstructions = A2(
@@ -7410,7 +7419,10 @@ var $author$project$Save$createMarkdownPreview = function (note) {
 		return $elm$core$String$isEmpty(noteText) ? $author$project$Save$viewMarkdownInstructions : $author$project$Save$viewMarkdownPreview(noteText);
 	}
 };
-var $elm$html$Html$section = _VirtualDom_node('section');
+var $author$project$Save$showMarkDownPreviewIfRequested = F2(
+	function (showPreview, note) {
+		return showPreview ? $author$project$Save$createMarkdownPreview(note) : A2($elm$html$Html$div, _List_Nil, _List_Nil);
+	});
 var $author$project$Save$ErrorModalClosed = {$: 'ErrorModalClosed'};
 var $author$project$ElmCommon$emptyDiv = A2($elm$html$Html$div, _List_Nil, _List_Nil);
 var $elm$html$Html$article = _VirtualDom_node('article');
@@ -7785,6 +7797,7 @@ var $author$project$Save$viewNewNoteButton = function (doing) {
 			]));
 };
 var $author$project$Save$NoteSavedMsg = {$: 'NoteSavedMsg'};
+var $author$project$Save$PreviewNoteMsg = {$: 'PreviewNoteMsg'};
 var $author$project$Save$fromBool = function (truth) {
 	return truth ? ' ⏱️' : '';
 };
@@ -7843,6 +7856,28 @@ var $author$project$Save$viewSaveButton = F2(
 						[
 							$elm$html$Html$text(
 							'Save' + $author$project$Save$fromBool(showSpinner))
+						])),
+					A2(
+					$elm$html$Html$button,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$id('preview-note'),
+							$elm$html$Html$Events$onClick($author$project$Save$PreviewNoteMsg),
+							$elm$html$Html$Attributes$classList(
+							_List_fromArray(
+								[
+									_Utils_Tuple2('button', true),
+									_Utils_Tuple2('level-item', true),
+									_Utils_Tuple2('is-info', true),
+									_Utils_Tuple2('mt-1', true),
+									_Utils_Tuple2(
+									'is-static',
+									!$author$project$Save$hasContent(note))
+								]))
+						]),
+					_List_fromArray(
+						[
+							$elm$html$Html$text('Preview')
 						]))
 				]));
 	});
@@ -8037,7 +8072,7 @@ var $author$project$Save$view = function (model) {
 							[
 								$author$project$Save$viewErrors(model.errorMessages),
 								$author$project$Save$viewNoteEditingArea(model),
-								$author$project$Save$createMarkdownPreview(model.note)
+								A2($author$project$Save$showMarkDownPreviewIfRequested, model.showPreview, model.note)
 							]))
 					])),
 				$author$project$Save$viewFooter

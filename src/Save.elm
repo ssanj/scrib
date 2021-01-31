@@ -84,6 +84,7 @@ type alias Model =
   , infoMessage : Maybe InformationMessage
   , errorMessages: Maybe (N.Nonempty ModalError)
   , doing : WhatAreWeDoing
+  , showPreview: Bool
   }
 
 type PortType = SaveMessage
@@ -94,6 +95,7 @@ type Msg = NoteSavedMsg
          | NoteEditedMsg String
          | NewNoteMsg
          | ViewNoteMsg
+         | PreviewNoteMsg
          | NoteSaveResponseMsg RemoteSaveStatus
          | NoteSavedToLocalStorage
          | RemoteNoteIdVersionSavedToLocalStorage
@@ -138,6 +140,7 @@ update msg model =
     (NoteEditedMsg newNoteText)            -> handleEditingNote model newNoteText
     NewNoteMsg                             -> handleNewNote model
     ViewNoteMsg                            -> handleGoingToView model
+    PreviewNoteMsg                         -> handlePreviewNote model
     NoteSavedToLocalStorage                -> handleRemoteSave model
     RemoteNoteIdVersionSavedToLocalStorage -> handleNoteIdVersionSavedToLocalStorage model
     RemoteNewNoteSavedToToLocalStorage     -> handleNewNoteSavedToLocalStorage model
@@ -184,12 +187,17 @@ view model =
               [
                 viewErrors model.errorMessages
               , viewNoteEditingArea model
-              , createMarkdownPreview model.note
+              , showMarkDownPreviewIfRequested model.showPreview model.note
               ]
         ]
     , viewFooter
     ]
 
+
+showMarkDownPreviewIfRequested : Bool -> NoteWithContent -> Html Msg
+showMarkDownPreviewIfRequested showPreview note =
+  if showPreview then createMarkdownPreview note
+  else div [] []
 
 
 viewErrors : Maybe (N.Nonempty ModalError) -> Html Msg
@@ -320,6 +328,7 @@ defaultModel =
   , infoMessage       = Nothing
   , errorMessages     = Nothing
   , doing             = Idle
+  , showPreview       = False
   }
 
 defaultNote : NoteWithContent
@@ -450,6 +459,7 @@ handleEditingNote model newNoteText =
             in { model | note = NoteWithId note, noteContentStatus  = NeedsToSave }
   in onlyModel updatedModel
 
+
 handleNewNote : Model -> (Model, Cmd Msg)
 handleNewNote model =
   onlyModel {
@@ -460,8 +470,14 @@ handleNewNote model =
     , doing            = Idle
   }
 
+
 handleGoingToView : Model -> (Model, Cmd Msg)
 handleGoingToView model = (model, Browser.Navigation.load "view.html")
+
+
+handlePreviewNote : Model -> (Model, Cmd msg)
+handlePreviewNote model = onlyModel { model | showPreview = True }
+
 
 handleNoteSaveResponse : Model -> RemoteSaveStatus -> (Model, Cmd Msg)
 handleNoteSaveResponse model result =
@@ -761,6 +777,20 @@ viewSaveButton doing note =
                  ]
            ]
            [text ("Save" ++ (fromBool showSpinner))]
+      , button
+          [
+            id "preview-note"
+             , onClick PreviewNoteMsg
+             , classList
+                 [
+                   ("button", True)
+                 , ("level-item", True)
+                 , ("is-info", True)
+                 , ("mt-1", True)
+                 , ("is-static", not (hasContent note))
+                 ]
+           ]
+           [text ("Preview")]
       ]
 
 
