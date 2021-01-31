@@ -660,7 +660,7 @@ viewNoteEditingArea model =
     , viewInlineSuccessIfAny model.successMessage
     --, viewInlineErrorIfAny model.appErrors
     , viewNotesTextArea model.doing model.note model.noteContentStatus
-    , viewControls model.doing model.note
+    , viewControls model.doing model.note model.showPreview
     ]
 
 
@@ -694,8 +694,8 @@ viewNotesTextArea doing note contentStatus =
 
 
 
-viewControls: WhatAreWeDoing -> NoteWithContent -> Html Msg
-viewControls doing note =
+viewControls: WhatAreWeDoing -> NoteWithContent -> Bool -> Html Msg
+viewControls doing note showPreview =
   div
     []
     [
@@ -704,7 +704,7 @@ viewControls doing note =
           class "level"
         ]
         [
-          viewSaveButton doing note
+          viewLeftButtonGroup doing note showPreview
         , viewNewNoteButton doing
         ]
     ]
@@ -748,6 +748,20 @@ modifiedTag contentStatus =
                    , style "border-right-color" "salmon"
                    ]
 
+
+-- TODO: If we have any errors, we should not show spinner
+viewLeftButtonGroup: WhatAreWeDoing -> NoteWithContent -> Bool -> Html Msg
+viewLeftButtonGroup doing note showPreview =
+    div
+      [
+        class "level-left"
+      ]
+      [
+        viewSaveButton doing note
+      , viewPreviewButton note showPreview
+      ]
+
+
 -- TODO: If we have any errors, we should not show spinner
 viewSaveButton: WhatAreWeDoing -> NoteWithContent -> Html Msg
 viewSaveButton doing note =
@@ -758,40 +772,39 @@ viewSaveButton doing note =
           UpdatingSessionCache -> True
           Idle                 -> False
   in
-    div
+    button
       [
-        class "level-left"
-      ]
+        id "save-note"
+         , onClick NoteSavedMsg
+         , classList
+             [
+               ("button", True)
+             , ("level-item", True)
+             , ("is-success", True)
+             , ("mt-1", True)
+             , ("is-static", not (hasContent note) || showSpinner)
+             ]
+       ]
+       [text ("Save" ++ (fromBool showSpinner))]
+
+
+
+viewPreviewButton: NoteWithContent -> Bool -> Html Msg
+viewPreviewButton note showPreview =
+    button
       [
-        button
-          [
-            id "save-note"
-             , onClick NoteSavedMsg
-             , classList
-                 [
-                   ("button", True)
-                 , ("level-item", True)
-                 , ("is-success", True)
-                 , ("mt-1", True)
-                 , ("is-static", not (hasContent note) || showSpinner)
-                 ]
-           ]
-           [text ("Save" ++ (fromBool showSpinner))]
-      , button
-          [
-            id "preview-note"
-             , onClick PreviewNoteMsg
-             , classList
-                 [
-                   ("button", True)
-                 , ("level-item", True)
-                 , ("is-info", True)
-                 , ("mt-1", True)
-                 , ("is-static", not (hasContent note))
-                 ]
-           ]
-           [text ("Preview")]
-      ]
+        id "preview-note"
+         , onClick PreviewNoteMsg
+         , classList
+             [
+               ("button", True)
+             , ("level-item", True)
+             , ("is-info", True)
+             , ("mt-1", True)
+             , ("is-static", not (hasContent note))
+             ]
+       ]
+       [text  <| if showPreview then "Hide Preview" else "Preview"]
 
 
 fromBool : Bool -> String

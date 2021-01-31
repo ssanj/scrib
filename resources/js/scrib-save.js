@@ -7757,8 +7757,102 @@ var $author$project$Save$viewMenu = A2(
 				]))
 		]));
 var $author$project$ElmCommon$plainDiv = $elm$html$Html$div(_List_Nil);
-var $author$project$Save$NewNoteMsg = {$: 'NewNoteMsg'};
+var $author$project$Save$PreviewNoteMsg = {$: 'PreviewNoteMsg'};
 var $elm$core$Basics$not = _Basics_not;
+var $author$project$Save$hasContent = function (note) {
+	if (note.$ === 'NoteWithoutId') {
+		var noteText = note.a;
+		return !$elm$core$String$isEmpty(
+			$author$project$Note$getNoteLightText(noteText));
+	} else {
+		var noteText = note.a;
+		return !$elm$core$String$isEmpty(
+			$author$project$Note$getNoteFullText(noteText));
+	}
+};
+var $author$project$Save$viewPreviewButton = F2(
+	function (note, showPreview) {
+		return A2(
+			$elm$html$Html$button,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$id('preview-note'),
+					$elm$html$Html$Events$onClick($author$project$Save$PreviewNoteMsg),
+					$elm$html$Html$Attributes$classList(
+					_List_fromArray(
+						[
+							_Utils_Tuple2('button', true),
+							_Utils_Tuple2('level-item', true),
+							_Utils_Tuple2('is-info', true),
+							_Utils_Tuple2('mt-1', true),
+							_Utils_Tuple2(
+							'is-static',
+							!$author$project$Save$hasContent(note))
+						]))
+				]),
+			_List_fromArray(
+				[
+					$elm$html$Html$text(
+					showPreview ? 'Hide Preview' : 'Preview')
+				]));
+	});
+var $author$project$Save$NoteSavedMsg = {$: 'NoteSavedMsg'};
+var $author$project$Save$fromBool = function (truth) {
+	return truth ? ' ⏱️' : '';
+};
+var $author$project$Save$viewSaveButton = F2(
+	function (doing, note) {
+		var showSpinner = function () {
+			switch (doing.$) {
+				case 'SavingNoteRemotely':
+					return true;
+				case 'SavingNoteLocally':
+					return true;
+				case 'UpdatingSessionCache':
+					return true;
+				default:
+					return false;
+			}
+		}();
+		return A2(
+			$elm$html$Html$button,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$id('save-note'),
+					$elm$html$Html$Events$onClick($author$project$Save$NoteSavedMsg),
+					$elm$html$Html$Attributes$classList(
+					_List_fromArray(
+						[
+							_Utils_Tuple2('button', true),
+							_Utils_Tuple2('level-item', true),
+							_Utils_Tuple2('is-success', true),
+							_Utils_Tuple2('mt-1', true),
+							_Utils_Tuple2(
+							'is-static',
+							(!$author$project$Save$hasContent(note)) || showSpinner)
+						]))
+				]),
+			_List_fromArray(
+				[
+					$elm$html$Html$text(
+					'Save' + $author$project$Save$fromBool(showSpinner))
+				]));
+	});
+var $author$project$Save$viewLeftButtonGroup = F3(
+	function (doing, note, showPreview) {
+		return A2(
+			$elm$html$Html$div,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$class('level-left')
+				]),
+			_List_fromArray(
+				[
+					A2($author$project$Save$viewSaveButton, doing, note),
+					A2($author$project$Save$viewPreviewButton, note, showPreview)
+				]));
+	});
+var $author$project$Save$NewNoteMsg = {$: 'NewNoteMsg'};
 var $author$project$Save$viewNewNoteButton = function (doing) {
 	var enableButton = function () {
 		if (doing.$ === 'Idle') {
@@ -7796,93 +7890,8 @@ var $author$project$Save$viewNewNoteButton = function (doing) {
 					]))
 			]));
 };
-var $author$project$Save$NoteSavedMsg = {$: 'NoteSavedMsg'};
-var $author$project$Save$PreviewNoteMsg = {$: 'PreviewNoteMsg'};
-var $author$project$Save$fromBool = function (truth) {
-	return truth ? ' ⏱️' : '';
-};
-var $author$project$Save$hasContent = function (note) {
-	if (note.$ === 'NoteWithoutId') {
-		var noteText = note.a;
-		return !$elm$core$String$isEmpty(
-			$author$project$Note$getNoteLightText(noteText));
-	} else {
-		var noteText = note.a;
-		return !$elm$core$String$isEmpty(
-			$author$project$Note$getNoteFullText(noteText));
-	}
-};
-var $author$project$Save$viewSaveButton = F2(
-	function (doing, note) {
-		var showSpinner = function () {
-			switch (doing.$) {
-				case 'SavingNoteRemotely':
-					return true;
-				case 'SavingNoteLocally':
-					return true;
-				case 'UpdatingSessionCache':
-					return true;
-				default:
-					return false;
-			}
-		}();
-		return A2(
-			$elm$html$Html$div,
-			_List_fromArray(
-				[
-					$elm$html$Html$Attributes$class('level-left')
-				]),
-			_List_fromArray(
-				[
-					A2(
-					$elm$html$Html$button,
-					_List_fromArray(
-						[
-							$elm$html$Html$Attributes$id('save-note'),
-							$elm$html$Html$Events$onClick($author$project$Save$NoteSavedMsg),
-							$elm$html$Html$Attributes$classList(
-							_List_fromArray(
-								[
-									_Utils_Tuple2('button', true),
-									_Utils_Tuple2('level-item', true),
-									_Utils_Tuple2('is-success', true),
-									_Utils_Tuple2('mt-1', true),
-									_Utils_Tuple2(
-									'is-static',
-									(!$author$project$Save$hasContent(note)) || showSpinner)
-								]))
-						]),
-					_List_fromArray(
-						[
-							$elm$html$Html$text(
-							'Save' + $author$project$Save$fromBool(showSpinner))
-						])),
-					A2(
-					$elm$html$Html$button,
-					_List_fromArray(
-						[
-							$elm$html$Html$Attributes$id('preview-note'),
-							$elm$html$Html$Events$onClick($author$project$Save$PreviewNoteMsg),
-							$elm$html$Html$Attributes$classList(
-							_List_fromArray(
-								[
-									_Utils_Tuple2('button', true),
-									_Utils_Tuple2('level-item', true),
-									_Utils_Tuple2('is-info', true),
-									_Utils_Tuple2('mt-1', true),
-									_Utils_Tuple2(
-									'is-static',
-									!$author$project$Save$hasContent(note))
-								]))
-						]),
-					_List_fromArray(
-						[
-							$elm$html$Html$text('Preview')
-						]))
-				]));
-	});
-var $author$project$Save$viewControls = F2(
-	function (doing, note) {
+var $author$project$Save$viewControls = F3(
+	function (doing, note, showPreview) {
 		return A2(
 			$elm$html$Html$div,
 			_List_Nil,
@@ -7896,7 +7905,7 @@ var $author$project$Save$viewControls = F2(
 						]),
 					_List_fromArray(
 						[
-							A2($author$project$Save$viewSaveButton, doing, note),
+							A3($author$project$Save$viewLeftButtonGroup, doing, note, showPreview),
 							$author$project$Save$viewNewNoteButton(doing)
 						]))
 				]));
@@ -8044,7 +8053,7 @@ var $author$project$Save$viewNoteEditingArea = function (model) {
 				$author$project$Save$viewInlineInfoIfAny(model.infoMessage),
 				$author$project$Save$viewInlineSuccessIfAny(model.successMessage),
 				A3($author$project$Save$viewNotesTextArea, model.doing, model.note, model.noteContentStatus),
-				A2($author$project$Save$viewControls, model.doing, model.note)
+				A3($author$project$Save$viewControls, model.doing, model.note, model.showPreview)
 			]));
 };
 var $author$project$Save$view = function (model) {
