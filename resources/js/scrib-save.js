@@ -6380,7 +6380,9 @@ var $author$project$Save$handlePreviewNote = function (model) {
 	return $author$project$ElmCommon$onlyModel(
 		_Utils_update(
 			model,
-			{showPreview: true}));
+			{
+				showPreview: model.showPreview ? false : true
+			}));
 };
 var $author$project$Save$SavingNoteRemotely = {$: 'SavingNoteRemotely'};
 var $author$project$ApiKey$performApiKey = F3(
@@ -7783,7 +7785,7 @@ var $author$project$Save$viewPreviewButton = F2(
 						[
 							_Utils_Tuple2('button', true),
 							_Utils_Tuple2('level-item', true),
-							_Utils_Tuple2('is-info', true),
+							_Utils_Tuple2('is-link', true),
 							_Utils_Tuple2('mt-1', true),
 							_Utils_Tuple2(
 							'is-static',

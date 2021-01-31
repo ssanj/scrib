@@ -476,7 +476,7 @@ handleGoingToView model = (model, Browser.Navigation.load "view.html")
 
 
 handlePreviewNote : Model -> (Model, Cmd msg)
-handlePreviewNote model = onlyModel { model | showPreview = True }
+handlePreviewNote model = onlyModel { model | showPreview = if model.showPreview then False else True }
 
 
 handleNoteSaveResponse : Model -> RemoteSaveStatus -> (Model, Cmd Msg)
@@ -799,7 +799,7 @@ viewPreviewButton note showPreview =
              [
                ("button", True)
              , ("level-item", True)
-             , ("is-info", True)
+             , ("is-link", True)
              , ("mt-1", True)
              , ("is-static", not (hasContent note))
              ]
