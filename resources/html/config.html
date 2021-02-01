@@ -34,73 +34,7 @@
       return JSON.parse(apiKey);
     }
 
-    // document.addEventListener('DOMContentLoaded', () => burgerMenu(document));
+    document.addEventListener('DOMContentLoaded', () => burgerMenu(document));
   </script>
   </body>
-<!--   <body>
-  <section class="section">
-    <nav class="navbar" role="navigation" aria-label="main navigation">
-      <div class="navbar-brand">
-        <a class="navbar-item" href="index.html">
-          Home
-        </a>
-        <a class="navbar-item" href="view.html">
-          View
-        </a>
-        <a class="navbar-item" href="save.html">
-          New Note
-        </a>
-
-        <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
-          <span aria-hidden="true"></span>
-          <span aria-hidden="true"></span>
-          <span aria-hidden="true"></span>
-        </a>
-      </div>
-    </nav>
-    <div class="container">
-      <div>
-          <div class="field">
-            <label class="px-1">Please enter an API Key</label>
-            <div class="control px-1">
-              <input id="api-key-text-input" class="input" type="text" placeholder="Text input">
-            </div>
-          </div>
-
-         <div class="field">
-          <div class="control  px-1">
-            <button id="add-api-key-button" class="button is-link is-fullwidth">Add</button>
-          </div>
-        </div>
-        </article>
-      </div>
-    </div>
-    <div id="api-key-debug"></div>
-    <div class="block">
-      <hr />
-    </div>
-    <nav aria-label="main navigation" role="navigation" class="content">
-      <div class="content has-text-centered">
-        <p class="scrib-footer">scribble effortlessly
-          <div class="is-size-7">crafted by <a href="https://sanj.ink">Sanj Sahayam</a></div>
-        </p>
-      </div>
-    </nav>
-  </section>
-  <script>
-      const addApiKeyButton = document.getElementById('add-api-key-button');
-      const apiKeyTextInput = document.getElementById('api-key-text-input');
-      const debugApiKey     = document.getElementById('api-key-debug');
-      const appApiKey  = 'scrib.api.key';
-
-      debugApiKey.innerHTML = localStorage.getItem(appApiKey);
-
-      addApiKeyButton.addEventListener('click', function(event) {
-        localStorage.setItem(appApiKey, apiKeyTextInput.value);
-        debugApiKey.innerHTML = localStorage.getItem(appApiKey);
-      });
-
-      document.addEventListener('DOMContentLoaded', () => burgerMenu(document));
-  </script>
-  </body> -->
 </html>
