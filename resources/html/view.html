@@ -9,6 +9,7 @@
     <script src="js/scrib-view.js"></script>
     <script src="js/ports.js"></script>
     <script src="js/ui.js"></script>
+    <script src="js/util.js"></script>
     <style>
       #notes-list {
         height: 20em;
@@ -43,7 +44,7 @@
       localStorage.removeItem(appEditKey);
       const storedData = sessionStorage.getItem(appKey);
       const notes      = storedData ? JSON.parse(storedData) : null;
-      const apiKey     = JSON.parse(localStorage.getItem(appApiKey));
+      const apiKey     = getApiKey(localStorage, appApiKey);
       return { "top_notes" : notes, ...apiKey };
     }
 

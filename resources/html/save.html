@@ -9,6 +9,7 @@
   <script src="js/scrib-save.js"></script>
   <script src="js/ports.js"></script>
   <script src="js/ui.js"></script>
+  <script src="js/util.js"></script>
 </head>
 <body>
   <div id="myapp"></div>
@@ -31,7 +32,7 @@
       const storedData     = localStorage.getItem(appKey);
       //TODO: we should try/catch here.
       const noteForEditing = storedData ? JSON.parse(storedData) : null;
-      const apiKey         = JSON.parse(localStorage.getItem(appApiKey));
+      const apiKey     = getApiKey(localStorage, appApiKey);
       return { "note": noteForEditing , ...apiKey};
     }
 

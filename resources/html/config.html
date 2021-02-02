@@ -9,6 +9,7 @@
   <script src="js/scrib-config.js"></script>
   <script src="js/ports.js"></script>
   <script src="js/ui.js"></script>
+  <script src="js/util.js"></script>
 </head>
   <body>
   <div id="myapp"></div>
@@ -31,7 +32,7 @@
 
      function initLoad() {
       const apiKey     = localStorage.getItem(appApiKey);
-      return JSON.parse(apiKey);
+      return getApiKey(localStorage, appApiKey);
     }
 
     document.addEventListener('DOMContentLoaded', () => burgerMenu(document));
