@@ -58,8 +58,7 @@ function handleStorage(action, cb) {
       backgrounded(cb, result);
     } else if (storageAction === "add_to_array") {
       const action = function() {
-        const cacheString        = store.getItem(storage.storageKey);
-        const cacheArrayObj      = JSON.parse(cacheString)
+        const cacheArrayObj = getJSONArrayKey(store, storage.storageKey);
         cacheArrayObj.unshift(storage.data);
         const updatedCacheString = JSON.stringify(cacheArrayObj);
         store.setItem(storage.storageKey, updatedCacheString);
@@ -74,8 +73,7 @@ function handleStorage(action, cb) {
       backgrounded(cb, result);
     } else if (storageAction === "update_to_array") {
       const action = function() {
-        const cacheString        = store.getItem(storage.storageKey);
-        const cacheArrayObj      = JSON.parse(cacheString)
+        const cacheArrayObj = getJSONArrayKey(store, storage.storageKey);
 
         const foundIndex = cacheArrayObj.findIndex(o => o.noteId === storage.data.noteId)
 
@@ -120,6 +118,11 @@ function handleStorage(action, cb) {
 //try this to see if it fixes the lost callback issue.
 function backgrounded(callback, result) {
   setTimeout(callback(result), 0);
+}
+
+function getJSONArrayKey(store, key) {
+  const maybeCacheString = store.getItem(key);
+  return (maybeCacheString === null) ? [] : JSON.parse(cacheString)
 }
 
 function execute(f, responseKey, dataTransform) {
