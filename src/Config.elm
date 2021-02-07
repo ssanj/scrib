@@ -79,18 +79,23 @@ update msg model =
      ApiKeySavedToLocalStorage -> handleApiKeySavedToLocalStorage model
      JSNotificationError error -> handleJsNotificationError model error
 
+
 -- VIEW
+
 
 view : Model -> Html Msg
 view { informationMessage, apiKey, apiKeyInput } =
-  div
-    []
+  plainDiv
     [
-      viewMenu
-    , viewWelcomeMessage informationMessage
-    , viewApiKeyInput apiKeyInput
-    , viewCurrentApiKey apiKey
-    , viewFooter
+      section
+        [class "section"]
+        [
+          viewMenu
+        , viewWelcomeMessage informationMessage
+        , viewApiKeyInput apiKeyInput
+        , viewCurrentApiKey apiKey
+        , viewFooter
+        ]
     ]
 
 
