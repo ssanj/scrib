@@ -43,11 +43,29 @@ jobs:
           ./build-optimized.sh View scrib-view
           ./build-optimized.sh Config scrib-config
 
-      - name: Copy Make Files
+      - name: Install Minify
         shell: bash
         run: |
-          mkdir dist
-          ./copy-static dist
+          npm install minify -g
+
+      - name: Install Openssl
+        shell: bash
+        run: |
+          apt-get install openssl -y
+
+
+      - name: Run Optimization
+        shell: bash
+        run: |
+          mkdir staging dist
+          optimized-copy-static staging dist
+
+
+      # - name: Copy Make Files
+      #   shell: bash
+      #   run: |
+      #     mkdir dist
+      #     ./copy-static dist
 
       - name: Zip Dist Files
         id: create-artifact
