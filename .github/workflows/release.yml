@@ -58,7 +58,7 @@ jobs:
         shell: bash
         run: |
           mkdir staging dist
-          optimized-copy-static staging dist
+          ./optimized-copy-static.sh staging dist
 
 
       # - name: Copy Make Files
