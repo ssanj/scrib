@@ -46,12 +46,12 @@ jobs:
       - name: Install Minify
         shell: bash
         run: |
-          npm install minify -g
+          npm install minify@v6.0.1 -g
 
       - name: Install Openssl
         shell: bash
         run: |
-          apt-get install openssl -y
+          sudo apt-get install openssl -y
 
 
       - name: Run Optimization
