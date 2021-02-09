@@ -43,10 +43,11 @@ function replaceWithHashed(){
     file_name=$(basename $html_file)
     output_file_name="$OUTPUT_DIR/html/$file_name"
     cp "$html_file" "$output_file_name"
+    echo "$file_name:"
     while IFS= read -r line; do
       existing=$(echo "$line" | cut -d':' -f1)
       hashed=$(echo "$line" | cut -d':' -f2)
-      echo "mapping $existing -> $hashed"
+      echo "  $existing -> $hashed"
       # use strings ending with " to workaround replacing anything else that may match
       sed -i "s/$existing\"/$hashed\"/g" "$output_file_name"
     done  < "$MANIFEST_FILE_PATH"
