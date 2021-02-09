@@ -48,7 +48,7 @@ function replaceWithHashed(){
       hashed=$(echo "$line" | cut -d':' -f2)
       echo "mapping $existing -> $hashed"
       # use strings ending with " to workaround replacing anything else that may match
-      sed -i '' "s/$existing\"/$hashed\"/g" "$output_file_name"
+      sed -i "s/$existing\"/$hashed\"/g" "$output_file_name"
     done  < "$MANIFEST_FILE_PATH"
   done
 }
