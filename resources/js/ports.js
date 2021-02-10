@@ -122,7 +122,7 @@ function backgrounded(callback, result) {
 
 function getJSONArrayKey(store, key) {
   const maybeCacheString = store.getItem(key);
-  return (maybeCacheString === null) ? [] : JSON.parse(cacheString)
+  return (maybeCacheString === null) ? [] : JSON.parse(maybeCacheString)
 }
 
 function execute(f, responseKey, dataTransform) {
