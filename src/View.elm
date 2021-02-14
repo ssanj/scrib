@@ -521,10 +521,15 @@ isDeleted : List TitleType -> Bool
 isDeleted titles =
   case titles of
     []                     -> False
-    (TitleText _ :: xs)    -> isDeleted xs
-    (TitleTag value :: xs) ->
-      if (toLower value == "deleted") then True
-      else isDeleted xs
+    (headTitleType :: xs)  -> isTagDeleted headTitleType || isDeleted xs
+
+
+isTagDeleted : TitleType -> Bool
+isTagDeleted titleType =
+  case titleType of
+    TitleText _    -> False
+    TitleTag value -> toLower value == "deleted"
+
 
 createHeader : List TitleType -> List (Html msg)
 createHeader headingWithTags =
@@ -546,13 +551,19 @@ processHeadingWithTags titles =
     []    -> []
     (TitleText value):: xs -> text value :: processHeadingWithTags xs
     (TitleTag value) :: xs ->
-      (
-        span
-          [class "tag is-success is-small-8 is-rounded mx-1"]
-          [
-            text value
-          ]
-      ) :: processHeadingWithTags xs
+      let renderTag =
+            span
+              [class "tag is-success is-small-8 is-rounded mx-1"]
+              [
+                text value
+              ]
+          dontRenderDeleteTag = text ""
+      in
+        (
+          if isTagDeleted (TitleTag value) then dontRenderDeleteTag
+          else renderTag
+        ) :: processHeadingWithTags xs
+
 
 onlyHeading : String -> String
 onlyHeading note = maybe "-no title-" identity (List.head <| String.split "\n" note)
