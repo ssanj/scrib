@@ -9,36 +9,44 @@
   <script src="js/ui.js"></script>
 </head>
   <body>
-  <section class="section">
-    <nav class="navbar" role="navigation" aria-label="main navigation">
-      <div class="navbar-brand">
-      </div>
-    </nav>
-    <section class="hero is-medium is-info">
-      <div class="hero-body">
-        <div class="container">
-          <h1 class="title">
-            Scrib
-          </h1>
-          <h2 class="subtitle scrib-footer">
-            scribble effortlessly
-          </h2>
+    <section class="section">
+      <nav class="navbar" role="navigation" aria-label="main navigation">
+        <div class="navbar-brand">
+        </div>
+      </nav>
+      <section class="hero is-medium is-info">
+        <div class="hero-body">
+          <div class="container">
+            <h1 class="title">
+              Scrib
+            </h1>
+            <h2 class="subtitle scrib-footer">
+              scribble effortlessly
+            </h2>
+          </div>
+        </div>
+      </section>
+      <div class="container has-text-centered">
+        <div class="block">
+        </div>
+        <div class="block">
+          To create a new note head over to <a href="save.html">New Notes</a>.
+        </div>
+        <div class="block">
+          To view or update existing notes, head over to <a href="view.html">View Note</a>
+        </div>
+        <div class="block">
+          To update your API KEY, head over to <a href="config.html">Config</a>
         </div>
       </div>
     </section>
-    <div class="container has-text-centered">
-      <div class="block">
-      </div>
-      <div class="block">
-        To create a new note head over to <a href="save.html">New Notes</a>.
-      </div>
-      <div class="block">
-        To view or update existing notes, head over to <a href="view.html">View Note</a>
-      </div>
-      <div class="block">
-        To update your API KEY, head over to <a href="config.html">Config</a>
-      </div>
-    </div>
-  </section>
+    <script>
+      function cleanUpSharedState() {
+        const appEditKey = 'scrib.edit';
+        localStorage.removeItem(appEditKey);
+      }
+
+      cleanUpSharedState()
+    </script>
   </body>
 </html>
