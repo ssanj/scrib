@@ -8,6 +8,7 @@ import StorageKeys     exposing (..)
 import Notifications   exposing (..)
 import TagExtractor    exposing (..)
 
+import String          exposing (toLower)
 import Html.Events     exposing (onClick, onInput)
 import FP              exposing (maybe, const, collect, maybeToList, find)
 import ApiKey          exposing (ApiKey, ApiKeyWithPayload, apiKeyHeader, decodeApiKeyWithPayload, performApiKey)
@@ -501,16 +502,33 @@ createMarkdownPreview = maybe viewMarkdownPreviewDefault viewMarkdownPreview
 
 createNoteItem: SC.NoteFull -> Html Msg
 createNoteItem fullNote =
-  let title = removeHeading <| onlyHeading (SC.getNoteFullText fullNote)
+  let title           = removeHeading <| onlyHeading (SC.getNoteFullText fullNote)
+      headingWithTags = extractTags title
+      deleted         = isDeleted headingWithTags
   in
     a
-      [class "panel-block", onClick (NoteSelected fullNote)]
-      (createHeader title)
+      [
+        class "panel-block"
+      , classList
+          [
+            ("deleted-note", deleted)
+          ]
+      , onClick (NoteSelected fullNote)
+      ]
+      (createHeader headingWithTags)
 
-createHeader : String -> List (Html msg)
-createHeader title =
-  let headingWithTags = extractTags title
-      heading = processHeadingWithTags headingWithTags
+isDeleted : List TitleType -> Bool
+isDeleted titles =
+  case titles of
+    []                     -> False
+    (TitleText _ :: xs)    -> isDeleted xs
+    (TitleTag value :: xs) ->
+      if (toLower value == "deleted") then True
+      else isDeleted xs
+
+createHeader : List TitleType -> List (Html msg)
+createHeader headingWithTags =
+  let heading = processHeadingWithTags headingWithTags
   in
       (
         span

@@ -20,6 +20,10 @@
   overflow-wrap: break-word
 }
 
+.deleted-note {
+  text-decoration: line-through;
+}
+
 @media screen and (max-width: 768px) {
   .level-item {
       width: 100%;
