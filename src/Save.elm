@@ -705,13 +705,25 @@ viewControls doing note showPreview =
         ]
         [
           viewLeftButtonGroup doing note showPreview
-        , viewNewNoteButton doing
+        , viewRightButtonGroup doing note
         ]
     ]
 
 
-viewDeleteButton : WhatAreWeDoing -> NoteWithContent -> Html Msg
-viewDeleteButton doing note =
+viewRightButtonGroup : WhatAreWeDoing -> NoteWithContent -> Html Msg
+viewRightButtonGroup doing note =
+    div
+      [
+        class "level-right"
+      ]
+      [
+        viewDeleteNoteButton doing note
+      , viewNewNoteButton doing
+      ]
+
+
+viewDeleteNoteButton : WhatAreWeDoing -> NoteWithContent -> Html Msg
+viewDeleteNoteButton doing note =
   let showSpinner =
         case doing of
           SavingNoteRemotely   -> True
@@ -727,7 +739,7 @@ viewDeleteButton doing note =
              [
                ("button", True)
              , ("level-item", True)
-             , ("is-error", True)
+             , ("is-danger", True)
              , ("mt-1", True)
              , ("is-static", not (hasContent note) || showSpinner)
              ]
@@ -742,26 +754,21 @@ viewNewNoteButton doing =
           Idle  -> True
           _     -> False
   in
-    div
+    button
       [
-        class "level-right"
+        id "new-note"
+      , onClick NewNoteMsg
+      , classList
+          [
+            ("button", True)
+          , ("level-item", True)
+          , ("is-info", True)
+          , ("mt-1", True)
+          , ("is-static", not enableButton)
+          ]
       ]
       [
-        button
-          [
-            id "new-note"
-          , onClick NewNoteMsg
-          , classList
-              [
-                ("button", True)
-              , ("level-item", True)
-              , ("is-info", True)
-              , ("is-static", not enableButton)
-              ]
-          ]
-          [
-            text "New Note"
-          ]
+        text "New Note"
       ]
 
 modifiedTag : ContentStatus -> List (Attribute msg)
