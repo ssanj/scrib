@@ -710,6 +710,31 @@ viewControls doing note showPreview =
     ]
 
 
+viewDeleteButton : WhatAreWeDoing -> NoteWithContent -> Html Msg
+viewDeleteButton doing note =
+  let showSpinner =
+        case doing of
+          SavingNoteRemotely   -> True
+          SavingNoteLocally    -> True
+          UpdatingSessionCache -> True
+          Idle                 -> False
+  in
+    button
+      [
+        id "delete-note"
+         , onClick NoteSavedMsg
+         , classList
+             [
+               ("button", True)
+             , ("level-item", True)
+             , ("is-error", True)
+             , ("mt-1", True)
+             , ("is-static", not (hasContent note) || showSpinner)
+             ]
+       ]
+       [text "Delete"]
+
+
 viewNewNoteButton : WhatAreWeDoing -> Html Msg
 viewNewNoteButton doing =
   let enableButton =
