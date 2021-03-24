@@ -38,6 +38,7 @@ type DataSource = LocalLoad
 type WhatAreWeDoing = SavingNoteRemotely
                     | SavingNoteLocally
                     | UpdatingSessionCache
+                    | DeletingNoteRemotely
                     | Idle
 
 type NoteWithContent = NoteWithoutId SC.NoteLight
@@ -94,9 +95,11 @@ type PortType = SaveMessage
 type Msg = NoteSavedMsg
          | NoteEditedMsg String
          | NewNoteMsg
+         | DeleteNoteMsg
          | ViewNoteMsg
          | PreviewNoteMsg
          | NoteSaveResponseMsg RemoteSaveStatus
+         | NoteDeleteResponseMsg RemoteSaveStatus
          | NoteSavedToLocalStorage
          | RemoteNoteIdVersionSavedToLocalStorage
          | RemoteNewNoteSavedToToLocalStorage
@@ -139,6 +142,7 @@ update msg model =
     NoteSavedMsg                           -> handleSavingNote model
     (NoteEditedMsg newNoteText)            -> handleEditingNote model newNoteText
     NewNoteMsg                             -> handleNewNote model
+    DeleteNoteMsg                          -> handleRemoteDelete model
     ViewNoteMsg                            -> handleGoingToView model
     PreviewNoteMsg                         -> handlePreviewNote model
     NoteSavedToLocalStorage                -> handleRemoteSave model
@@ -152,6 +156,7 @@ update msg model =
     TesterMsg timeout realMessage          -> noop model
     ErrorModalClosed                       -> handleErrorModalClose model
     (NoteSaveResponseMsg noteResponse)     -> handleNoteSaveResponse model noteResponse
+    (NoteDeleteResponseMsg noteResponse)   -> handleNoteDeletedResponse model noteResponse
 
 
 noop : ModelCommand Model Msg
@@ -270,6 +275,19 @@ performRemoteSaveNote note apiKey =
   }
 
 
+performRemoteDeleteNote: SC.NoteFull -> ApiKey -> Cmd Msg
+performRemoteDeleteNote noteFull apiKey =
+  Http.request {
+   method    = "DELETE"
+  , headers  = [ apiKeyHeader apiKey ]
+  , url      = "/note/" ++ (String.fromInt <| SC.getNoteFullId noteFull)
+  , body     = Http.emptyBody
+  , expect   = Http.expectStringResponse processDeleteNoteResults (responseToHttpResponse SL.decodeSlateError SC.decoderNoteIdVersion)
+  , timeout  = Nothing
+  , tracker  = Nothing
+  }
+
+
 responseToHttpResponse : D.Decoder e -> D.Decoder a ->  Http.Response String -> Result (HttpError e) (HttpSuccess a)
 responseToHttpResponse errorDecoder successDecoder response  =
   case response of
@@ -370,6 +388,10 @@ processSaveNoteResults : RemoteSaveStatus -> Msg
 processSaveNoteResults = NoteSaveResponseMsg
 
 
+processDeleteNoteResults : RemoteSaveStatus -> Msg
+processDeleteNoteResults = NoteDeleteResponseMsg
+
+
 -- UPDATE HELPERS
 
 
@@ -386,6 +408,7 @@ handleSavingNote model =
         }
   in (newModel, saveNoteToLocalCmd)
 
+
 handleRemoteSave : Model -> (Model, Cmd Msg)
 handleRemoteSave model =
   let updatedModel =
@@ -398,8 +421,29 @@ handleRemoteSave model =
         }
   in performOrGotoConfig model (updatedModel, performRemoteSaveNote model.note)
 
+
+handleRemoteDelete : Model -> (Model, Cmd Msg)
+handleRemoteDelete model =
+  let updatedModel =
+        {
+          model |
+            --remoteNoteData = Loading
+            remoteSaveStatus = Nothing
+        ,   doing            = DeletingNoteRemotely
+        ,   infoMessage      = Just <| InformationMessage "Deleting Note"
+        }
+  in
+    case model.note of
+      NoteWithId fullNote -> performOrGotoConfig model (updatedModel, performRemoteDeleteNote fullNote)
+      NoteWithoutId _     -> onlyModel model -- do nothing because we don't have a note id.
+
+
+
+
 handleJSError : Model -> String -> (Model, Cmd Msg)
 handleJSError model error = (model, logMessage error)
+
+
 
 handleNoteIdVersionSavedToLocalStorage : Model -> (Model, Cmd Msg)
 handleNoteIdVersionSavedToLocalStorage model =
@@ -471,6 +515,7 @@ handleNewNote model =
   }
 
 
+
 handleGoingToView : Model -> (Model, Cmd Msg)
 handleGoingToView model = (model, Browser.Navigation.load "view.html")
 
@@ -517,6 +562,16 @@ handleNoteSaveResponse model result =
                 in saveLocally newNote result UpdateNoteToLocalAfterRemoteSave model
               else onlyModel model -- save completed for some other note, just keep doing what you were doing
 
+
+handleNoteDeletedResponse : Model -> RemoteSaveStatus -> (Model, Cmd Msg)
+handleNoteDeletedResponse model _ =
+  let newModel = {
+                    model |
+                      infoMessage = Just <| InformationMessage "Deleted note"
+                    , remoteSaveStatus  = Nothing
+                    , doing = Idle
+                 }
+  in onlyModel newModel
 
 fromRemoteError : HttpError e -> (e -> String) -> N.Nonempty String
 fromRemoteError error showError =
@@ -729,12 +784,13 @@ viewDeleteNoteButton doing note =
           SavingNoteRemotely   -> True
           SavingNoteLocally    -> True
           UpdatingSessionCache -> True
+          DeletingNoteRemotely -> True
           Idle                 -> False
   in
     button
       [
         id "delete-note"
-         , onClick NoteSavedMsg
+         , onClick DeleteNoteMsg
          , classList
              [
                ("button", True)
@@ -795,6 +851,7 @@ viewLeftButtonGroup doing note showPreview =
 
 
 -- TODO: If we have any errors, we should not show spinner
+-- TODO: We should do this patten match once and use it everywhere
 viewSaveButton: WhatAreWeDoing -> NoteWithContent -> Html Msg
 viewSaveButton doing note =
   let showSpinner =
@@ -802,6 +859,7 @@ viewSaveButton doing note =
           SavingNoteRemotely   -> True
           SavingNoteLocally    -> True
           UpdatingSessionCache -> True
+          DeletingNoteRemotely -> True
           Idle                 -> False
   in
     button
