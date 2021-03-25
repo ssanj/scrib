@@ -779,13 +779,7 @@ viewRightButtonGroup doing note =
 
 viewDeleteNoteButton : WhatAreWeDoing -> NoteWithContent -> Html Msg
 viewDeleteNoteButton doing note =
-  let showSpinner =
-        case doing of
-          SavingNoteRemotely   -> True
-          SavingNoteLocally    -> True
-          UpdatingSessionCache -> True
-          DeletingNoteRemotely -> True
-          Idle                 -> False
+  let showSpinner = isBusy doing
   in
     button
       [
@@ -805,10 +799,7 @@ viewDeleteNoteButton doing note =
 
 viewNewNoteButton : WhatAreWeDoing -> Html Msg
 viewNewNoteButton doing =
-  let enableButton =
-        case doing of
-          Idle  -> True
-          _     -> False
+  let enableButton = isBusy doing
   in
     button
       [
@@ -854,13 +845,7 @@ viewLeftButtonGroup doing note showPreview =
 -- TODO: We should do this patten match once and use it everywhere
 viewSaveButton: WhatAreWeDoing -> NoteWithContent -> Html Msg
 viewSaveButton doing note =
-  let showSpinner =
-        case doing of
-          SavingNoteRemotely   -> True
-          SavingNoteLocally    -> True
-          UpdatingSessionCache -> True
-          DeletingNoteRemotely -> True
-          Idle                 -> False
+  let showSpinner = isBusy doing
   in
     button
       [
@@ -949,6 +934,16 @@ viewMarkdownPreview noteText =
 
 markdownViewId : String
 markdownViewId = "markdown-view"
+
+
+isBusy : WhatAreWeDoing -> Bool
+isBusy doing =
+  case doing of
+    SavingNoteRemotely   -> True
+    SavingNoteLocally    -> True
+    UpdatingSessionCache -> True
+    DeletingNoteRemotely -> True
+    Idle                 -> False
 
 
 -- JS COMMANDS
