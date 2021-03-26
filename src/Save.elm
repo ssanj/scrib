@@ -50,7 +50,8 @@ type ContentStatus = NeedsToSave
 
 type alias SaveModelCommand = ModelCommand Model Msg
 
-type alias RemoteSaveStatus = Result (HttpError SL.SlateError) (HttpSuccess SC.NoteIdVersion)
+type alias RemoteSaveStatus   = Result (HttpError SL.SlateError) (HttpSuccess SC.NoteIdVersion)
+type alias RemoteDeleteStatus = Result (HttpError SL.SlateError) (HttpSuccess SC.NoteId)
 
 type SaveType = SaveNewNoteToLocalAfterRemoteSave
               | UpdateNoteToLocalAfterRemoteSave
@@ -99,7 +100,7 @@ type Msg = NoteSavedMsg
          | ViewNoteMsg
          | PreviewNoteMsg
          | NoteSaveResponseMsg RemoteSaveStatus
-         | NoteDeleteResponseMsg RemoteSaveStatus
+         | NoteDeleteResponseMsg RemoteDeleteStatus
          | NoteSavedToLocalStorage
          | RemoteNoteIdVersionSavedToLocalStorage
          | RemoteNewNoteSavedToToLocalStorage
@@ -282,7 +283,7 @@ performRemoteDeleteNote noteFull apiKey =
   , headers  = [ apiKeyHeader apiKey ]
   , url      = "/note/" ++ (String.fromInt <| SC.getNoteFullId noteFull)
   , body     = Http.emptyBody
-  , expect   = Http.expectStringResponse processDeleteNoteResults (responseToHttpResponse SL.decodeSlateError SC.decoderNoteIdVersion)
+  , expect   = Http.expectStringResponse processDeleteNoteResults (responseToHttpResponse SL.decodeSlateError SC.decoderNoteId)
   , timeout  = Nothing
   , tracker  = Nothing
   }
@@ -388,7 +389,7 @@ processSaveNoteResults : RemoteSaveStatus -> Msg
 processSaveNoteResults = NoteSaveResponseMsg
 
 
-processDeleteNoteResults : RemoteSaveStatus -> Msg
+processDeleteNoteResults : RemoteDeleteStatus -> Msg
 processDeleteNoteResults = NoteDeleteResponseMsg
 
 
@@ -563,15 +564,41 @@ handleNoteSaveResponse model result =
               else onlyModel model -- save completed for some other note, just keep doing what you were doing
 
 
-handleNoteDeletedResponse : Model -> RemoteSaveStatus -> (Model, Cmd Msg)
-handleNoteDeletedResponse model _ =
-  let newModel = {
-                    model |
-                      infoMessage = Just <| InformationMessage "Deleted note"
-                    , remoteSaveStatus  = Nothing
-                    , doing = Idle
-                 }
-  in onlyModel newModel
+handleNoteDeletedResponse : Model -> RemoteDeleteStatus -> (Model, Cmd Msg)
+handleNoteDeletedResponse model result =
+  case result of
+    Err x       ->
+        onlyModel
+          {
+            model |
+              remoteSaveStatus  = Nothing -- we should probably reset all state that we know of
+            , doing             = Idle
+            , noteContentStatus = UpToDate
+            , errorMessages     = addErrorMessages (fromRemoteError x SL.showSlateError) model.errorMessages
+          }
+
+    (Ok (HttpSuccess meta)) ->
+      let responseData = meta.statusJson
+      in
+        case responseData of
+          Err x ->
+              let newModel =
+                    { model |
+                        doing             = Idle
+                      , errorMessages = addErrorMessage "I could not understand the response from the server :(" model.errorMessages
+                    }
+                  event = logMessage <| "Could not decode json response from server: " ++ (D.errorToString x)
+              in (newModel, event)
+
+          Ok _ ->
+            let newModel = {
+                              model |
+                                infoMessage = Just <| InformationMessage "Deleted note"
+                              , doing = Idle
+                           }
+            -- TODO: clean up session cache
+            in onlyModel newModel
+
 
 fromRemoteError : HttpError e -> (e -> String) -> N.Nonempty String
 fromRemoteError error showError =

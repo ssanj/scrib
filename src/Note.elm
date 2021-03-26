@@ -5,6 +5,7 @@ module Note exposing
     NoteLight
   , NoteFull
   , NoteIdVersion
+  , NoteId
 
     -- CONSTRUCTORS
 
@@ -40,6 +41,7 @@ module Note exposing
     -- DECODERS
 
   , decoderNoteIdVersion
+  , decoderNoteId
   --, decodeNote
   , decodeLightNote
   , decodeFullNote
@@ -63,6 +65,8 @@ type NoteLight = NoteLight String
 
 
 type alias NoteIdVersion = { noteId : Int, noteVersion : Int }
+
+type alias NoteId = { noteId : Int }
 
 
 -- CONSTRUCTORS
@@ -120,6 +124,9 @@ getNoteFullVersion (NoteFull _ { noteVersion }) = noteVersion
 
 isSameNoteId : NoteFull -> NoteIdVersion -> Bool
 isSameNoteId note { noteId } = (getNoteFullId note) == noteId
+
+getNoteId : NoteId -> Int
+getNoteId { noteId } = noteId
 
 
 -- UPDATES
@@ -197,3 +204,8 @@ decoderNoteIdVersion =
     NoteIdVersion
     (D.field "noteId" D.int)
     (D.field "noteVersion" D.int)
+
+
+decoderNoteId : D.Decoder NoteId
+decoderNoteId = D.map NoteId (D.field "noteId" D.int)
+
