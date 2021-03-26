@@ -662,7 +662,7 @@ saveSelectedNoteToLocalStorage note =
 removeSelectedNoteFromLocalStorage : Cmd Msg
 removeSelectedNoteFromLocalStorage =
   let storageArea               = savedNoteStorageArea
-      removeSelectedNoteValue   = P.JsStorageValue storageArea Delete ()
+      removeSelectedNoteValue   = P.JsStorageValue storageArea DeleteKey ()
       responseKey               = Just noteRemovedFromLocalStorageResponseKey
       removeSelectedNoteCommand = P.WithStorage removeSelectedNoteValue responseKey
   in scribMessage <| P.encodeJsCommand removeSelectedNoteCommand (const E.null)

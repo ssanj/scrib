@@ -17,6 +17,7 @@ module Note exposing
   , getNoteLightText
   , getNoteFullText
   , getNoteFullId
+  , getNoteFullNoteId
   , getNoteFullVersion
 
     -- UPDATES
@@ -37,6 +38,7 @@ module Note exposing
   , encodeLightNote
   , encodeFullNote
   , encodeFullNotes
+  , encodeNoteId
 
     -- DECODERS
 
@@ -119,11 +121,18 @@ getNoteFullText (NoteFull noteText _) = noteText
 getNoteFullId : NoteFull -> Int
 getNoteFullId (NoteFull _ { noteId }) = noteId
 
+
+getNoteFullNoteId : NoteFull -> NoteId
+getNoteFullNoteId (NoteFull _ { noteId }) = NoteId noteId
+
+
 getNoteFullVersion : NoteFull -> Int
 getNoteFullVersion (NoteFull _ { noteVersion }) = noteVersion
 
+
 isSameNoteId : NoteFull -> NoteIdVersion -> Bool
 isSameNoteId note { noteId } = (getNoteFullId note) == noteId
+
 
 getNoteId : NoteId -> Int
 getNoteId { noteId } = noteId
@@ -167,10 +176,17 @@ encodeFullNote (NoteFull noteText {noteId, noteVersion}) =
    ]
 
 encodeLightNote: Encoder NoteLight
-encodeLightNote  (NoteLight noteText) =
+encodeLightNote (NoteLight noteText) =
   E.object
    [
       ("noteText", E.string noteText)
+   ]
+
+encodeNoteId: Encoder NoteId
+encodeNoteId  { noteId } =
+  E.object
+   [
+      ("noteId", E.int noteId)
    ]
 
 

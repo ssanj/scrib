@@ -39,6 +39,7 @@ type WhatAreWeDoing = SavingNoteRemotely
                     | SavingNoteLocally
                     | UpdatingSessionCache
                     | DeletingNoteRemotely
+                    | DeletingNoteFromSessionCache
                     | Idle
 
 type NoteWithContent = NoteWithoutId SC.NoteLight
@@ -106,6 +107,7 @@ type Msg = NoteSavedMsg
          | RemoteNewNoteSavedToToLocalStorage
          | NewNoteSyncedToSessionStorage
          | UpdatedNoteSyncedToSessionStorage
+         --| NoteDeletedFromSessionStorage
          | JSNotificationError String
          | InlineSuccessMessageTimedOut
          | InlineInfoTimedOut
@@ -157,8 +159,8 @@ update msg model =
     TesterMsg timeout realMessage          -> noop model
     ErrorModalClosed                       -> handleErrorModalClose model
     (NoteSaveResponseMsg noteResponse)     -> handleNoteSaveResponse model noteResponse
-    (NoteDeleteResponseMsg noteResponse)   -> handleNoteDeletedResponse model noteResponse
-
+    (NoteDeleteResponseMsg noteResponse)   -> handleNoteRemotelyDeletedResponse model noteResponse
+    --NoteDeletedFromSessionStorage          -> handleNoteDeletedFromSessionStorage model
 
 noop : ModelCommand Model Msg
 noop = onlyModel
@@ -428,17 +430,27 @@ handleRemoteDelete model =
   let updatedModel =
         {
           model |
-            --remoteNoteData = Loading
-            remoteSaveStatus = Nothing
-        ,   doing            = DeletingNoteRemotely
-        ,   infoMessage      = Just <| InformationMessage "Deleting Note"
+          doing            = DeletingNoteRemotely
+        , infoMessage      = Just <| InformationMessage "Saving Remotely"
         }
   in
     case model.note of
       NoteWithId fullNote -> performOrGotoConfig model (updatedModel, performRemoteDeleteNote fullNote)
-      NoteWithoutId _     -> onlyModel model -- do nothing because we don't have a note id.
+      NoteWithoutId _     -> onlyModel model
 
 
+handleDeleteNotFromSession : Model -> (Model, Cmd Msg)
+handleDeleteNotFromSession model =
+  let updatedModel =
+        {
+          model |
+            doing            = DeletingNoteFromSessionCache
+        ,   infoMessage      = Just <| InformationMessage "Deleting Note from session cache"
+        }
+  in
+    case model.note of
+      NoteWithId fullNote -> (updatedModel, deleteNoteFromSessionCache <| SC.getNoteFullNoteId fullNote)
+      NoteWithoutId _     -> onlyModel model
 
 
 handleJSError : Model -> String -> (Model, Cmd Msg)
@@ -468,6 +480,18 @@ handleNewNoteSavedToLocalStorage model =
           , doing          = UpdatingSessionCache
         }
   in (newModel, syncNewNoteWithSessionCache model.note)
+
+
+--handleNoteDeletedFromSessionStorage : Model -> (Model, Cmd Msg)
+--handleNoteDeletedFromSessionStorage model =
+--  let newModel =
+--        {
+--          model |
+--            successMessage = Nothing
+--          , infoMessage    = Just <| InformationMessage "Note Deleted"
+--          , doing          = Idle
+--        }
+--  in onlyModel newModel
 
 
 handleNewNoteSyncedToSessionStorage : ModelCommand Model Msg
@@ -564,8 +588,8 @@ handleNoteSaveResponse model result =
               else onlyModel model -- save completed for some other note, just keep doing what you were doing
 
 
-handleNoteDeletedResponse : Model -> RemoteDeleteStatus -> (Model, Cmd Msg)
-handleNoteDeletedResponse model result =
+handleNoteRemotelyDeletedResponse : Model -> RemoteDeleteStatus -> (Model, Cmd Msg)
+handleNoteRemotelyDeletedResponse model result =
   case result of
     Err x       ->
         onlyModel
@@ -590,14 +614,7 @@ handleNoteDeletedResponse model result =
                   event = logMessage <| "Could not decode json response from server: " ++ (D.errorToString x)
               in (newModel, event)
 
-          Ok _ ->
-            let newModel = {
-                              model |
-                                infoMessage = Just <| InformationMessage "Deleted note"
-                              , doing = Idle
-                           }
-            -- TODO: clean up session cache
-            in onlyModel newModel
+          Ok _ -> handleDeleteNotFromSession model
 
 
 fromRemoteError : HttpError e -> (e -> String) -> N.Nonempty String
@@ -966,11 +983,12 @@ markdownViewId = "markdown-view"
 isBusy : WhatAreWeDoing -> Bool
 isBusy doing =
   case doing of
-    SavingNoteRemotely   -> True
-    SavingNoteLocally    -> True
-    UpdatingSessionCache -> True
-    DeletingNoteRemotely -> True
-    Idle                 -> False
+    SavingNoteRemotely           -> True
+    SavingNoteLocally            -> True
+    UpdatingSessionCache         -> True
+    DeletingNoteFromSessionCache -> True
+    DeletingNoteRemotely         -> True
+    Idle                         -> False
 
 
 -- JS COMMANDS
@@ -987,6 +1005,9 @@ remoteNewNoteSavedToToLocalStorageResponseKey = P.ResponseKey "RemoteNewNoteSave
 
 remoteNewNoteSyncedToSessionStorageResponseKey : P.ResponseKey
 remoteNewNoteSyncedToSessionStorageResponseKey = P.ResponseKey "NewNoteSyncedToSessionStorage"
+
+deleteNoteFromSessionStorageResponseKey : P.ResponseKey
+deleteNoteFromSessionStorageResponseKey = P.ResponseKey "DeletedNoteFromSessionStorage"
 
 remoteUpdatedNoteSyncedToSessionStorageResponseKey : P.ResponseKey
 remoteUpdatedNoteSyncedToSessionStorageResponseKey = P.ResponseKey "UpdatedNoteSyncedToSessionStorage"
@@ -1012,6 +1033,16 @@ syncNewNoteWithSessionCache note =
       saveSelectedNoteCommand = P.WithStorage saveSelectedNoteValue (Just responseKey)
   in scribMessage <| P.encodeJsCommand saveSelectedNoteCommand encodeSaveNote
 
+
+deleteNoteFromSessionCache : SC.NoteId -> Cmd Msg
+deleteNoteFromSessionCache noteId =
+  let storageArea               = viewTopNotesStorageArea
+      deleteSelectedNoteValue   = P.JsStorageValue storageArea (Delete ArrayType) noteId
+      --responseKey               = deleteNoteFromSessionStorageResponseKey
+      deleteSelectedNoteCommand = P.WithStorage deleteSelectedNoteValue Nothing --(Just responseKey)
+  in scribMessage <| P.encodeJsCommand deleteSelectedNoteCommand SC.encodeNoteId
+
+
 -- TODO: This is a duplicate of syncNewNoteWithSessionCache with one param different
 syncUpdateNoteWithSessionCache : NoteWithContent ->Cmd Msg
 syncUpdateNoteWithSessionCache note =
@@ -1033,6 +1064,7 @@ subscriptionSuccess (S.JsResponse (P.ResponseKey key) result) =
     "RemoteNewNoteSavedToToLocalStorage"     -> RemoteNewNoteSavedToToLocalStorage
     "NewNoteSyncedToSessionStorage"          -> NewNoteSyncedToSessionStorage
     "UpdatedNoteSyncedToSessionStorage"      -> UpdatedNoteSyncedToSessionStorage
+    --"DeletedNoteFromSessionStorage"          -> NoteDeletedFromSessionStorage
     otherKey                                 -> subscriptionFailure <| ("Unhandled JS notification: " ++ otherKey)
 
 subscriptionFailure : String -> Msg

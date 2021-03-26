@@ -42,7 +42,7 @@ keyValue (JsonKey value) = value
 type StorageKey       = StorageKey String
 type StorageType      = Local | Session
 type StorageValueType = ArrayType | HashType
-type StorageAction    = Save | Delete | Add StorageValueType | Update StorageValueType
+type StorageAction    = Save | DeleteKey | Add StorageValueType | Update StorageValueType |  Delete StorageValueType
 
 type StorageArea = StorageArea StorageType StorageKey
 
@@ -65,7 +65,9 @@ encodeStorageAction : Encoder StorageAction
 encodeStorageAction storageAction =
   case storageAction of
     Save               -> E.string "save"
-    Delete             -> E.string "delete"
+    DeleteKey          -> E.string "delete_key"
+    (Delete ArrayType) -> E.string "delete_from_array"
+    (Delete HashType)  -> E.string "delete_from_hash"
     (Add ArrayType)    -> E.string "add_to_array"
     (Add HashType)     -> E.string "add_to_hash"
     (Update ArrayType) -> E.string "update_to_array"
