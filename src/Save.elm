@@ -107,7 +107,7 @@ type Msg = NoteSavedMsg
          | RemoteNewNoteSavedToToLocalStorage
          | NewNoteSyncedToSessionStorage
          | UpdatedNoteSyncedToSessionStorage
-         --| NoteDeletedFromSessionStorage
+         | NoteDeletedFromSessionStorage
          | JSNotificationError String
          | InlineSuccessMessageTimedOut
          | InlineInfoTimedOut
@@ -160,7 +160,7 @@ update msg model =
     ErrorModalClosed                       -> handleErrorModalClose model
     (NoteSaveResponseMsg noteResponse)     -> handleNoteSaveResponse model noteResponse
     (NoteDeleteResponseMsg noteResponse)   -> handleNoteRemotelyDeletedResponse model noteResponse
-    --NoteDeletedFromSessionStorage          -> handleNoteDeletedFromSessionStorage model
+    NoteDeletedFromSessionStorage          -> handleNoteDeletedFromSessionStorage model
 
 noop : ModelCommand Model Msg
 noop = onlyModel
@@ -482,16 +482,16 @@ handleNewNoteSavedToLocalStorage model =
   in (newModel, syncNewNoteWithSessionCache model.note)
 
 
---handleNoteDeletedFromSessionStorage : Model -> (Model, Cmd Msg)
---handleNoteDeletedFromSessionStorage model =
---  let newModel =
---        {
---          model |
---            successMessage = Nothing
---          , infoMessage    = Just <| InformationMessage "Note Deleted"
---          , doing          = Idle
---        }
---  in onlyModel newModel
+handleNoteDeletedFromSessionStorage : Model -> (Model, Cmd Msg)
+handleNoteDeletedFromSessionStorage = handleGoingToView
+  --let newModel =
+  --      {
+  --        model |
+  --          successMessage = Nothing
+  --        , infoMessage    = Just <| InformationMessage "Note Deleted"
+  --        , doing          = Idle
+  --      }
+  --in onlyModel newModel
 
 
 handleNewNoteSyncedToSessionStorage : ModelCommand Model Msg
@@ -1064,7 +1064,7 @@ subscriptionSuccess (S.JsResponse (P.ResponseKey key) result) =
     "RemoteNewNoteSavedToToLocalStorage"     -> RemoteNewNoteSavedToToLocalStorage
     "NewNoteSyncedToSessionStorage"          -> NewNoteSyncedToSessionStorage
     "UpdatedNoteSyncedToSessionStorage"      -> UpdatedNoteSyncedToSessionStorage
-    --"DeletedNoteFromSessionStorage"          -> NoteDeletedFromSessionStorage
+    "DeletedNoteFromSessionStorage"          -> NoteDeletedFromSessionStorage
     otherKey                                 -> subscriptionFailure <| ("Unhandled JS notification: " ++ otherKey)
 
 subscriptionFailure : String -> Msg

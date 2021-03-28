@@ -45,26 +45,27 @@ function handleStorage(action, cb) {
 
       backgrounded(cb, result);
     } else if (storageAction === "delete_from_array") {
-      console.log("delete_from_array called with: " + JSON.stringify(storage))
-    //   const action = function() {
-    //     const cacheArrayObj = getJSONArrayKey(store, storage.storageKey);
-    //     //remove key from array
-    //     //TODO: Find out the correct structure for this
-    //     const index = cacheArrayObj.findIndex((el) => el.noteId == storage.data.noteId)
-    //     if (index != -1) {
-    //       cacheArrayObj.splice(index, 1);
-    //       const updatedCacheString =   JSON.stringify(cacheArrayObj);
-    //       store.setItem(storage.storageKey, updatedCacheString);
-    //     } else { }
-    //   };
+      const action = function() {
+        const cacheArrayObj = getJSONArrayKey(store, storage.storageKey);
+        //remove key from array
+        //TODO: Find out the correct structure for this
+        const index = cacheArrayObj.findIndex((el) => el.noteId == storage.data.noteId)
+        if (index != -1) {
+          cacheArrayObj.splice(index, 1);
+          const updatedCacheString =   JSON.stringify(cacheArrayObj);
+          store.setItem(storage.storageKey, updatedCacheString);
+        } else {
+          console.log("Did not find item to delete in storage: " + JSON.stringify(storage));
+        }
+      };
 
-    //   const resultTransformer = function(result) {
-    //     return result;
-    //   }
+      const resultTransformer = function(result) {
+        return result;
+      }
 
-    //   const result = execute(action, responseKey, resultTransformer);
+      const result = execute(action, responseKey, resultTransformer);
 
-    //   backgrounded(cb, result);
+      backgrounded(cb, result);
     } else if (storageAction === "load") {
       const action = function() {
         store.getItem(storage.storageKey);
