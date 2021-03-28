@@ -45,7 +45,7 @@ function handleStorage(action, cb) {
 
       backgrounded(cb, result);
     } else if (storageAction === "delete_from_array") {
-      console.log("delete_from_array called with: " ++ JSON.stringify(storage))
+      console.log("delete_from_array called with: " + JSON.stringify(storage))
     //   const action = function() {
     //     const cacheArrayObj = getJSONArrayKey(store, storage.storageKey);
     //     //remove key from array

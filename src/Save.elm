@@ -1038,8 +1038,8 @@ deleteNoteFromSessionCache : SC.NoteId -> Cmd Msg
 deleteNoteFromSessionCache noteId =
   let storageArea               = viewTopNotesStorageArea
       deleteSelectedNoteValue   = P.JsStorageValue storageArea (Delete ArrayType) noteId
-      --responseKey               = deleteNoteFromSessionStorageResponseKey
-      deleteSelectedNoteCommand = P.WithStorage deleteSelectedNoteValue Nothing --(Just responseKey)
+      responseKey               = deleteNoteFromSessionStorageResponseKey
+      deleteSelectedNoteCommand = P.WithStorage deleteSelectedNoteValue (Just responseKey)
   in scribMessage <| P.encodeJsCommand deleteSelectedNoteCommand SC.encodeNoteId
 
 
