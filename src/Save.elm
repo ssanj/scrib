@@ -431,7 +431,7 @@ handleRemoteDelete model =
         {
           model |
           doing            = DeletingNoteRemotely
-        , infoMessage      = Just <| InformationMessage "Saving Remotely"
+        , infoMessage      = Just <| InformationMessage "Deleting Remotely"
         }
   in
     case model.note of
@@ -592,6 +592,7 @@ handleNoteRemotelyDeletedResponse : Model -> RemoteDeleteStatus -> (Model, Cmd M
 handleNoteRemotelyDeletedResponse model result =
   case result of
     Err x       ->
+        -- check for already delete and proceed as normal
         onlyModel
           {
             model |
@@ -637,6 +638,27 @@ fromRemoteError error showError =
 --  , statusJson : Result D.Error v
 --  , headers : Dict String String
 --  }
+
+fromRemoteErrorSelectively : HttpError e -> (e -> String) -> (e -> Maybe b) -> Result (N.Nonempty String) b
+fromRemoteErrorSelectively error showError matchError =
+  case error of
+    HttpBadUrl url                 -> Err <| N.fromElement <| "The url supplied was invalid: " ++ url
+    HttpTimeout                    -> Err <| N.fromElement <| "The remote operation timed out"
+    HttpNetworkError               -> Err <| N.fromElement <| "There was a network error during your remote request"
+    HttpBadStatus meta ->
+      case getErrorStatus meta matchError of
+        (Just value)  -> Ok value
+        Nothing ->
+          let heading     = "The following error occurred"
+              metaStrings = showMeta meta showError
+          in Err <| N.cons heading metaStrings
+
+
+getErrorStatus :  HttpMetaData a -> (a -> Maybe b) -> Maybe b
+getErrorStatus { statusJson } handle =
+  case statusJson of
+    Err _    -> Nothing
+    Ok value -> handle value
 
 
 showMeta : HttpMetaData a -> (a -> String) -> N.Nonempty String
