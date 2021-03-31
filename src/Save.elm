@@ -593,14 +593,19 @@ handleNoteRemotelyDeletedResponse model result =
   case result of
     Err x       ->
         -- check for already delete and proceed as normal
-        onlyModel
-          {
-            model |
-              remoteSaveStatus  = Nothing -- we should probably reset all state that we know of
-            , doing             = Idle
-            , noteContentStatus = UpToDate
-            , errorMessages     = addErrorMessages (fromRemoteError x SL.showSlateError) model.errorMessages
-          }
+        let actionResult = fromRemoteErrorSelectively x SL.showSlateError onAlreadyDeletedError
+        in
+         case actionResult of
+          Err err ->
+            onlyModel
+              {
+                model |
+                  remoteSaveStatus  = Nothing -- we should probably reset all state that we know of
+                , doing             = Idle
+                , noteContentStatus = UpToDate
+                , errorMessages     = addErrorMessages err model.errorMessages
+              }
+          Ok _    -> handleDeleteNotFromSession model
 
     (Ok (HttpSuccess meta)) ->
       let responseData = meta.statusJson
@@ -616,6 +621,12 @@ handleNoteRemotelyDeletedResponse model result =
               in (newModel, event)
 
           Ok _ -> handleDeleteNotFromSession model
+
+
+onAlreadyDeletedError : SL.SlateError -> Maybe ()
+onAlreadyDeletedError { errorId } =
+  if errorId == 1006 then Just ()
+  else Nothing
 
 
 fromRemoteError : HttpError e -> (e -> String) -> N.Nonempty String
