@@ -47,8 +47,6 @@ function handleStorage(action, cb) {
     } else if (storageAction === "delete_from_array") {
       const action = function() {
         const cacheArrayObj = getJSONArrayKey(store, storage.storageKey);
-        //remove key from array
-        //TODO: Find out the correct structure for this
         const index = cacheArrayObj.findIndex((el) => el.noteId == storage.data.noteId)
         if (index != -1) {
           cacheArrayObj.splice(index, 1);
