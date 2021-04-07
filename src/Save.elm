@@ -876,7 +876,7 @@ viewDeleteNoteButton doing note =
 
 viewNewNoteButton : WhatAreWeDoing -> Html Msg
 viewNewNoteButton doing =
-  let enableButton = isBusy doing
+  let disabled = isBusy doing
   in
     button
       [
@@ -888,7 +888,7 @@ viewNewNoteButton doing =
           , ("level-item", True)
           , ("is-info", True)
           , ("mt-1", True)
-          , ("is-static", not enableButton)
+          , ("is-static", disabled)
           ]
       ]
       [
