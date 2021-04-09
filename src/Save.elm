@@ -362,11 +362,13 @@ getNoteVersion note =
     NoteWithId scNote -> Just <| SC.getNoteFullVersion scNote
     NoteWithoutId _   -> Nothing
 
+
 getNoteId : NoteWithContent -> Maybe Int
 getNoteId note =
   case note of
     NoteWithId scNote -> Just <| SC.getNoteFullId scNote
     NoteWithoutId _   -> Nothing
+
 
 getNoteText : NoteWithContent -> String
 getNoteText note =
@@ -374,11 +376,19 @@ getNoteText note =
     NoteWithId scNote    -> SC.getNoteFullText scNote
     NoteWithoutId scNote -> SC.getNoteLightText scNote
 
+
 hasContent: NoteWithContent -> Bool
 hasContent note =
   case note of
     NoteWithoutId noteText -> not (String.isEmpty <| SC.getNoteLightText noteText)
     NoteWithId noteText    -> not (String.isEmpty <| SC.getNoteFullText noteText)
+
+hasBeenSaved : NoteWithContent -> Bool
+hasBeenSaved note =
+  case note of
+    NoteWithoutId _ -> False
+    NoteWithId _    -> True
+
 
 -- TODO: Put the constants in one place
 inlineInfoSuccessTimeout : Seconds
@@ -868,7 +878,7 @@ viewDeleteNoteButton doing note =
              , ("level-item", True)
              , ("is-danger", True)
              , ("mt-1", True)
-             , ("is-static", not (hasContent note) || showSpinner)
+             , ("is-static", not (hasBeenSaved note) || showSpinner)
              ]
        ]
        [text "Delete"]

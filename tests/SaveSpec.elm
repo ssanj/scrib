@@ -5,10 +5,11 @@ import Test             exposing (..)
 
 import Expect      exposing (Expectation)
 import FP          exposing (const)
-import Save        exposing (isBusy, WhatAreWeDoing(..), viewNewNoteButton)
+import Save        exposing (isBusy, WhatAreWeDoing(..), viewNewNoteButton, NoteWithContent(..), viewDeleteNoteButton)
 
 import Test.Html.Selector as Selector
 import List.Nonempty      as NE
+import Note               as SC
 
 import Test.Html.Query as Query
 
@@ -22,6 +23,9 @@ busyStates =
     , DeletingNoteFromSessionCache
     ]
 
+allStates : NE.Nonempty WhatAreWeDoing
+allStates = NE.fromElement Idle |> NE.append busyStates
+
 
 whatAreWeDoingString : WhatAreWeDoing -> String
 whatAreWeDoingString doing =
@@ -34,13 +38,14 @@ whatAreWeDoingString doing =
     Idle                          -> "Idle"
 
 
-expectToBeBusy : WhatAreWeDoing -> Expectation
-expectToBeBusy doing = Expect.true ("is busy shouldn't have been True for " ++ (whatAreWeDoingString doing)) <| isBusy doing
-
 isBusyWhenBusy : Test
 isBusyWhenBusy =
   test "Returns True when busy" <|
     const <| combineExpectationsWith expectToBeBusy busyStates
+
+
+expectToBeBusy : WhatAreWeDoing -> Expectation
+expectToBeBusy doing = Expect.true ("is busy shouldn't have been True for " ++ (whatAreWeDoingString doing)) <| isBusy doing
 
 
 isBusyWhenIdle : Test
@@ -61,16 +66,68 @@ viewNewNoteButtonWhenIdle =
         |> Query.hasNot [Selector.class "is-static"]
 
 
-expectViewNoteButtonIsDisabled :  WhatAreWeDoing -> Expectation
+viewNewNoteButtonWhenBusy : Test
+viewNewNoteButtonWhenBusy =
+  test "Should be disabled when busy" <|
+    const <| combineExpectationsWith expectViewNoteButtonIsDisabled busyStates
+
+
+expectViewNoteButtonIsDisabled : WhatAreWeDoing -> Expectation
 expectViewNoteButtonIsDisabled doing =
   let html = viewNewNoteButton doing
   in Query.has [Selector.class "is-static"] <| Query.fromHtml html
 
 
-viewNewNoteButtonWhenBusy : Test
-viewNewNoteButtonWhenBusy =
-  test "Should be disabled when busy" <|
-    const <| combineExpectationsWith expectViewNoteButtonIsDisabled busyStates
+
+viewDeleteNoteButtonWithEmptyNote : Test
+viewDeleteNoteButtonWithEmptyNote =
+  test "Should disable the delete button when the note is new and has no content in any application state" <|
+    \_ ->
+      let unsavedNote = NoteWithoutId <| SC.mkLightNote ""
+      in combineExpectationsWith (expectDeleteNoteButtonIsDisabled unsavedNote) allStates
+
+
+viewDeleteNoteButtonWithNewNote : Test
+viewDeleteNoteButtonWithNewNote =
+  test "Should disable the delete button when the note has content and is unsaved in any application state" <|
+    \_ ->
+      let unsavedNote = NoteWithoutId <| SC.mkLightNote "this is a new one"
+      in combineExpectationsWith (expectDeleteNoteButtonIsDisabled unsavedNote) allStates
+
+
+viewDeleteNoteButtonWithAnyNoteWhenBusy : Test
+viewDeleteNoteButtonWithAnyNoteWhenBusy =
+  test "Should disable the delete button any application busy state" <|
+    \_ ->
+      let unsavedNote = NoteWithoutId <| SC.mkLightNote "this is a new one"
+      in combineExpectationsWith (expectDeleteNoteButtonIsDisabled unsavedNote) busyStates
+
+
+expectDeleteNoteButtonIsDisabled : NoteWithContent -> WhatAreWeDoing -> Expectation
+expectDeleteNoteButtonIsDisabled note doing =
+  let html = viewDeleteNoteButton doing note
+  in Query.has [Selector.class "is-static"] <| Query.fromHtml html
+
+--viewDeleteNoteButton : WhatAreWeDoing -> NoteWithContent -> Html Msg
+--viewDeleteNoteButton doing note =
+--  let showSpinner = isBusy doing
+--  in
+--    button
+--      [
+--        id "delete-note"
+--         , onClick DeleteNoteMsg
+--         , classList
+--             [
+--               ("button", True)
+--             , ("level-item", True)
+--             , ("is-danger", True)
+--             , ("mt-1", True)
+--             , ("is-static", not (hasContent note) || showSpinner)
+--             ]
+--       ]
+--       [text "Delete"]
+
+-- Utils
 
 
 combineExpectationsWith : (a -> Expectation) -> NE.Nonempty a -> Expectation
