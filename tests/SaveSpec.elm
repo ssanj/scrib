@@ -10,6 +10,8 @@ import Save        exposing (isBusy, WhatAreWeDoing(..), viewNewNoteButton, Note
 import Test.Html.Selector as Selector
 import List.Nonempty      as NE
 import Note               as SC
+import Json.Encode        as E
+import Json.Decode        as D
 
 import Test.Html.Query as Query
 
@@ -99,8 +101,30 @@ viewDeleteNoteButtonWithAnyNoteWhenBusy : Test
 viewDeleteNoteButtonWithAnyNoteWhenBusy =
   test "Should disable the delete button any application busy state" <|
     \_ ->
-      let unsavedNote = NoteWithoutId <| SC.mkLightNote "this is a new one"
-      in combineExpectationsWith (expectDeleteNoteButtonIsDisabled unsavedNote) busyStates
+      let unsavedNote       = NoteWithoutId <| SC.mkLightNote "this is a new one"
+          unsavedNoteCombos = combineExpectationsWith (expectDeleteNoteButtonIsDisabled unsavedNote) busyStates
+          savedNoteCombos   = combineExpectationsWith (expectDeleteNoteButtonIsDisabledOnFullNote createSavedNote) busyStates
+      in combineExpectations <| NE.Nonempty unsavedNoteCombos [ savedNoteCombos ]
+
+
+expectDeleteNoteButtonIsDisabledOnFullNote : Result D.Error SC.NoteFull -> WhatAreWeDoing -> Expectation
+expectDeleteNoteButtonIsDisabledOnFullNote fullNoteResult doing =
+  case fullNoteResult of
+    Ok fullNote -> expectDeleteNoteButtonIsDisabled (NoteWithId fullNote) doing
+    Err e       -> Expect.fail <| "Could not decode fullNote because: " ++ (D.errorToString e)
+
+
+-- This is the only way to create an instance of this opaque type.
+createSavedNote : Result D.Error SC.NoteFull
+createSavedNote =
+  let noteJson =
+        E.object
+         [
+            ("noteText", E.string "Some text")
+          , ("noteId", E.int 1000)
+          , ("noteVersion", E.int 1)
+         ]
+  in D.decodeValue SC.decodeFullNote noteJson
 
 
 expectDeleteNoteButtonIsDisabled : NoteWithContent -> WhatAreWeDoing -> Expectation
