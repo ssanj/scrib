@@ -34,22 +34,19 @@ whatAreWeDoingString doing =
     Idle                          -> "Idle"
 
 
+expectToBeBusy : WhatAreWeDoing -> Expectation
+expectToBeBusy doing = Expect.true ("is busy shouldn't have been True for " ++ (whatAreWeDoingString doing)) <| isBusy doing
+
 isBusyWhenBusy : Test
 isBusyWhenBusy =
   test "Returns True when busy" <|
-    \_ ->
-      let expected = True
-          expectToBeBusy : WhatAreWeDoing -> Expectation
-          expectToBeBusy doing = Expect.true ("is busy shouldn't have been True for " ++ (whatAreWeDoingString doing)) <| isBusy doing
-
-          allExpectations = NE.map expectToBeBusy busyStates
-      in combineExpectations allExpectations
+    const <| combineExpectationsWith expectToBeBusy busyStates
 
 
 isBusyWhenIdle : Test
 isBusyWhenIdle =
   test "Returns False when idle" <|
-    \_ ->
+    const <|
       let actual   = isBusy Idle
           expected = False
       in Expect.equal actual expected
@@ -64,16 +61,21 @@ viewNewNoteButtonWhenIdle =
         |> Query.hasNot [Selector.class "is-static"]
 
 
+expectViewNoteButtonIsDisabled :  WhatAreWeDoing -> Expectation
+expectViewNoteButtonIsDisabled doing =
+  let html = viewNewNoteButton doing
+  in Query.has [Selector.class "is-static"] <| Query.fromHtml html
+
+
 viewNewNoteButtonWhenBusy : Test
 viewNewNoteButtonWhenBusy =
   test "Should be disabled when busy" <|
-    \_ ->
-      let expectViewNoteButtonIsDisabled :  WhatAreWeDoing -> Expectation
-          expectViewNoteButtonIsDisabled doing =
-            let html = viewNewNoteButton doing
-            in Query.has [Selector.class "is-static"] <| Query.fromHtml html
-          allExpectations = NE.map expectViewNoteButtonIsDisabled busyStates
-      in combineExpectations allExpectations
+    const <| combineExpectationsWith expectViewNoteButtonIsDisabled busyStates
+
+
+combineExpectationsWith : (a -> Expectation) -> NE.Nonempty a -> Expectation
+combineExpectationsWith assertionF values =
+  combineExpectations <| NE.map assertionF values
 
 
 combineExpectations : NE.Nonempty Expectation -> Expectation
