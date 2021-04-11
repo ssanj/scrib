@@ -252,7 +252,7 @@ handleSearchQuery model query =
   in
     case trimmedQuery of
       ""            -> onlyModel { model | query = Nothing, whichNotes = TopNotes }
-      nonEmptyQuery -> performOrGotoConfig model ({ model | query = Just nonEmptyQuery }, searchRemoteNotes nonEmptyQuery)
+      nonEmptyQuery -> performOrGotoConfig model ({ model | query = Just query }, searchRemoteNotes nonEmptyQuery)
 
 noteSelection  : Model -> NoteSelection
 noteSelection { retrievedNotes,  searchResultNotes, whichNotes } =

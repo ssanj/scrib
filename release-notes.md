@@ -2,10 +2,13 @@
 
 ## Bug Fixes
 
-### New Note button was disable on the Save page.
-- The `New Note` was disabled on the `Save` and there was not way to create a new note. The user had to click on the main menu to make this happen.
+### Search Bar allows space-separated words
+- The search bar on the `View` page trimmed all searches by default, as you typed them in. This meant that you could never enter a search term with spaces anywhere within it.
 
-### Delete button was enable on the `Save` page when editing an unsaved note.
+### New Note button was disable on the Save page.
+- The `New Note` was disabled on the `Save` page and there was no way to create a new note. The user had to click on the main menu to make this happen.
+
+### Delete button was enable on the Save page when editing an unsaved note.
 - The `Delete` button was incorrectly enable when it shouldn't have been - when a note was not saved remote and hence shouldn't be deletable.
 
 # 3.0.7
