@@ -19,12 +19,15 @@ import Browser
 import Http
 import Browser.Navigation
 
-import List.Nonempty as N
-import Json.Decode   as D
-import Json.Encode   as E
-import Note          as SC
-import Ports         as P
-import Subs          as S
+
+import List.Nonempty    as N
+import Json.Decode      as D
+import Json.Encode      as E
+import Note             as SC
+import Ports            as P
+import Subs             as S
+import Component.Footer as Footer
+
 
 -- MODEL
 
@@ -131,32 +134,9 @@ view model =
             viewModalErrorsIfAny maybeModalErrors ErrorModalClosed
           , createMarkdownPreview model.selectedNote
           ])
-      , viewFooter
+      , Footer.view
       ]
 
-viewFooter : Html msg
-viewFooter =
-  nav
-    [ attribute "aria-label" "main navigation", class "content", attribute "role" "navigation" ]
-    [ div
-        [ class "content has-text-centered" ]
-        [ p
-            [ class "scrib-footer"]
-            [
-              text "scribble effortlessly"
-            ]
-        , div
-          [ class "is-size-7" ]
-          [
-            text "crafted by "
-          , a
-              [ href "https://sanj.ink"]
-              [
-                text "Sanj Sahayam"
-              ]
-          ]
-        ]
-    ]
 
 viewSearchArea : List SC.NoteFull ->  Maybe String -> Maybe InlineError -> Maybe InformationMessage -> List (Html Msg)
 viewSearchArea notesList maybeQuery  maybeInlineErrors maybeInfoMessage =

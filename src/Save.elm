@@ -16,15 +16,16 @@ import Http
 import Browser.Navigation
 import Markdown
 
-import Dict          as DICT
-import List.Nonempty as N
-import Json.Decode   as D
-import Json.Encode   as E
-import Note          as SC
-import Ports         as P
-import Subs          as S
-import List.Nonempty as N
-import SlateError    as SL
+import Dict             as DICT
+import List.Nonempty    as N
+import Json.Decode      as D
+import Json.Encode      as E
+import Note             as SC
+import Ports            as P
+import Subs             as S
+import List.Nonempty    as N
+import SlateError       as SL
+import Component.Footer as Footer
 
 
 -- MODEL
@@ -198,7 +199,7 @@ view model =
               , showMarkDownPreviewIfRequested model.showPreview model.note
               ]
         ]
-    , viewFooter
+    , Footer.view
     ]
 
 
@@ -767,31 +768,6 @@ viewMenu =
               ]
           ]
       ]
-
-
-viewFooter : Html msg
-viewFooter =
-  nav
-    [ attribute "aria-label" "main navigation", class "content", attribute "role" "navigation" ]
-    [ div
-        [ class "content has-text-centered" ]
-        [ p
-            [ class "scrib-footer"]
-            [
-              text "scribble effortlessly"
-            ]
-        , div
-          [ class "is-size-7" ]
-          [
-            text "crafted by "
-          , a
-              [ href "https://sanj.ink"]
-              [
-                text "Sanj Sahayam"
-              ]
-          ]
-        ]
-    ]
 
 
 viewNoteEditingArea : Model -> Html Msg
