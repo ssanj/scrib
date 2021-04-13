@@ -3,7 +3,7 @@ module Component.Footer exposing (view)
 import Html            exposing (..)
 import Html.Attributes exposing (..)
 
-version = "3.0.8"
+version = "0.3.0.9"
 
 view : Html msg
 view =

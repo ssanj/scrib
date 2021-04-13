@@ -1,4 +1,11 @@
-# 3.0.8
+# 0.3.0.9
+
+## Features
+
+### Show version information on Footer
+- The footer of every page displays the version
+
+# 0.3.0.8
 
 ## Bug Fixes
 
@@ -11,7 +18,7 @@
 ### Delete button was enable on the Save page when editing an unsaved note.
 - The `Delete` button was incorrectly enable when it shouldn't have been - when a note was not saved remote and hence shouldn't be deletable.
 
-# 3.0.7
+# 0.3.0.7
 
 ## Features
 

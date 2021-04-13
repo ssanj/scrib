@@ -2,4 +2,5 @@
 
 build View scrib-view
 build Save scrib-save
+build Config scrib-config
 local-copy-static
