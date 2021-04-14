@@ -7,4 +7,5 @@ makeSave
 echo "Compiling Config"
 makeConfig
 echo "Copying files"
+
 copy-static '/Volumes/Work/projects/code/haskell/toy/slate/static/'

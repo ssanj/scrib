@@ -480,6 +480,7 @@ fromHttpError error =
 createMarkdownPreview: Maybe SC.NoteFull -> Html Msg
 createMarkdownPreview = maybe viewMarkdownPreviewDefault viewMarkdownPreview
 
+
 createNoteItem: SC.NoteFull -> Html Msg
 createNoteItem fullNote =
   let title           = removeHeading <| onlyHeading (SC.getNoteFullText fullNote)
@@ -496,6 +497,7 @@ createNoteItem fullNote =
       , onClick (NoteSelected fullNote)
       ]
       (createHeader headingWithTags)
+
 
 isDeleted : List TitleType -> Bool
 isDeleted titles =
@@ -551,6 +553,63 @@ onlyHeading note = maybe "-no title-" identity (List.head <| String.split "\n" n
 removeHeading : String -> String
 removeHeading = String.replace "# " ""
 
+
+viewControls : SC.NoteFull -> Html Msg
+viewControls fullNote =
+    div
+    []
+    [
+      nav
+        [
+          class "level"
+        ]
+        [
+          viewLeftButtonGroup fullNote
+        ]
+    ]
+
+
+viewLeftButtonGroup: SC.NoteFull -> Html Msg
+viewLeftButtonGroup fullNote =
+    div
+      [
+        class "level-left"
+      ]
+      [
+        viewEditButton fullNote
+      , viewViewButton fullNote
+      ]
+
+
+viewEditButton : SC.NoteFull -> Html Msg
+viewEditButton fullNote =
+   button
+    [
+      class "button"
+    , class "is-info mt-1"
+    , class "level-item"
+    , onClick (NoteEdited fullNote)
+    ]
+    [
+      text "Edit"
+    ]
+
+
+viewViewButton : SC.NoteFull -> Html Msg
+viewViewButton fullNote =
+   button
+    [
+      class "button"
+    , class "is-info mt-1"
+    , class "level-item"
+    , class "is-success"
+    , onClick (NoteEdited fullNote)
+    ]
+    [
+      text "View"
+    ]
+
+
 viewMarkdownPreview : SC.NoteFull -> Html Msg
 viewMarkdownPreview fullNote =
   div
@@ -572,15 +631,7 @@ viewMarkdownPreview fullNote =
             [
               Markdown.toHtml [] (SC.getNoteFullText fullNote)
             ]
-        , button
-            [
-              class "button"
-            , class "is-info mt-2"
-            , onClick (NoteEdited fullNote)
-            ]
-            [
-              text "Edit"
-            ]
+        , viewControls fullNote
         ]
     ]
 
