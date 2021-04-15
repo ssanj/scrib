@@ -1,0 +1,4 @@
+#!/bin/bash
+
+elm make src/Page.elm --report=json --output=resources/js/scrib-page.js 2>&1 | sharpen
+

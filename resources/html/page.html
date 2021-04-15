@@ -1,0 +1,43 @@
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Scrib - View Note</title>
+  <link rel="stylesheet" href="css/bulma.min.css">
+  <link rel="stylesheet" href="css/md.css">
+  <link rel="stylesheet" href="css/scrib.css">
+  <script src="js/scrib-page.js"></script>
+  <script src="js/ports.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/util.js"></script>
+</head>
+<body>
+  <div id="myapp">Page with a View</div>
+  <script>
+
+    const appEditKey = 'scrib.view';
+    const appApiKey  = 'scrib.api.key';
+
+    const app = Elm.Page.init({
+      flags: initLoad(appEditKey),
+      node: document.getElementById('myapp')
+    });
+
+    app.ports.scribMessage.subscribe(function(action){
+      portActions(action, app.ports.jsMessage.send);
+    });
+
+
+    function initLoad(appKey) {
+      const storedData     = localStorage.getItem(appKey);
+      //TODO: we should try/catch here.
+      const noteForEditing = storedData ? JSON.parse(storedData) : null;
+      const apiKey     = getApiKey(localStorage, appApiKey);
+      return { "note": noteForEditing , ...apiKey };
+    }
+
+    document.addEventListener('DOMContentLoaded', () => burgerMenu(document));
+  </script>
+
+</body>
+</html>
