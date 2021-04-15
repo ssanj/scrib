@@ -61,7 +61,8 @@ type Msg = NoteSelected SC.NoteFull
          | NoteEdited SC.NoteFull
          | NoteViewed SC.NoteFull
          | TopNotesSavedToSessionStorage
-         | NoteSavedToLocalStorage
+         | NoteForEditingSavedToLocalStorage
+         | NoteForViewingSavedToLocalStorage
          | NoteRemovedFromLocalStorage
          | JSNotificationError String
          | AddNote
@@ -107,8 +108,9 @@ update msg model =
     (NoteEdited note)                     -> handleNoteEdited model note
     (NoteViewed note)                     -> handleNoteViewed model note
     TopNotesSavedToSessionStorage         -> handleTopNotesSavedToSessionStorage model
-    NoteSavedToLocalStorage               -> gotoConfigScreen model
-    NoteRemovedFromLocalStorage           -> gotoConfigScreen model
+    NoteForEditingSavedToLocalStorage     -> gotoNoteEditScreen model
+    NoteForViewingSavedToLocalStorage     -> gotoNoteViewScreen model
+    NoteRemovedFromLocalStorage           -> gotoNoteEditScreen model
     (JSNotificationError error)           -> handleJSError model error
     AddNote                               -> handleAddNote model
     (TopNotesResponse slateCallResult)    -> handleTopNotesResponse model slateCallResult
@@ -391,19 +393,23 @@ handleAddNote model = (model, removeSelectedNoteFromLocalStorage)
 
 
 handleNoteEdited : Model -> SC.NoteFull -> (Model, Cmd Msg)
-handleNoteEdited model note = (model, saveSelectedNoteToLocalStorage note)
+handleNoteEdited model note = (model, saveSelectedNoteForEditingToLocalStorage note)
 
 
 handleNoteViewed : Model -> SC.NoteFull -> (Model, Cmd Msg)
-handleNoteViewed model note = onlyModel model --(model, saveSelectedNoteToLocalStorage note)
+handleNoteViewed model note = (model, saveSelectedNoteForViewingToLocalStorage note)
 
 
 handleNoteSelected : Model -> SC.NoteFull -> (Model, Cmd Msg)
 handleNoteSelected model note = onlyModel  { model| selectedNote = Just note }
 
 
-gotoConfigScreen : Model -> (Model, Cmd Msg)
-gotoConfigScreen model = (model, Browser.Navigation.load "save.html")
+gotoNoteEditScreen : Model -> (Model, Cmd Msg)
+gotoNoteEditScreen model = (model, Browser.Navigation.load "save.html")
+
+
+gotoNoteViewScreen : Model -> (Model, Cmd Msg)
+gotoNoteViewScreen model = (model, Browser.Navigation.load "page.html")
 
 
 handleNotesRefreshed : Model -> (Model, Cmd Msg)
@@ -682,8 +688,12 @@ topNotesSavedToSessionStorageResponseKey : P.ResponseKey
 topNotesSavedToSessionStorageResponseKey = P.ResponseKey "TopNotesSavedToSessionStorage"
 
 
-noteSavedToLocalStorageResponseKey : P.ResponseKey
-noteSavedToLocalStorageResponseKey = P.ResponseKey "NoteSavedToLocalStorage"
+noteSavedForEditingToLocalStorageResponseKey : P.ResponseKey
+noteSavedForEditingToLocalStorageResponseKey = P.ResponseKey "NoteForEditingSavedToLocalStorage"
+
+
+noteSavedForViewingToLocalStorageResponseKey : P.ResponseKey
+noteSavedForViewingToLocalStorageResponseKey = P.ResponseKey "NoteForViewingSavedToLocalStorage"
 
 
 noteRemovedFromLocalStorageResponseKey : P.ResponseKey
@@ -704,13 +714,23 @@ logMessage message =
   in scribMessage <| P.encodeJsCommand logCommand E.string
 
 
-saveSelectedNoteToLocalStorage : SC.NoteFull -> Cmd Msg
-saveSelectedNoteToLocalStorage note =
+saveSelectedNoteForEditingToLocalStorage : SC.NoteFull -> Cmd Msg
+saveSelectedNoteForEditingToLocalStorage note =
   let storageArea             = savedNoteStorageArea
       saveSelectedNoteValue   = P.JsStorageValue storageArea Save note
-      responseKey             = Just noteSavedToLocalStorageResponseKey
+      responseKey             = Just noteSavedForEditingToLocalStorageResponseKey
       saveSelectedNoteCommand = P.WithStorage saveSelectedNoteValue responseKey
   in scribMessage <| P.encodeJsCommand saveSelectedNoteCommand SC.encodeFullNote
+
+
+saveSelectedNoteForViewingToLocalStorage : SC.NoteFull -> Cmd Msg
+saveSelectedNoteForViewingToLocalStorage note =
+  let storageArea             = savedNoteForViewingStorageArea
+      saveSelectedNoteValue   = P.JsStorageValue storageArea Save note
+      responseKey             = Just noteSavedForViewingToLocalStorageResponseKey
+      saveSelectedNoteCommand = P.WithStorage saveSelectedNoteValue responseKey
+  in scribMessage <| P.encodeJsCommand saveSelectedNoteCommand SC.encodeFullNote
+
 
 removeSelectedNoteFromLocalStorage : Cmd Msg
 removeSelectedNoteFromLocalStorage =
@@ -719,6 +739,7 @@ removeSelectedNoteFromLocalStorage =
       responseKey               = Just noteRemovedFromLocalStorageResponseKey
       removeSelectedNoteCommand = P.WithStorage removeSelectedNoteValue responseKey
   in scribMessage <| P.encodeJsCommand removeSelectedNoteCommand (const E.null)
+
 
 saveTopNotesToSessionStorage : List SC.NoteFull -> Cmd Msg
 saveTopNotesToSessionStorage notes =
@@ -734,10 +755,11 @@ saveTopNotesToSessionStorage notes =
 subscriptionSuccess : S.JsResponse E.Value -> Msg
 subscriptionSuccess (S.JsResponse (P.ResponseKey key) result) =
   case (key) of
-    "NoteSavedToLocalStorage"       -> NoteSavedToLocalStorage
-    "NoteRemovedFromLocalStorage"   -> NoteRemovedFromLocalStorage
-    "TopNotesSavedToSessionStorage" -> TopNotesSavedToSessionStorage
-    otherKey                      -> subscriptionFailure <| ("Unhandled JS notification: " ++ otherKey)
+    "NoteForEditingSavedToLocalStorage" -> NoteForEditingSavedToLocalStorage
+    "NoteForViewingSavedToLocalStorage" -> NoteForViewingSavedToLocalStorage
+    "NoteRemovedFromLocalStorage"       -> NoteRemovedFromLocalStorage
+    "TopNotesSavedToSessionStorage"     -> TopNotesSavedToSessionStorage
+    otherKey                            -> subscriptionFailure <| ("Unhandled JS notification: " ++ otherKey)
 
 subscriptionFailure : String -> Msg
 subscriptionFailure m = JSNotificationError ("subscriptionFailure: " ++ m)

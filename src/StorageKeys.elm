@@ -6,6 +6,7 @@ module StorageKeys exposing
     , apiKeyKey
     , viewTopNotesStorageArea
     , savedNoteStorageArea
+    , savedNoteForViewingStorageArea
     , apiKeyStorageArea
     , encodeKeyAndPayload
     , encodeStorageAreaAction
@@ -49,17 +50,25 @@ type StorageArea = StorageArea StorageType StorageKey
 viewTopNotesStorageArea: StorageArea
 viewTopNotesStorageArea = StorageArea Session (StorageKey "scrib.view")
 
+
 savedNoteStorageArea: StorageArea
 savedNoteStorageArea = StorageArea Local (StorageKey "scrib.edit")
 
+
+savedNoteForViewingStorageArea: StorageArea
+savedNoteForViewingStorageArea = StorageArea Local (StorageKey "scrib.view")
+
+
 apiKeyStorageArea: StorageArea
 apiKeyStorageArea = StorageArea Local (StorageKey "scrib.api.key")
+
 
 encodeStorageType : Encoder StorageType
 encodeStorageType st =
   case st of
     Local   -> E.string "local"
     Session -> E.string "session"
+
 
 encodeStorageAction : Encoder StorageAction
 encodeStorageAction storageAction =
@@ -72,6 +81,7 @@ encodeStorageAction storageAction =
     (Add HashType)     -> E.string "add_to_hash"
     (Update ArrayType) -> E.string "update_to_array"
     (Update HashType)  -> E.string "update_to_hash"
+
 
 encodeStorageAreaAction : StorageArea -> StorageAction -> Encoder a -> a -> E.Value
 encodeStorageAreaAction (StorageArea st (StorageKey storageKey)) action payloadEncoder payload =
