@@ -131,26 +131,20 @@ update _ = onlyModel
 -- VIEW
 
 view : Model -> Html Msg
-view model = div
-              []
-              [
-                text "you made it!"
-              ]
+view model =
 
   --let (maybeInlineErrors, maybeModalErrors) = maybe (Nothing, Nothing) getErrors model.appErrors
   --    notesList                             = choseWhichNotes (noteSelection model)
   --in
-  --  plainDiv
-  --    [
-  --      section [class "section"]
-  --        ([ viewMenu ]                                                              ++
-  --        (viewSearchArea notesList model.query maybeInlineErrors model.infoMessage) ++
-  --        [
-  --          viewModalErrorsIfAny maybeModalErrors ErrorModalClosed
-  --        , createMarkdownPreview model.selectedNote
-  --        ])
-  --    , Footer.view
-  --    ]
+    plainDiv
+      [
+        section [class "section"]
+          [
+            viewMenu
+          , text "You made it!"
+          , Footer.view
+          ]
+      ]
 
 
 --viewSearchArea : List SC.NoteFull ->  Maybe String -> Maybe InlineError -> Maybe InformationMessage -> List (Html Msg)
@@ -431,32 +425,32 @@ handleJSError model error = (model, logMessage error)
 -- VIEW HELPERS
 
 
---viewMenu : Html Msg
---viewMenu =
---  nav [ attribute "aria-label" "main navigation", class "navbar", attribute "role" "navigation" ]
---      [ div [ class "navbar-brand" ]
---          [ a [ attribute "aria-expanded" "false", attribute "aria-label" "menu", class "navbar-burger burger", attribute "data-target" "navbarBasicExample", attribute "role" "button" ]
---              [ span [ attribute "aria-hidden" "true" ]
---                  []
---              , span [ attribute "aria-hidden" "true" ]
---                  []
---              , span [ attribute "aria-hidden" "true" ]
---                  []
---              ]
---          ]
---      , div [ class "navbar-menu", id "navbarBasicExample" ]
---          [ div [ class "navbar-start" ]
---              [ a [ class "navbar-item", href "index.html" ]
---                  [ text "Home" ]
---              , a [ class "navbar-item", href "save.html" ]
---                  [ text "New Note" ]
---              , a [ class "navbar-item", onClick NotesRefreshed]
---                  [ text "Refresh" ]
---              , a [ class "navbar-item", href "config.html" ]
---                  [ text "Config" ]
---              ]
---          ]
---      ]
+viewMenu : Html Msg
+viewMenu =
+  nav [ attribute "aria-label" "main navigation", class "navbar", attribute "role" "navigation" ]
+      [ div [ class "navbar-brand" ]
+          [ a [ attribute "aria-expanded" "false", attribute "aria-label" "menu", class "navbar-burger burger", attribute "data-target" "navbarBasicExample", attribute "role" "button" ]
+              [ span [ attribute "aria-hidden" "true" ]
+                  []
+              , span [ attribute "aria-hidden" "true" ]
+                  []
+              , span [ attribute "aria-hidden" "true" ]
+                  []
+              ]
+          ]
+      , div [ class "navbar-menu", id "navbarBasicExample" ]
+          [ div [ class "navbar-start" ]
+              [ a [ class "navbar-item", href "index.html" ]
+                  [ text "Home" ]
+              , a [ class "navbar-item", href "save.html" ]
+                  [ text "New Note" ]
+              , a [ class "navbar-item" {-, onClick NotesRefreshed-}]
+                  [ text "Refresh" ]
+              , a [ class "navbar-item", href "config.html" ]
+                  [ text "Config" ]
+              ]
+          ]
+      ]
 
 --getQueryText : Maybe String -> String
 --getQueryText = maybe "" identity
