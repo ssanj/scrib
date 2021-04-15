@@ -59,6 +59,7 @@ type alias RemoteNotesData = WebData (List SC.NoteFull)
 
 type Msg = NoteSelected SC.NoteFull
          | NoteEdited SC.NoteFull
+         | NoteViewed SC.NoteFull
          | TopNotesSavedToSessionStorage
          | NoteSavedToLocalStorage
          | NoteRemovedFromLocalStorage
@@ -104,6 +105,7 @@ update msg model =
   case msg of
     (NoteSelected note)                   -> handleNoteSelected model note
     (NoteEdited note)                     -> handleNoteEdited model note
+    (NoteViewed note)                     -> handleNoteViewed model note
     TopNotesSavedToSessionStorage         -> handleTopNotesSavedToSessionStorage model
     NoteSavedToLocalStorage               -> gotoConfigScreen model
     NoteRemovedFromLocalStorage           -> gotoConfigScreen model
@@ -367,32 +369,46 @@ handleInlineInfo model message =
 handleInlineInfoSuccess : Cmd Msg
 handleInlineInfoSuccess = addTimeoutForInlineMessage inlineInfoSuccessTimeout InlineInfoTimedOut
 
+
 handleInlineInfoTimeout : Model -> (Model, Cmd Msg)
 handleInlineInfoTimeout model = onlyModel <| onInlineInfoTimeout informationMessageGetter informationMessageSetter model
+
 
 handleInlineErrorTimeout : Model -> (Model, Cmd Msg)
 handleInlineErrorTimeout model = onlyModel <| onInlineErrorTimeout appErrorsGetter appErrorsSetter model
 
+
 handleErrorModalClosed : Model -> (Model, Cmd Msg)
 handleErrorModalClosed model = onlyModel <| onErrorModalClosed appErrorsGetter appErrorsSetter model
+
 
 handleTopNotesSavedToSessionStorage : Model -> (Model, Cmd Msg)
 handleTopNotesSavedToSessionStorage model = onlyModel {model | selectedNote = Nothing }
 
+
 handleAddNote : Model -> (Model, Cmd Msg)
 handleAddNote model = (model, removeSelectedNoteFromLocalStorage)
+
 
 handleNoteEdited : Model -> SC.NoteFull -> (Model, Cmd Msg)
 handleNoteEdited model note = (model, saveSelectedNoteToLocalStorage note)
 
+
+handleNoteViewed : Model -> SC.NoteFull -> (Model, Cmd Msg)
+handleNoteViewed model note = onlyModel model --(model, saveSelectedNoteToLocalStorage note)
+
+
 handleNoteSelected : Model -> SC.NoteFull -> (Model, Cmd Msg)
 handleNoteSelected model note = onlyModel  { model| selectedNote = Just note }
+
 
 gotoConfigScreen : Model -> (Model, Cmd Msg)
 gotoConfigScreen model = (model, Browser.Navigation.load "save.html")
 
+
 handleNotesRefreshed : Model -> (Model, Cmd Msg)
 handleNotesRefreshed model = performOrGotoConfig model ({ model | notes = Loading, query = Nothing }, getTopRemoteNotes)
+
 
 handleJSError : Model -> String -> (Model, Cmd Msg)
 handleJSError model error = (model, logMessage error)
@@ -603,7 +619,7 @@ viewViewButton fullNote =
     , class "is-info mt-1"
     , class "level-item"
     , class "is-success"
-    , onClick (NoteEdited fullNote)
+    , onClick (NoteViewed fullNote)
     ]
     [
       text "View"
@@ -665,22 +681,28 @@ viewInformationIfAny = maybe emptyDiv addInlineInfoFlash
 topNotesSavedToSessionStorageResponseKey : P.ResponseKey
 topNotesSavedToSessionStorageResponseKey = P.ResponseKey "TopNotesSavedToSessionStorage"
 
+
 noteSavedToLocalStorageResponseKey : P.ResponseKey
 noteSavedToLocalStorageResponseKey = P.ResponseKey "NoteSavedToLocalStorage"
+
 
 noteRemovedFromLocalStorageResponseKey : P.ResponseKey
 noteRemovedFromLocalStorageResponseKey = P.ResponseKey "NoteRemovedFromLocalStorage"
 
+
 appName : String
 appName = "scrib"
 
+
 appMessage : a -> P.JsAppMessage a
 appMessage = P.JsAppMessage appName
+
 
 logMessage: String -> Cmd Msg
 logMessage message =
   let logCommand = P.LogConsole <| appMessage message
   in scribMessage <| P.encodeJsCommand logCommand E.string
+
 
 saveSelectedNoteToLocalStorage : SC.NoteFull -> Cmd Msg
 saveSelectedNoteToLocalStorage note =
