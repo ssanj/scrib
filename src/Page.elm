@@ -36,7 +36,10 @@ import Component.Footer as Footer
 --type NotesDataSource = TopNotes
 --                     | SearchResultNotes
 
-type alias Model = ()
+type alias Model =
+  {
+    note : Maybe SC.NoteFull
+  }
   --{
   --  query             : Maybe String
   --, notes             : RemoteNotesData
@@ -141,7 +144,7 @@ view model =
         section [class "section"]
           [
             viewMenu
-          , text "You made it!"
+          , createMarkdownPreview model.note
           , Footer.view
           ]
       ]
@@ -201,7 +204,10 @@ subscriptions _ = Sub.none --jsMessage (S.encodeJsResponse subscriptionSuccess s
 
 
 emptyModel: Model
-emptyModel = ()
+emptyModel =
+  {
+    note = Nothing
+  }
 --  {
 --    query             = Nothing
 --  , notes             = NotAsked
@@ -262,7 +268,7 @@ emptyModel = ()
 
 
 handleInitSuccess : ApiKeyWithPayload SC.NoteFull -> (Model, Cmd Msg)
-handleInitSuccess _ = onlyModel emptyModel
+handleInitSuccess { payload } = onlyModel { emptyModel | note = payload }
 
  -- let notes = maybe [] identity payload
  --     mc    =
@@ -501,8 +507,8 @@ viewMenu =
 --    (Http.BadBody body)     -> "bad body: " ++ body
 
 
---createMarkdownPreview: Maybe SC.NoteFull -> Html Msg
---createMarkdownPreview = maybe viewMarkdownPreviewDefault viewMarkdownPreview
+createMarkdownPreview: Maybe SC.NoteFull -> Html Msg
+createMarkdownPreview = maybe viewMarkdownPreviewDefault viewMarkdownPreview
 
 
 --createNoteItem: SC.NoteFull -> Html Msg
@@ -634,44 +640,46 @@ viewMenu =
 --    ]
 
 
---viewMarkdownPreview : SC.NoteFull -> Html Msg
---viewMarkdownPreview fullNote =
---  div
---    []
---    [
---      hr
---        []
---        []
---    , div
---        [
---          id "preview"
---        ]
---        [
---          div
---            [
---              id markdownViewId
---            , class "clipped"
---            ]
---            [
---              Markdown.toHtml [] (SC.getNoteFullText fullNote)
---            ]
---        , viewControls fullNote
---        ]
---    ]
+viewMarkdownPreview : SC.NoteFull -> Html Msg
+viewMarkdownPreview fullNote =
+  div
+    []
+    [
+      hr
+        []
+        []
+    , div
+        [
+          id "page-view"
+        ]
+        [
+          div
+            [
+              id markdownViewId
+            , class "clipped"
+            ]
+            [
+              Markdown.toHtml [] (SC.getNoteFullText fullNote)
+            ]
+         -- , viewControls fullNote
+        ]
+    ]
 
---viewMarkdownPreviewDefault: Html Msg
---viewMarkdownPreviewDefault =
---  div []
---    [ hr []
---      []
---    , div [ id "preview" ]
---      [ div [ id markdownViewId ]
---        []
---      ]
---    ]
+viewMarkdownPreviewDefault: Html Msg
+viewMarkdownPreviewDefault =
+  div []
+    [ hr []
+      []
+    , div [ id "page-view" ]
+      [ div [ id markdownViewId ]
+        [
+          text "No content to display"
+        ]
+      ]
+    ]
 
---markdownViewId : String
---markdownViewId = "markdown-view"
+markdownViewId : String
+markdownViewId = "markdown-page-view"
 
 --viewModalErrorsIfAny : Maybe ModalErrors -> a -> Html a
 --viewModalErrorsIfAny maybeError msg = maybe emptyDiv (\errors -> viewModalErrors errors msg) maybeError
