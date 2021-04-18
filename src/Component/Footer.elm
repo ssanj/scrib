@@ -8,7 +8,13 @@ version = "0.3.0.9"
 view : Html msg
 view =
   nav
-    [ attribute "aria-label" "main navigation", class "content", attribute "role" "navigation" ]
+    [
+      attribute "aria-label" "main navigation"
+    , class "content"
+    , attribute "role" "navigation"
+    , style "margin-top" "2em"
+    , style "border-top" "2px solid #fafafa"
+    ]
     [ div
         [ class "content has-text-centered" ]
         [ p

@@ -450,7 +450,7 @@ viewMenu =
                   [ text "Home" ]
               , a [ class "navbar-item", href "save.html" ]
                   [ text "New Note" ]
-              , a [ class "navbar-item" ]
+              , a [ class "navbar-item", href "view.html"]
                   [ text "View" ]
               , a [ class "navbar-item", href "config.html" ]
                   [ text "Config" ]
