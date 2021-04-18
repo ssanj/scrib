@@ -24,6 +24,10 @@
   text-decoration: line-through;
 }
 
+#markdown-page-view {
+  line-height: 2em;
+}
+
 @media screen and (max-width: 768px) {
   .level-item {
       width: 100%;
