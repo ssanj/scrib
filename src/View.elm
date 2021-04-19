@@ -651,7 +651,15 @@ viewMarkdownPreview fullNote =
             , class "clipped"
             ]
             [
-              Markdown.toHtml [] (SC.getNoteFullText fullNote)
+              --Markdown.toHtml [] (String.join "\n" <| List.take 10 <| String.lines <| SC.getNoteFullText fullNote)
+              Markdown.toHtml [] (String.join "\n" <| List.take 5 <| String.lines <| SC.getNoteFullText fullNote)
+            , div
+                [
+                  id "elipses"
+                ]
+                [
+                  text "..."
+                ]
             ]
         , viewControls fullNote
         ]
