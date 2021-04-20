@@ -110,6 +110,10 @@ p,
   margin-bottom: 1.3rem;
 }
 
+p:last-of-type {
+  margin-bottom: 0;
+}
+
 h1,
 .modest-h1,
 h2,

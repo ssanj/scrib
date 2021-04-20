@@ -20,6 +20,11 @@
   overflow-wrap: break-word
 }
 
+.elipses {
+  font-family: monospace;
+  font-size: 1em;
+}
+
 .deleted-note {
   text-decoration: line-through;
 }

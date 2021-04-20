@@ -583,7 +583,7 @@ viewControls fullNote =
     [
       nav
         [
-          class "level"
+          class "level mt-2"
         ]
         [
           viewLeftButtonGroup fullNote
@@ -655,7 +655,7 @@ viewMarkdownPreview fullNote =
               Markdown.toHtml [] (String.join "\n" <| List.take 5 <| String.lines <| SC.getNoteFullText fullNote)
             , div
                 [
-                  id "elipses"
+                  class "elipses"
                 ]
                 [
                   text "..."
