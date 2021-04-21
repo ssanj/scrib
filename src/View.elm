@@ -650,20 +650,36 @@ viewMarkdownPreview fullNote =
               id markdownViewId
             , class "clipped"
             ]
-            [
-              --Markdown.toHtml [] (String.join "\n" <| List.take 10 <| String.lines <| SC.getNoteFullText fullNote)
-              Markdown.toHtml [] (String.join "\n" <| List.take 5 <| String.lines <| SC.getNoteFullText fullNote)
-            , div
-                [
-                  class "elipses"
-                ]
-                [
-                  text "..."
-                ]
-            ]
+            (viewPreviewSnippet fullNote 5)
         , viewControls fullNote
         ]
     ]
+
+
+viewPreviewSnippet : SC.NoteFull -> Int -> List (Html msg)
+viewPreviewSnippet fullNote linesToShow =
+  let allLines           = String.lines <| SC.getNoteFullText fullNote
+      previewLines       = List.take linesToShow allLines
+      previewText        = String.join "\n" previewLines
+      allLinesLength     = List.length allLines
+      previewLinesLength = List.length previewLines
+      hasMoreLinesToShow = previewLinesLength < allLinesLength
+      footer             =
+        if hasMoreLinesToShow then
+          div
+            [
+              class "ellipses"
+            ]
+            [
+              text ("..." ++ "(" ++(String.fromInt(previewLinesLength) ++ "/" ++ (String.fromInt(allLinesLength))) ++ ")")
+            ]
+        else emptyDiv
+  in
+    [
+      Markdown.toHtml [] previewText
+    , footer
+    ]
+
 
 viewMarkdownPreviewDefault: Html Msg
 viewMarkdownPreviewDefault =
