@@ -668,10 +668,10 @@ viewPreviewSnippet fullNote linesToShow =
         if hasMoreLinesToShow then
           div
             [
-              class "ellipses"
+              class "preview-page-break mt-2"
             ]
             [
-              text ("..." ++ "(" ++(String.fromInt(previewLinesLength) ++ "/" ++ (String.fromInt(allLinesLength))) ++ ")")
+              text ("showing " ++ (String.fromInt(previewLinesLength) ++ " of " ++ (String.fromInt(allLinesLength))) ++ " lines")
             ]
         else emptyDiv
   in

@@ -25,6 +25,11 @@
   font-size: 1em;
 }
 
+.preview-page-break {
+  font-family: monospace;
+  font-size: 0.75em;
+}
+
 .deleted-note {
   text-decoration: line-through;
 }
