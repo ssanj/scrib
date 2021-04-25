@@ -20,3 +20,12 @@ extractTags title =
             (hasPrefix, hasTag) -> (TitleText (String.fromList hasPrefix) :: TitleTag (String.fromList hasTag) :: restOfList)
   in extractTitleTypes (String.toList title)
 
+
+isTag : TitleType -> Bool
+isTag titleType =
+  case titleType of
+    TitleText _ -> False
+    TitleTag  _ -> True
+
+isText : TitleType -> Bool
+isText = not << isTag

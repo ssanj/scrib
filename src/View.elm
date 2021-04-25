@@ -658,13 +658,14 @@ viewMarkdownPreview fullNote =
 
 viewPreviewSnippet : SC.NoteFull -> Int -> List (Html msg)
 viewPreviewSnippet fullNote linesToShow =
-  let allLines           = String.lines <| SC.getNoteFullText fullNote
-      previewLines       = List.take linesToShow allLines
-      previewText        = String.join "\n" previewLines
-      allLinesLength     = List.length allLines
-      previewLinesLength = List.length previewLines
-      hasMoreLinesToShow = previewLinesLength < allLinesLength
-      footer             =
+  let allLines                = String.lines <| SC.getNoteFullText fullNote
+      previewLines            = List.take linesToShow allLines
+      previewWithCleanHeading = headingWithoutTags previewLines
+      previewText             = String.join "\n" previewWithCleanHeading
+      allLinesLength          = List.length allLines
+      previewLinesLength      = List.length previewWithCleanHeading
+      hasMoreLinesToShow      = previewLinesLength < allLinesLength
+      footer                  =
         if hasMoreLinesToShow then
           div
             [
@@ -680,6 +681,27 @@ viewPreviewSnippet fullNote linesToShow =
     , footer
     ]
 
+
+headingWithoutTags : List String -> List String
+headingWithoutTags lines =
+  case lines of
+    []              -> []
+    (heading :: rest) -> (renderHeadingWithoutTags heading) :: rest
+
+
+renderHeadingWithoutTags : String -> String
+renderHeadingWithoutTags heading  =
+  let textWithTags = extractTags heading
+      onlyText     = List.filterMap getStringTags textWithTags
+      trimmedText  = List.map String.trim onlyText
+  in String.join " " trimmedText
+
+
+getStringTags : TitleType -> Maybe String
+getStringTags titleType =
+  case titleType of
+    TitleText value -> Just value
+    TitleTag _      -> Nothing
 
 viewMarkdownPreviewDefault: Html Msg
 viewMarkdownPreviewDefault =

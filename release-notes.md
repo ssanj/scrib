@@ -5,6 +5,14 @@
 ### Show version information on Footer
 - The footer of every page displays the version
 
+### Truncate Preview on Search page
+- The preview now shows five lines of preview
+- Shows a summary of the number of lines shown vs the number of lines on the notes
+- Removes tags from headings
+
+### Full page view of notes
+- A full page view is now available on the `page` page.
+
 # 0.3.0.8
 
 ## Bug Fixes
