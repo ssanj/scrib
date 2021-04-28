@@ -5,6 +5,7 @@ import FP exposing (partitionExcluding)
 
 type TitleType = TitleText String | TitleTag String
 
+-- Can we replace this with a parser?
 extractTags : String -> List TitleType
 extractTags title =
   let

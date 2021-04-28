@@ -59,7 +59,7 @@ type alias Model =
 
 -- MSG
 
-type Msg = Noop
+type Msg = NoteEdited SC.NoteFull
 
   --NoteSelected SC.NoteFull
 --         | NoteEdited SC.NoteFull
@@ -110,11 +110,10 @@ decodeLocalSave = decodeApiKeyWithPayload noteKey SC.decodeFullNote
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
-update _ = onlyModel
---update msg model =
---  case msg of
+update msg model =
+  case msg of
 --    (NoteSelected note)                   -> handleNoteSelected model note
---    (NoteEdited note)                     -> handleNoteEdited model note
+    (NoteEdited note)                     -> handleNoteEdited model note
 --    (NoteViewed note)                     -> handleNoteViewed model note
 --    TopNotesSavedToSessionStorage         -> handleTopNotesSavedToSessionStorage model
 --    NoteForEditingSavedToLocalStorage     -> gotoNoteEditScreen model
@@ -145,10 +144,51 @@ view model =
           [
             viewMenu
           , createMarkdownPreview model.note
+          , maybe emptyDiv viewControls (model.note)
           , Footer.view
           ]
       ]
 
+
+viewControls : SC.NoteFull -> Html Msg
+viewControls fullNote =
+    div
+    []
+    [
+      nav
+        [
+          class "level mt-2"
+        ]
+        [
+          viewLeftButtonGroup fullNote
+        ]
+    ]
+
+
+viewLeftButtonGroup: SC.NoteFull -> Html Msg
+viewLeftButtonGroup fullNote =
+    div
+      [
+        class "level-left"
+      ]
+      [
+        viewEditButton fullNote
+      --, viewViewButton fullNote
+      ]
+
+
+viewEditButton : SC.NoteFull -> Html Msg
+viewEditButton fullNote =
+   button
+    [
+      class "button"
+    , class "is-info mt-1"
+    , class "level-item"
+    , onClick (NoteEdited fullNote)
+    ]
+    [
+      text "Edit"
+    ]
 
 --viewSearchArea : List SC.NoteFull ->  Maybe String -> Maybe InlineError -> Maybe InformationMessage -> List (Html Msg)
 --viewSearchArea notesList maybeQuery  maybeInlineErrors maybeInfoMessage =
@@ -400,8 +440,8 @@ handleDecodeResult result success failure =
 --handleAddNote model = (model, removeSelectedNoteFromLocalStorage)
 
 
---handleNoteEdited : Model -> SC.NoteFull -> (Model, Cmd Msg)
---handleNoteEdited model note = (model, saveSelectedNoteForEditingToLocalStorage note)
+handleNoteEdited : Model -> SC.NoteFull -> (Model, Cmd Msg)
+handleNoteEdited model note = onlyModel model --(model, saveSelectedNoteForEditingToLocalStorage note)
 
 
 --handleNoteViewed : Model -> SC.NoteFull -> (Model, Cmd Msg)
