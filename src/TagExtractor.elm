@@ -30,3 +30,17 @@ isTag titleType =
 
 isText : TitleType -> Bool
 isText = not << isTag
+
+
+getStringTags : TitleType -> Maybe String
+getStringTags titleType =
+  case titleType of
+    TitleText value -> Just value
+    TitleTag _      -> Nothing
+
+getTags : TitleType -> Maybe String
+getTags titleType =
+  case titleType of
+    TitleText _    -> Nothing
+    TitleTag value -> Just value
+

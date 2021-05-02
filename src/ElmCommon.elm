@@ -9,7 +9,8 @@ import List.Nonempty as N
 import Json.Decode   as D
 import Http          as Http
 
-import FP exposing (maybe, maybeToBool)
+import FP exposing           (maybe, maybeToBool)
+import TagExtractor exposing (TitleType, extractTags, getStringTags)
 
 type alias ErrorMessage = { errorMessage : String }
 
@@ -135,6 +136,23 @@ foldResult failure success result =
   case result of
     (Ok value)  -> success value
     (Err error) -> failure error
+
+
+
+headingWithoutTags : List String -> List String
+headingWithoutTags lines =
+  case lines of
+    []              -> []
+    (heading :: rest) -> (renderHeadingWithoutTags heading) :: rest
+
+
+renderHeadingWithoutTags : String -> String
+renderHeadingWithoutTags heading  =
+  let textWithTags = extractTags heading
+      onlyText     = List.filterMap getStringTags textWithTags
+      trimmedText  = List.map String.trim onlyText
+  in String.join " " trimmedText
+
 
 
 -- HTTP

@@ -6,7 +6,7 @@ import Html.Attributes exposing (..)
 import ElmCommon       exposing (..)
 import StorageKeys     exposing (..)
 import Notifications   exposing (..)
-import TagExtractor    exposing (..)
+import TagExtractor    exposing (TitleType(..), extractTags)
 
 import String          exposing (toLower)
 import Html.Events     exposing (onClick, onInput)
@@ -681,27 +681,6 @@ viewPreviewSnippet fullNote linesToShow =
     , footer
     ]
 
-
-headingWithoutTags : List String -> List String
-headingWithoutTags lines =
-  case lines of
-    []              -> []
-    (heading :: rest) -> (renderHeadingWithoutTags heading) :: rest
-
-
-renderHeadingWithoutTags : String -> String
-renderHeadingWithoutTags heading  =
-  let textWithTags = extractTags heading
-      onlyText     = List.filterMap getStringTags textWithTags
-      trimmedText  = List.map String.trim onlyText
-  in String.join " " trimmedText
-
-
-getStringTags : TitleType -> Maybe String
-getStringTags titleType =
-  case titleType of
-    TitleText value -> Just value
-    TitleTag _      -> Nothing
 
 viewMarkdownPreviewDefault: Html Msg
 viewMarkdownPreviewDefault =
