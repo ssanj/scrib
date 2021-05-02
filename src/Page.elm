@@ -6,7 +6,6 @@ import Html.Attributes exposing (..)
 import ElmCommon       exposing (..)
 import StorageKeys     exposing (..)
 import Notifications   exposing (..)
-import TagExtractor    exposing (..)
 
 import String          exposing (toLower)
 import Html.Events     exposing (onClick, onInput)
@@ -259,11 +258,18 @@ viewMarkdownPreview fullNote =
             , class "clipped"
             ]
             [
-              Markdown.toHtml [] (SC.getNoteFullText fullNote)
+              Markdown.toHtml [] (renderMarkdownPreview fullNote)
             ]
          -- , viewControls fullNote
         ]
     ]
+
+
+renderMarkdownPreview : SC.NoteFull -> String
+renderMarkdownPreview fullNote =
+  let allLines                = String.lines <| SC.getNoteFullText fullNote
+      previewWithCleanHeading = headingWithoutTags allLines
+  in String.join "\n" previewWithCleanHeading
 
 viewMarkdownPreviewDefault: Html Msg
 viewMarkdownPreviewDefault =
