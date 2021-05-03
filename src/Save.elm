@@ -990,10 +990,18 @@ viewMarkdownPreview noteText =
             , class "clipped"
             ]
             [
-              Markdown.toHtml [] noteText
+              Markdown.toHtml [] (renderMarkdownPreview noteText)
             ]
         ]
     ]
+
+
+renderMarkdownPreview : String -> String
+renderMarkdownPreview note =
+  let allLines                = String.lines note
+      previewWithCleanHeading = headingWithoutTags allLines
+  in String.join "\n" previewWithCleanHeading
+
 
 markdownViewId : String
 markdownViewId = "markdown-view"

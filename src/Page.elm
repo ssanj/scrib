@@ -271,6 +271,7 @@ renderMarkdownPreview fullNote =
       previewWithCleanHeading = headingWithoutTags allLines
   in String.join "\n" previewWithCleanHeading
 
+
 viewMarkdownPreviewDefault: Html Msg
 viewMarkdownPreviewDefault =
   div []

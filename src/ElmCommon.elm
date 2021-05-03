@@ -10,7 +10,7 @@ import Json.Decode   as D
 import Http          as Http
 
 import FP exposing           (maybe, maybeToBool)
-import TagExtractor exposing (TitleType, extractTags, getStringTags)
+import TagExtractor exposing (TitleType(..), extractTags, getStringTags)
 
 type alias ErrorMessage = { errorMessage : String }
 
@@ -153,6 +153,27 @@ renderHeadingWithoutTags heading  =
       trimmedText  = List.map String.trim onlyText
   in String.join " " trimmedText
 
+
+isTagDeleted : TitleType -> Bool
+isTagDeleted titleType =
+  case titleType of
+    TitleText _    -> False
+    TitleTag value -> String.toLower value == "deleted"
+
+
+processHeadingWithTags : List TitleType -> (String -> Html msg) -> List (Html msg)
+processHeadingWithTags titles renderTagWith =
+  case titles of
+    []    -> []
+    (TitleText value):: xs -> text value :: processHeadingWithTags xs renderTagWith
+    (TitleTag value) :: xs ->
+      let renderedTag = renderTagWith value
+          dontRenderDeleteTag = text ""
+      in
+        (
+          if isTagDeleted (TitleTag value) then dontRenderDeleteTag
+          else renderedTag
+        ) :: processHeadingWithTags xs renderTagWith
 
 
 -- HTTP

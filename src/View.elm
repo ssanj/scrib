@@ -521,23 +521,9 @@ createNoteItem fullNote =
       (createHeader headingWithTags)
 
 
-isDeleted : List TitleType -> Bool
-isDeleted titles =
-  case titles of
-    []                     -> False
-    (headTitleType :: xs)  -> isTagDeleted headTitleType || isDeleted xs
-
-
-isTagDeleted : TitleType -> Bool
-isTagDeleted titleType =
-  case titleType of
-    TitleText _    -> False
-    TitleTag value -> toLower value == "deleted"
-
-
 createHeader : List TitleType -> List (Html msg)
 createHeader headingWithTags =
-  let heading = processHeadingWithTags headingWithTags
+  let heading = processHeadingWithTags headingWithTags renderTag
   in
       (
         span
@@ -549,28 +535,26 @@ createHeader headingWithTags =
           ]
       ) :: heading
 
-processHeadingWithTags : List TitleType -> List (Html msg)
-processHeadingWithTags titles =
+
+renderTag : String -> Html msg
+renderTag value =
+  span
+    [class "tag is-success is-small-8 is-rounded mx-1"]
+    [
+      text value
+    ]
+
+
+isDeleted : List TitleType -> Bool
+isDeleted titles =
   case titles of
-    []    -> []
-    (TitleText value):: xs -> text value :: processHeadingWithTags xs
-    (TitleTag value) :: xs ->
-      let renderTag =
-            span
-              [class "tag is-success is-small-8 is-rounded mx-1"]
-              [
-                text value
-              ]
-          dontRenderDeleteTag = text ""
-      in
-        (
-          if isTagDeleted (TitleTag value) then dontRenderDeleteTag
-          else renderTag
-        ) :: processHeadingWithTags xs
+    []                     -> False
+    (headTitleType :: xs)  -> isTagDeleted headTitleType || isDeleted xs
 
 
 onlyHeading : String -> String
 onlyHeading note = maybe "-no title-" identity (List.head <| String.split "\n" note)
+
 
 removeHeading : String -> String
 removeHeading = String.replace "# " ""
