@@ -42,6 +42,7 @@ jobs:
           ./build-optimized.sh Save scrib-save
           ./build-optimized.sh View scrib-view
           ./build-optimized.sh Config scrib-config
+          ./build-optimized.sh Page scrib-page
 
       - name: Install Elm Test
         shell: bash
