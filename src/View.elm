@@ -6,19 +6,22 @@ import Html.Attributes exposing (..)
 import ElmCommon       exposing (..)
 import StorageKeys     exposing (..)
 import Notifications   exposing (..)
+import Task
+import Browser.Dom
 import TagExtractor    exposing (TitleType(..), extractTags)
 
 import String          exposing (toLower)
 import Html.Events     exposing (onClick, onInput)
 import FP              exposing (maybe, const, collect, maybeToList, find)
 import ApiKey          exposing (ApiKey, ApiKeyWithPayload, apiKeyHeader, decodeApiKeyWithPayload, performApiKey)
-import Markdown
 
+import Markdown
+import Keyboard
+import Keyboard.Events
 import Browser.Navigation
 import Browser
 import Http
 import Browser.Navigation
-
 
 import List.Nonempty    as N
 import Json.Decode      as D
@@ -54,6 +57,10 @@ type SaveType = SaveResponse | DontSaveResponse
 type alias RemoteNotesData = WebData (List SC.NoteFull)
 
 
+type KeyboardNavigation = UpKey
+                        | DownKey
+                        | EscapeKey
+
 -- MSG
 
 
@@ -73,6 +80,8 @@ type Msg = NoteSelected SC.NoteFull
          | ErrorModalClosed
          | InlineErrorTimedOut
          | InlineInfoTimedOut
+         | HandleKeyPress KeyboardNavigation
+         | SearchFocus
 
 
 
@@ -95,8 +104,12 @@ main =
 init : E.Value -> (Model, Cmd Msg)
 init topNotes =
     let decodeResult = D.decodeValue decodeLocalNotes topNotes
-    in handleDecodeResult decodeResult handleInitSuccess handleInitError
+        decodeContinuation = handleDecodeResult decodeResult handleInitSuccess handleInitError
+        searchFocusContinuation = Task.attempt (const SearchFocus) (Browser.Dom.focus "search-box")
+    in Tuple.mapSecond (\cmd -> Cmd.batch [cmd, searchFocusContinuation]) decodeContinuation
 
+
+-- Task.attempt (always NoOp) (Browser.Dom.focus const_DOM_ID_MAIN
 
 -- UPDATE
 
@@ -120,6 +133,8 @@ update msg model =
     ErrorModalClosed                      -> handleErrorModalClosed model
     InlineErrorTimedOut                   -> handleInlineErrorTimeout model
     InlineInfoTimedOut                    -> handleInlineInfoTimeout model
+    (HandleKeyPress keyPressed)           -> handleKeyboardPress model keyPressed
+    SearchFocus                           -> handleSearchFocus model
 
 
 -- VIEW
@@ -168,7 +183,17 @@ viewSearchBar : Maybe String -> Html Msg
 viewSearchBar maybeQuery  =
   div [ class "panel-block" ]
     [ p [ class "control has-icons-left" ]
-      [ input [ class "input", class "is-primary", placeholder "Search", type_ "text", onInput SearchEdited, value <| getQueryText maybeQuery ]
+      [ input
+        [
+          class "input"
+        , class "is-primary"
+        , placeholder "Search"
+        , id "search-box"
+        , type_ "text"
+        , onInput SearchEdited
+        , value <| getQueryText maybeQuery
+        , addKeyboardSupport
+        ]
         []
       , span [ class "icon is-left" ]
         [ i [ attribute "aria-hidden" "true", class "fas", class "fa-search" ]
@@ -176,6 +201,16 @@ viewSearchBar maybeQuery  =
         ]
       ]
     ]
+
+
+addKeyboardSupport : Attribute Msg
+addKeyboardSupport =
+  Keyboard.Events.on Keyboard.Events.Keydown <|
+    List.map (Tuple.mapSecond HandleKeyPress)
+      [ ( Keyboard.ArrowUp, UpKey )
+      , ( Keyboard.ArrowDown, DownKey )
+      , ( Keyboard.Escape, EscapeKey )
+      ]
 
 
 -- PORTS
@@ -390,6 +425,22 @@ handleTopNotesSavedToSessionStorage model = onlyModel {model | selectedNote = No
 
 handleAddNote : Model -> (Model, Cmd Msg)
 handleAddNote model = (model, removeSelectedNoteFromLocalStorage)
+
+
+handleKeyboardPress : Model -> KeyboardNavigation -> (Model, Cmd Msg)
+handleKeyboardPress model keyPressed =  (model, ("Key pressed: " ++ keyPressedToString keyPressed) |> logMessage)
+
+
+keyPressedToString : KeyboardNavigation -> String
+keyPressedToString keyPressed =
+  case keyPressed of
+    UpKey     -> "Up"
+    DownKey   -> "Down"
+    EscapeKey -> "Esc"
+
+
+handleSearchFocus : Model -> (Model, Cmd Msg)
+handleSearchFocus = onlyModel
 
 
 handleNoteEdited : Model -> SC.NoteFull -> (Model, Cmd Msg)
