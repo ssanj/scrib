@@ -34,6 +34,10 @@
   text-decoration: line-through;
 }
 
+.selected-note {
+  border: 1px solid blue;
+}
+
 #markdown-page-view {
   line-height: 2em;
 }

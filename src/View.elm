@@ -50,6 +50,7 @@ type alias Model =
   , searchResultNotes : List SC.NoteFull
   , infoMessage       : Maybe InformationMessage
   , whichNotes        : NotesDataSource
+  , selectedIndex     : Maybe Int
   }
 
 type SaveType = SaveResponse | DontSaveResponse
@@ -148,7 +149,7 @@ view model =
       [
         section [class "section"]
           ([ viewMenu ]                                                              ++
-          (viewSearchArea notesList model.query maybeInlineErrors model.infoMessage) ++
+          (viewSearchArea model notesList model.query maybeInlineErrors model.infoMessage) ++
           [
             viewModalErrorsIfAny maybeModalErrors ErrorModalClosed
           , createMarkdownPreview model.selectedNote
@@ -157,13 +158,13 @@ view model =
       ]
 
 
-viewSearchArea : List SC.NoteFull ->  Maybe String -> Maybe InlineError -> Maybe InformationMessage -> List (Html Msg)
-viewSearchArea notesList maybeQuery  maybeInlineErrors maybeInfoMessage =
+viewSearchArea : Model -> List SC.NoteFull ->  Maybe String -> Maybe InlineError -> Maybe InformationMessage -> List (Html Msg)
+viewSearchArea model notesList maybeQuery  maybeInlineErrors maybeInfoMessage =
     [
       viewSearchBar maybeQuery
     , viewInlineErrorsIfAny maybeInlineErrors
     , viewInformationIfAny maybeInfoMessage
-    , viewNotesList notesList
+    , viewNotesList notesList model
     , viewNotesCount notesList
     ]
 
@@ -242,6 +243,7 @@ emptyModel =
   , searchResultNotes = []
   , infoMessage       = Nothing
   , whichNotes        = TopNotes
+  , selectedIndex     = Just 1
   }
 
 inlineInfoTimeout : Seconds
@@ -508,8 +510,8 @@ listFold : b -> (N.Nonempty a -> b) -> List a -> b
 listFold onEmpty onFull elements =
   maybe onEmpty onFull <| N.fromList elements
 
-viewNotesList: List SC.NoteFull -> Html Msg
-viewNotesList notes =
+viewNotesList: List SC.NoteFull -> Model -> Html Msg
+viewNotesList notes model =
   if List.isEmpty notes
   then
     div
@@ -518,7 +520,8 @@ viewNotesList notes =
         text "No results found. Please try a different search."
       ]
   else
-    div [ id "notes-list" ] (List.map createNoteItem notes)
+    div [ id "notes-list" ] (List.map (createNoteItem model) notes )
+
 
 getInformationFromRemoteNotesData : RemoteNotesData -> Maybe InformationMessage
 getInformationFromRemoteNotesData remoteNotesData =
@@ -554,8 +557,8 @@ createMarkdownPreview: Maybe SC.NoteFull -> Html Msg
 createMarkdownPreview = maybe viewMarkdownPreviewDefault viewMarkdownPreview
 
 
-createNoteItem: SC.NoteFull -> Html Msg
-createNoteItem fullNote =
+createNoteItem: Model -> SC.NoteFull -> Html Msg
+createNoteItem model fullNote =
   let title           = removeHeading <| onlyHeading (SC.getNoteFullText fullNote)
       headingWithTags = extractTags title
       deleted         = isDeleted headingWithTags
@@ -566,6 +569,7 @@ createNoteItem fullNote =
       , classList
           [
             ("deleted-note", deleted)
+          , ("selected-note", maybe False (const True) model.selectedIndex)
           ]
       , onClick (NoteSelected fullNote)
       ]
