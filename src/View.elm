@@ -61,6 +61,7 @@ type alias RemoteNotesData = WebData (List SC.NoteFull)
 type KeyboardNavigation = UpKey
                         | DownKey
                         | EscapeKey
+                        | EnterKey
 
 -- MSG
 
@@ -211,6 +212,7 @@ addKeyboardSupport =
       [ ( Keyboard.ArrowUp, UpKey )
       , ( Keyboard.ArrowDown, DownKey )
       , ( Keyboard.Escape, EscapeKey )
+      , ( Keyboard.Enter, EnterKey )
       ]
 
 
@@ -431,22 +433,63 @@ handleAddNote model = (model, removeSelectedNoteFromLocalStorage)
 
 handleKeyboardPress : Model -> KeyboardNavigation -> (Model, Cmd Msg)
 handleKeyboardPress model keyPressed =
-  let newModel =
-        case keyPressed of
-          DownKey     ->
-            let newSelectedIndex =
-                  case model.selectedIndex of
-                    Nothing  -> Just 0
-                    hasIndex -> Maybe.map (moveForward model.searchResultNotes) hasIndex
-            in { model | selectedIndex = newSelectedIndex }
-          UpKey   ->
-            let newSelectedIndex =
-                  case model.selectedIndex of
-                    Nothing  -> Just 0
-                    hasIndex -> Maybe.map (moveBackward model.searchResultNotes) hasIndex
-            in { model | selectedIndex = newSelectedIndex }
-          EscapeKey -> model
-  in (newModel, ("Key pressed: " ++ keyPressedToString keyPressed ++ ", index: " ++ (maybe "-" String.fromInt newModel.selectedIndex)) |> logMessage)
+  let notesStack = chooseNotesListSearch model
+  in
+    case keyPressed of
+      DownKey     ->
+        let newSelectedIndex =
+              case model.selectedIndex of
+                Nothing  -> Just 0
+                hasIndex -> Maybe.map (moveForward notesStack) hasIndex
+            newModel = { model | selectedIndex = newSelectedIndex }
+        in (newModel, logKeyPress newModel.selectedIndex keyPressed)
+      UpKey   ->
+        let newSelectedIndex =
+              case model.selectedIndex of
+                Nothing  -> Just 0
+                hasIndex -> Maybe.map (moveBackward notesStack) hasIndex
+            newModel = { model | selectedIndex = newSelectedIndex }
+        in (newModel, logKeyPress newModel.selectedIndex keyPressed)
+
+      EscapeKey ->
+        let newModel = { model | selectedIndex = Nothing }
+        in (newModel, logKeyPress newModel.selectedIndex keyPressed)
+
+      EnterKey ->
+        let newModel  = { model | selectedIndex = Nothing }
+            maybeNote =  Maybe.andThen (selectNoteAtIndex notesStack) model.selectedIndex
+            logCmd1    = logKeyPress model.selectedIndex keyPressed
+            logCmd2    = logKeyPress newModel.selectedIndex keyPressed
+        in  case maybeNote of
+              Nothing   -> (newModel, Cmd.batch [logMessage "Note not found", logCmd1, logCmd2])
+              Just note ->
+                let selectNoteAction = handleNoteSelected newModel note
+                    noteFoundLog     = logMessage ("note found: " ++ (SC.getNoteFullText note))
+                in addCmdToModelCmd  (Cmd.batch [noteFoundLog, logCmd1, logCmd2]) selectNoteAction
+
+
+chooseNotesListSearch : Model -> List SC.NoteFull
+chooseNotesListSearch model =
+  case model.query of
+    Nothing -> model.retrievedNotes -- not searching so return all notes
+    Just _  -> model.searchResultNotes -- searching so return matches
+
+
+addCmdToModelCmd : Cmd msg -> (Model, Cmd msg) -> (Model, Cmd msg)
+addCmdToModelCmd newCommand existingModelCmd =
+  Tuple.mapSecond (\c1 -> Cmd.batch [c1, newCommand]) existingModelCmd
+
+
+logKeyPress : Maybe Int -> KeyboardNavigation -> Cmd Msg
+logKeyPress selectedIndex keyPressed =
+  ("Key pressed: " ++ keyPressedToString keyPressed ++ ", index: " ++ (maybe "-" String.fromInt selectedIndex)) |> logMessage
+
+
+selectNoteAtIndex : List SC.NoteFull -> Int ->  Maybe SC.NoteFull
+selectNoteAtIndex searchResultNotes selectedIndex =
+  let indexedPairs = List.indexedMap Tuple.pair searchResultNotes
+      matchedPairs = List.filter (\(index, value) -> index == selectedIndex) indexedPairs
+  in List.head <| List.map Tuple.second matchedPairs
 
 
 moveBackward : List SC.NoteFull -> Int -> Int
@@ -470,6 +513,7 @@ keyPressedToString keyPressed =
     UpKey     -> "Up"
     DownKey   -> "Down"
     EscapeKey -> "Esc"
+    EnterKey  -> "Enter"
 
 
 handleSearchFocus : Model -> (Model, Cmd Msg)
