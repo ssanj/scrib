@@ -497,14 +497,9 @@ moveBackward searchResultNotes currentIndex = Basics.max 0 (currentIndex - 1)
 
 
 moveForward : List SC.NoteFull -> Int -> Int
-moveForward searchResultNotes currentIndex = currentIndex + 1
-  --let maxNotes    = List.length searchResultNotes
-  --in  modBy (currentIndex + 1) maxNotes
-
-  --let maxNotes    = List.length searchResultNotes
-  --    indexMax    = Basics.max 0 (maxNotes - 1)
-  --    nextIndex   = modBy (currentIndex + 1) maxNotes
-  --in Basics.min indexMax nextIndex
+moveForward matchedNotes currentIndex =
+  let maxNotes = List.length matchedNotes
+  in modBy maxNotes (currentIndex + 1)
 
 
 keyPressedToString : KeyboardNavigation -> String
