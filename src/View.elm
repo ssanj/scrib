@@ -243,7 +243,7 @@ emptyModel =
   , searchResultNotes = []
   , infoMessage       = Nothing
   , whichNotes        = TopNotes
-  , selectedIndex     = Just 1
+  , selectedIndex     = Nothing
   }
 
 inlineInfoTimeout : Seconds
@@ -430,7 +430,38 @@ handleAddNote model = (model, removeSelectedNoteFromLocalStorage)
 
 
 handleKeyboardPress : Model -> KeyboardNavigation -> (Model, Cmd Msg)
-handleKeyboardPress model keyPressed =  (model, ("Key pressed: " ++ keyPressedToString keyPressed) |> logMessage)
+handleKeyboardPress model keyPressed =
+  let newModel =
+        case keyPressed of
+          DownKey     ->
+            let newSelectedIndex =
+                  case model.selectedIndex of
+                    Nothing  -> Just 0
+                    hasIndex -> Maybe.map (moveForward model.searchResultNotes) hasIndex
+            in { model | selectedIndex = newSelectedIndex }
+          UpKey   ->
+            let newSelectedIndex =
+                  case model.selectedIndex of
+                    Nothing  -> Just 0
+                    hasIndex -> Maybe.map (moveBackward model.searchResultNotes) hasIndex
+            in { model | selectedIndex = newSelectedIndex }
+          EscapeKey -> model
+  in (newModel, ("Key pressed: " ++ keyPressedToString keyPressed ++ ", index: " ++ (maybe "-" String.fromInt newModel.selectedIndex)) |> logMessage)
+
+
+moveBackward : List SC.NoteFull -> Int -> Int
+moveBackward searchResultNotes currentIndex = Basics.max 0 (currentIndex - 1)
+
+
+moveForward : List SC.NoteFull -> Int -> Int
+moveForward searchResultNotes currentIndex = currentIndex + 1
+  --let maxNotes    = List.length searchResultNotes
+  --in  modBy (currentIndex + 1) maxNotes
+
+  --let maxNotes    = List.length searchResultNotes
+  --    indexMax    = Basics.max 0 (maxNotes - 1)
+  --    nextIndex   = modBy (currentIndex + 1) maxNotes
+  --in Basics.min indexMax nextIndex
 
 
 keyPressedToString : KeyboardNavigation -> String
