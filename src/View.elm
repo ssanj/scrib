@@ -520,7 +520,7 @@ viewNotesList notes model =
         text "No results found. Please try a different search."
       ]
   else
-    div [ id "notes-list" ] (List.map (createNoteItem model) notes )
+    div [ id "notes-list" ] (List.indexedMap (createNoteItem model) notes )
 
 
 getInformationFromRemoteNotesData : RemoteNotesData -> Maybe InformationMessage
@@ -557,8 +557,8 @@ createMarkdownPreview: Maybe SC.NoteFull -> Html Msg
 createMarkdownPreview = maybe viewMarkdownPreviewDefault viewMarkdownPreview
 
 
-createNoteItem: Model -> SC.NoteFull -> Html Msg
-createNoteItem model fullNote =
+createNoteItem: Model -> Int -> SC.NoteFull -> Html Msg
+createNoteItem model index fullNote =
   let title           = removeHeading <| onlyHeading (SC.getNoteFullText fullNote)
       headingWithTags = extractTags title
       deleted         = isDeleted headingWithTags
@@ -569,7 +569,7 @@ createNoteItem model fullNote =
       , classList
           [
             ("deleted-note", deleted)
-          , ("selected-note", maybe False (const True) model.selectedIndex)
+          , ("selected-note", maybe False (\si -> si == index) model.selectedIndex)
           ]
       , onClick (NoteSelected fullNote)
       ]
