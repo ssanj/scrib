@@ -6,8 +6,8 @@ import Html.Attributes exposing (..)
 import ElmCommon       exposing (..)
 import StorageKeys     exposing (..)
 import Notifications   exposing (..)
-import Task
-import Browser.Dom
+import Task            exposing (Task)
+
 import TagExtractor    exposing (TitleType(..), extractTags)
 
 import String          exposing (toLower)
@@ -22,7 +22,9 @@ import Browser.Navigation
 import Browser
 import Http
 import Browser.Navigation
+import Debug
 
+import Browser.Dom      as Dom
 import List.Nonempty    as N
 import Json.Decode      as D
 import Json.Encode      as E
@@ -30,7 +32,6 @@ import Note             as SC
 import Ports            as P
 import Subs             as S
 import Component.Footer as Footer
-
 
 -- MODEL
 
@@ -84,6 +85,7 @@ type Msg = NoteSelected SC.NoteFull
          | InlineInfoTimedOut
          | HandleKeyPress KeyboardNavigation
          | SearchFocus
+         | ScrollElementToView
 
 
 
@@ -107,7 +109,7 @@ init : E.Value -> (Model, Cmd Msg)
 init topNotes =
     let decodeResult = D.decodeValue decodeLocalNotes topNotes
         decodeContinuation = handleDecodeResult decodeResult handleInitSuccess handleInitError
-        searchFocusContinuation = Task.attempt (const SearchFocus) (Browser.Dom.focus "search-box")
+        searchFocusContinuation = Task.attempt (const SearchFocus) (Dom.focus "search-box")
     in Tuple.mapSecond (\cmd -> Cmd.batch [cmd, searchFocusContinuation]) decodeContinuation
 
 
@@ -137,6 +139,7 @@ update msg model =
     InlineInfoTimedOut                    -> handleInlineInfoTimeout model
     (HandleKeyPress keyPressed)           -> handleKeyboardPress model keyPressed
     SearchFocus                           -> handleSearchFocus model
+    ScrollElementToView                   -> handleScrollElementToView model
 
 
 -- VIEW
@@ -441,15 +444,16 @@ handleKeyboardPress model keyPressed =
               case model.selectedIndex of
                 Nothing  -> Just 0
                 hasIndex -> Maybe.map (moveForward notesStack) hasIndex
+
             newModel = { model | selectedIndex = newSelectedIndex }
-        in (newModel, logKeyPress newModel.selectedIndex keyPressed)
+        in (newModel, Cmd.batch [scrollToElementIntoView ".selected-note", logKeyPress newModel.selectedIndex keyPressed])
       UpKey   ->
         let newSelectedIndex =
               case model.selectedIndex of
                 Nothing  -> Just 0
                 hasIndex -> Maybe.map (moveBackward notesStack) hasIndex
             newModel = { model | selectedIndex = newSelectedIndex }
-        in (newModel, logKeyPress newModel.selectedIndex keyPressed)
+        in (newModel, Cmd.batch [scrollToElementIntoView ".selected-note", logKeyPress newModel.selectedIndex keyPressed])
 
       EscapeKey ->
         let newModel = { model | selectedIndex = Nothing }
@@ -513,6 +517,10 @@ keyPressedToString keyPressed =
 
 handleSearchFocus : Model -> (Model, Cmd Msg)
 handleSearchFocus = onlyModel
+
+
+handleScrollElementToView : Model -> (Model, Cmd Msg)
+handleScrollElementToView = onlyModel
 
 
 handleNoteEdited : Model -> SC.NoteFull -> (Model, Cmd Msg)
@@ -627,22 +635,59 @@ createMarkdownPreview: Maybe SC.NoteFull -> Html Msg
 createMarkdownPreview = maybe viewMarkdownPreviewDefault viewMarkdownPreview
 
 
+addIfNeeded : Bool -> Attribute msg -> List (Attribute msg)
+addIfNeeded isNeed attr = if isNeed then [ attr ] else []
+
+-- this is going to need to know which button was pressed as well.
+--jumpToBottom : String -> Msg -> Cmd Msg
+--jumpToBottom id msg =
+--    Dom.getElement id
+--        |> Task.andThen (calculateViewport id)
+--        |> Task.attempt (\_ -> msg)
+
+
+--calculateViewport : String -> Dom.Element -> Task Dom.Error ()
+--calculateViewport id el =
+--  --if isWithin el then Task.succeed () -- is already visible so don't scroll.
+--  -- else
+--  Debug.log ("element: " ++ Debug.toString el) (Dom.setViewportOf id 0 el.element.y) -- scroll to the top of the element
+
+
+isWithin : Dom.Element -> Bool
+isWithin el =
+  let element  = el.element
+      viewport = el.viewport
+      isInHorizontal = element.x >= viewport.x && (element.x <= viewport.x + viewport.width)
+      isInVertical   = element.y >= viewport.y && (element.y <= viewport.y + viewport.height)
+  in isInHorizontal && isInVertical
+
+
 createNoteItem: Model -> Int -> SC.NoteFull -> Html Msg
 createNoteItem model index fullNote =
   let title           = removeHeading <| onlyHeading (SC.getNoteFullText fullNote)
       headingWithTags = extractTags title
       deleted         = isDeleted headingWithTags
+      selected        = maybe False (\si -> si == index) model.selectedIndex
   in
     a
-      [
-        class "panel-block"
-      , classList
+      (
+        List.concat
           [
-            ("deleted-note", deleted)
-          , ("selected-note", maybe False (\si -> si == index) model.selectedIndex)
+            [
+              class "panel-block"
+            ]
+          , [
+              classList
+                [
+                  ("deleted-note", deleted)
+                , ("selected-note", selected)
+                ]
+            ]
+          , [
+              onClick (NoteSelected fullNote)
+            ]
           ]
-      , onClick (NoteSelected fullNote)
-      ]
+      )
       (createHeader headingWithTags)
 
 
@@ -882,6 +927,22 @@ saveTopNotesToSessionStorage notes =
       responseKey         = Just topNotesSavedToSessionStorageResponseKey
       saveTopNotesCommand = P.WithStorage saveTopNotesValue responseKey
   in scribMessage <| P.encodeJsCommand saveTopNotesCommand SC.encodeFullNotes
+
+
+scrollOptions : E.Value
+scrollOptions =
+  E.object
+  [
+    ("behavior", E.string "smooth")
+  , ("block",    E.string "start")
+  , ("inline",   E.string "nearest")
+  ]
+
+
+scrollToElementIntoView : String -> Cmd Msg
+scrollToElementIntoView selector =
+  let scrollToViewCommand = P.ScrollToView <| P.JsScrollToViewValue selector scrollOptions
+  in scribMessage <| P.encodeJsCommand scrollToViewCommand identity
 
 
 -- SUBSCRIPTION HELPERS

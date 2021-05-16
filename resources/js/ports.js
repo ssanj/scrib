@@ -3,10 +3,27 @@ function portActions(action, cb) {
     console.log("[" + JSON.stringify(action.log.appName) + "]: " + JSON.stringify(action.log.data));
   } else if (action.eventType === "storage_action") {
     handleStorage(action, cb);
+  } else if (action.eventType == "scroll_to_view") {
+    handleScrollToView(action);
   } else {
     console.log("error, handled action:" + JSON.stringify(action));
   }
 }
+
+function handleScrollToView(action) {
+  const scrollAction = action.scrollToView;
+  const selector     = scrollAction.selector;
+  const options      = scrollAction.options;
+  const element      = document.querySelector(selector);
+  if (element) {
+    requestAnimationFrame(function(){
+     element.scrollIntoView(options);
+    });
+  } else {
+    console.log("could not find element:" + element);
+  }
+}
+
 
 function handleStorage(action, cb) {
   const storage       = action.storage;
