@@ -39,7 +39,9 @@
       });
 
       app.ports.scribMessage.subscribe(function(action){
-        portActions(action, app.ports.jsMessage.send);
+        window.requestAnimationFrame(function(){
+          portActions(action, app.ports.jsMessage.send);
+        });
       });
 
      function initLoad(appKey) {
@@ -52,6 +54,16 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => burgerMenu(document));
+    document.getElementById('scroll-button').addEventListener('click', (e) => {
+      const el = document.querySelector('.selected-note');
+      if (el) {
+        el.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+          inline: "nearest"
+        })
+      }
+    })
   </script>
   </body>
 </html>

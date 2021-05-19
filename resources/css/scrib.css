@@ -35,7 +35,8 @@
 }
 
 .selected-note {
-  border: 1px solid blue;
+  background-color: #f5f5f5;
+  color: #2980b9;
 }
 
 #markdown-page-view {

@@ -15,15 +15,12 @@ function handleScrollToView(action) {
   const selector     = scrollAction.selector;
   const options      = scrollAction.options;
   const element      = document.querySelector(selector);
-  if (element) {
-    requestAnimationFrame(function(){
-     element.scrollIntoView(options);
-    });
-  } else {
-    console.log("could not find element:" + element);
-  }
+    if (element) {
+      element.scrollIntoView(options);
+    } else {
+      console.log("could not find element:" + element);
+    }
 }
-
 
 function handleStorage(action, cb) {
   const storage       = action.storage;

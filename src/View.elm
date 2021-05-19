@@ -197,6 +197,7 @@ viewSearchBar maybeQuery  =
         , type_ "text"
         , onInput SearchEdited
         , value <| getQueryText maybeQuery
+        , autocomplete False
         , addKeyboardSupport
         ]
         []
