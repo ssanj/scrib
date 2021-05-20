@@ -279,8 +279,8 @@ handleSearchQuery model query =
   let trimmedQuery = String.trim query
   in
     case trimmedQuery of
-      ""            -> onlyModel { model | query = Nothing, whichNotes = TopNotes }
-      nonEmptyQuery -> performOrGotoConfig model ({ model | query = Just query }, searchRemoteNotes nonEmptyQuery)
+      ""            -> onlyModel { model | query = Nothing, whichNotes = TopNotes, selectedIndex = Nothing }
+      nonEmptyQuery -> performOrGotoConfig model ({ model | query = Just query, selectedIndex = Nothing }, searchRemoteNotes nonEmptyQuery)
 
 noteSelection  : Model -> NoteSelection
 noteSelection { retrievedNotes,  searchResultNotes, whichNotes } =
