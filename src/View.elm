@@ -32,6 +32,7 @@ import Note             as SC
 import Ports            as P
 import Subs             as S
 import Component.Footer as Footer
+import List
 
 -- MODEL
 
@@ -437,40 +438,38 @@ handleAddNote model = (model, removeSelectedNoteFromLocalStorage)
 
 handleKeyboardPress : Model -> KeyboardNavigation -> (Model, Cmd Msg)
 handleKeyboardPress model keyPressed =
-  let notesStack = chooseNotesListSearch model
+  let notesStack  = chooseNotesListSearch model
+      notesLength = List.length notesStack
   in
+    -- TODO: capture all the newSelected indexes in one place and then dispatch various cmds
     case keyPressed of
-      DownKey     ->
-        let newSelectedIndex =
-              case model.selectedIndex of
-                Nothing  -> Just 0
-                hasIndex -> Maybe.map (moveForward notesStack) hasIndex
+      DownKey     -> scrollAndSelectNext scrollDown model notesLength
 
-            newModel = { model | selectedIndex = newSelectedIndex }
-        in (newModel, Cmd.batch [scrollToElementIntoView ".selected-note", logKeyPress newModel.selectedIndex keyPressed])
-      UpKey   ->
-        let newSelectedIndex =
-              case model.selectedIndex of
-                Nothing  -> Just 0
-                hasIndex -> Maybe.map (moveBackward notesStack) hasIndex
-            newModel = { model | selectedIndex = newSelectedIndex }
-        in (newModel, Cmd.batch [scrollToElementIntoView ".selected-note", logKeyPress newModel.selectedIndex keyPressed])
+      UpKey   -> scrollAndSelectNext scrollUp model notesLength
 
-      EscapeKey ->
-        let newModel = { model | selectedIndex = Nothing }
-        in (newModel, logKeyPress newModel.selectedIndex keyPressed)
+      EscapeKey -> onlyModel { model | selectedIndex = Nothing }
 
       EnterKey ->
-        let newModel  = { model | selectedIndex = Nothing }
-            maybeNote =  Maybe.andThen (selectNoteAtIndex notesStack) model.selectedIndex
-            logCmd1    = logKeyPress model.selectedIndex keyPressed
-            logCmd2    = logKeyPress newModel.selectedIndex keyPressed
+        let maybeNote =  Maybe.andThen (selectNoteAtIndex notesStack) model.selectedIndex
         in  case maybeNote of
-              Nothing   -> (newModel, Cmd.batch [logMessage "Note not found", logCmd1, logCmd2])
-              Just note ->
-                let selectNoteAction = handleNoteSelected newModel note
-                    noteFoundLog     = logMessage ("note found: " ++ (SC.getNoteFullText note))
-                in addCmdToModelCmd  (Cmd.batch [noteFoundLog, logCmd1, logCmd2]) selectNoteAction
+              Nothing   ->
+                 let logCurrentIndex   = logKeyPress model.selectedIndex keyPressed
+                     logNotFoundError  = logMessage "Note not found"
+                     cmds              = Cmd.batch [logCurrentIndex, logNotFoundError]
+                in
+                   ({ model | selectedIndex = Nothing }, cmds)
+
+              note -> onlyModel { model | selectedIndex = Nothing, selectedNote = note }
+
+
+type alias ScrollFunction = Maybe Int -> Int -> Int
+
+
+scrollAndSelectNext : ScrollFunction -> Model -> Int -> (Model, Cmd Msg)
+scrollAndSelectNext scrollF model notesLength =
+        let newSelectedIndex = scrollF model.selectedIndex notesLength
+            newModel = { model | selectedIndex = Just newSelectedIndex }
+        in (newModel, scrollToElementIntoView ".selected-note")
 
 
 chooseNotesListSearch : Model -> List SC.NoteFull
@@ -497,14 +496,14 @@ selectNoteAtIndex searchResultNotes selectedIndex =
   in List.head <| List.map Tuple.second matchedPairs
 
 
-moveBackward : List SC.NoteFull -> Int -> Int
-moveBackward searchResultNotes currentIndex = Basics.max 0 (currentIndex - 1)
+scrollDown : Maybe Int -> Int -> Int
+scrollDown selectedIndex length =
+    maybe 0 (\n -> modBy length (n + 1)) selectedIndex
 
 
-moveForward : List SC.NoteFull -> Int -> Int
-moveForward matchedNotes currentIndex =
-  let maxNotes = List.length matchedNotes
-  in modBy maxNotes (currentIndex + 1)
+scrollUp : Maybe Int -> Int -> Int
+scrollUp selectedIndex length =
+    maybe 0 (\n -> modBy length (Basics.max 0 (n - 1))) selectedIndex
 
 
 keyPressedToString : KeyboardNavigation -> String
@@ -652,15 +651,6 @@ addIfNeeded isNeed attr = if isNeed then [ attr ] else []
 --  --if isWithin el then Task.succeed () -- is already visible so don't scroll.
 --  -- else
 --  Debug.log ("element: " ++ Debug.toString el) (Dom.setViewportOf id 0 el.element.y) -- scroll to the top of the element
-
-
-isWithin : Dom.Element -> Bool
-isWithin el =
-  let element  = el.element
-      viewport = el.viewport
-      isInHorizontal = element.x >= viewport.x && (element.x <= viewport.x + viewport.width)
-      isInVertical   = element.y >= viewport.y && (element.y <= viewport.y + viewport.height)
-  in isInHorizontal && isInVertical
 
 
 createNoteItem: Model -> Int -> SC.NoteFull -> Html Msg
