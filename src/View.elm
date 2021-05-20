@@ -509,7 +509,16 @@ scrollDown selectedIndex length =
 
 scrollUp : Maybe Int -> Int -> Int
 scrollUp selectedIndex length =
-    maybe 0 (\n -> modBy length (Basics.max 0 (n - 1))) selectedIndex
+  let reduceByOneOrZero : Int -> Int
+      reduceByOneOrZero n = Basics.max 0 (n - 1)
+
+      upIndex : Int -> Int -> Int
+      upIndex top n =
+        case n of
+          0     -> modBy top (reduceByOneOrZero top)
+          other -> modBy top (reduceByOneOrZero other)
+  in
+    maybe 0 (upIndex length) selectedIndex
 
 
 keyPressedToString : KeyboardNavigation -> String
