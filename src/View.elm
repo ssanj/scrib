@@ -441,25 +441,14 @@ handleKeyboardPress model keyPressed =
   let notesStack  = chooseNotesListSearch model
       notesLength = List.length notesStack
   in
-    -- TODO: capture all the newSelected indexes in one place and then dispatch various cmds
     case keyPressed of
-      DownKey     -> scrollAndSelectNext scrollDown model notesLength
+      DownKey   -> scrollAndSelectNext scrollDown model notesLength
 
-      UpKey   -> scrollAndSelectNext scrollUp model notesLength
+      UpKey     -> scrollAndSelectNext scrollUp model notesLength
 
-      EscapeKey -> onlyModel { model | selectedIndex = Nothing }
+      EscapeKey -> resetSelectedIndex model
 
-      EnterKey ->
-        let maybeNote =  Maybe.andThen (selectNoteAtIndex notesStack) model.selectedIndex
-        in  case maybeNote of
-              Nothing   ->
-                 let logCurrentIndex   = logKeyPress model.selectedIndex keyPressed
-                     logNotFoundError  = logMessage "Note not found"
-                     cmds              = Cmd.batch [logCurrentIndex, logNotFoundError]
-                in
-                   ({ model | selectedIndex = Nothing }, cmds)
-
-              note -> onlyModel { model | selectedIndex = Nothing, selectedNote = note }
+      EnterKey  -> selectNote model notesStack EnterKey
 
 
 type alias ScrollFunction = Maybe Int -> Int -> Int
@@ -471,6 +460,23 @@ scrollAndSelectNext scrollF model notesLength =
             newModel = { model | selectedIndex = Just newSelectedIndex }
         in (newModel, scrollToElementIntoView ".selected-note")
 
+
+selectNote : Model -> List SC.NoteFull -> KeyboardNavigation -> (Model, Cmd Msg)
+selectNote model notesStack keyPressed =
+    let maybeNote =  Maybe.andThen (findSelectedNoteAtIndex notesStack) model.selectedIndex
+    in  case maybeNote of
+          Nothing   ->
+             let logCurrentIndex   = logKeyPress model.selectedIndex keyPressed
+                 logNotFoundError  = logMessage "Note not found"
+                 cmds              = Cmd.batch [logCurrentIndex, logNotFoundError]
+            in
+               ({ model | selectedIndex = Nothing }, cmds)
+
+          note -> onlyModel { model | selectedIndex = Nothing, selectedNote = note }
+
+
+resetSelectedIndex : Model -> (Model, Cmd Msg)
+resetSelectedIndex model = onlyModel { model | selectedIndex = Nothing }
 
 chooseNotesListSearch : Model -> List SC.NoteFull
 chooseNotesListSearch model =
@@ -489,8 +495,8 @@ logKeyPress selectedIndex keyPressed =
   ("Key pressed: " ++ keyPressedToString keyPressed ++ ", index: " ++ (maybe "-" String.fromInt selectedIndex)) |> logMessage
 
 
-selectNoteAtIndex : List SC.NoteFull -> Int ->  Maybe SC.NoteFull
-selectNoteAtIndex searchResultNotes selectedIndex =
+findSelectedNoteAtIndex : List SC.NoteFull -> Int ->  Maybe SC.NoteFull
+findSelectedNoteAtIndex searchResultNotes selectedIndex =
   let indexedPairs = List.indexedMap Tuple.pair searchResultNotes
       matchedPairs = List.filter (\(index, value) -> index == selectedIndex) indexedPairs
   in List.head <| List.map Tuple.second matchedPairs
